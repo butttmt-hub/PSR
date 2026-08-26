@@ -52,6 +52,32 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .field-highlight{animation:fieldPulse 1.6s ease}
 .owner-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.owner-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.owner-card h4{margin:0 0 9px;color:var(--blue)}.owner-card ul{margin:0;padding-left:18px;font-size:12px;line-height:1.55}.owner-card.empty{opacity:.5}.handover{border:2px solid var(--blue);border-radius:14px;background:#F8FCFF;padding:18px}.handover h3{margin:0 0 8px}.notice{padding:12px;border-radius:10px;font-size:12px;line-height:1.5}.notice.info{background:#EAF3FA;color:#0A4B75}.notice.warn{background:#FFF3E8;color:#9A4C0B}.notice.danger{background:#FDECEC;color:#8B1E16}
 footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
+.product-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#EAF3FA;border:1px solid #BFDCEF;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#0A4B75}
+.product-banner button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,30,50,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-card{background:#fff;border-radius:14px;max-width:1240px;width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line)}
+.modal-head h2{margin:0;font-size:19px;color:var(--text)}
+.modal-close{border:0;background:none;font-size:24px;color:var(--muted);cursor:pointer;line-height:1;padding:0}
+.modal-body{padding:20px 24px;overflow:auto}
+.modal-foot{display:flex;justify-content:center;gap:10px;padding:14px 24px;border-top:1px solid var(--line)}
+.pm-row{margin-bottom:14px}
+.pm-row.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.pm-label{font-size:12px;font-weight:800;color:var(--text);margin-bottom:6px}
+.pm-radios{display:flex;gap:20px;flex-wrap:wrap;font-size:13px;align-items:center}
+.pm-radios label{display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500}
+.pm-actions{text-align:center;margin:16px 0 20px}
+.pm-actions .btn{margin:0 4px}
+.pm-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:420px}
+.pm-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+.pm-table th{background:#F4F7FA;color:var(--blue);padding:9px 8px;text-align:left;position:sticky;top:0}
+.pm-table td{padding:8px;border-top:1px solid var(--line)}
+.pm-table tbody tr{cursor:pointer}
+.pm-table tbody tr.selected{background:#EAF3FA}
+.pm-table tbody tr:hover{background:#FAFCFE}
+.pm-pagination{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--muted)}
+.pm-pagination button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer;font-size:12px}
+.pm-pagination button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:1050px){main{grid-template-columns:1fr}.side{position:static}.progress{grid-template-columns:repeat(4,1fr)}.grid,.grid.three{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){header{padding:15px}.header-row{align-items:flex-start}.proto{display:none}.progress{grid-template-columns:repeat(2,1fr)}main{width:94%;margin-top:14px}.grid,.grid.three,.customer-grid,.hero-choice,.summary-grid,.owner-grid{grid-template-columns:1fr}.panel-head,.panel-body,.actions{padding-left:15px;padding-right:15px}.field{min-height:auto}}
 @media print{.progress-wrap,.actions,.side,header .proto{display:none!important}body{background:#fff}main{display:block;width:100%;margin:0}.panel{box-shadow:none;border:0}.screen{display:none!important}.screen[data-screen="7"],.screen[data-screen="8"]{display:block!important}.panel-head{border-bottom:1px solid #ccc}}
@@ -87,7 +113,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
           <div><div class="label">Requirement Ref.</div><input id="refNo" type="text" value="REQ-CS-001"></div>
         </div>
         <div class="hero-choice">
-          <div class="product-choice selected" data-product="Cut Sheet" onclick="selectProduct('Cut Sheet')"><h3>Cut Sheet</h3><p>Steel Cut Sheet · Complete Journey</p></div>
+          <div class="product-choice selected" data-product="Cut Sheet" onclick="chooseCutSheet()"><h3>Cut Sheet</h3><p>Steel Cut Sheet · Complete Journey</p></div>
           <div class="product-choice" data-product="Tube" onclick="selectProduct('Tube')"><h3>Tube</h3><p>Steel Tube · Complete Journey</p></div>
         </div>
         <div class="notice info" style="margin-top:16px"><strong>Sales principle:</strong> เริ่มจาก Requirement ของลูกค้า แล้วให้ระบบช่วยเทียบกับ TMT Standard — ฝ่ายขายเลือก Cut Sheet หรือ Tube แล้วให้ระบบช่วยเทียบ Requirement กับ TMT Standard — ฝ่ายขายไม่จำเป็นต้องจำ STD ทั้งหมดเอง</div>
@@ -96,6 +122,10 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
       <!-- Screen 2 -->
       <div class="screen" data-screen="2">
         <div class="section-title">Product Specification / สเปกสินค้า</div>
+        <div class="product-banner" id="productBanner" style="display:none">
+          <div class="pb-text"></div>
+          <button onclick="openProductsModal()">🔍 เปลี่ยน Product</button>
+        </div>
         <div class="grid" id="productSpecFields"></div>
       </div>
 
@@ -176,6 +206,62 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     </div>
   </aside>
 </main>
+
+<div class="modal-overlay" id="productsModalOverlay" style="display:none">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>Products</h2>
+      <button class="modal-close" onclick="closeProductsModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="pm-filters">
+        <div class="pm-row">
+          <div class="pm-label">* Type</div>
+          <div class="pm-radios">
+            <label><input type="radio" name="pmType" value="Stock" checked>Stock</label>
+            <label><input type="radio" name="pmType" value="Made to order">Made to order</label>
+            <label><input type="radio" name="pmType" value="Customer Material">Customer Material</label>
+            <label><input type="radio" name="pmType" value="Service">Service</label>
+          </div>
+        </div>
+        <div class="pm-row">
+          <div class="pm-label">* Plant</div>
+          <div class="pm-radios">
+            <label><input type="radio" name="pmPlant" value="1200" checked>1200 : Wang Noi Plant</label>
+            <label><input type="radio" name="pmPlant" value="1300">1300 : Rama 3 Plant</label>
+          </div>
+        </div>
+        <div class="pm-row two-col">
+          <div>
+            <div class="pm-label">Material Type</div>
+            <div style="display:flex;gap:6px">
+              <select id="pmMaterialType" style="flex:1"><option value="">All</option><option value="เหล็กแผ่นดำ" selected>เหล็กแผ่นดำ</option></select>
+              <button type="button" title="ล้างค่า" onclick="document.getElementById('pmMaterialType').value='';searchProducts()" style="border:1px solid #C9D6E1;background:#fff;border-radius:8px;width:34px;cursor:pointer;color:var(--muted)">×</button>
+            </div>
+          </div>
+          <div><div class="pm-label">Size</div><select id="pmSize"><option value="All">All</option></select></div>
+        </div>
+        <div class="pm-row two-col">
+          <div><div class="pm-label">Material Code</div><input id="pmCode" type="text" placeholder=""></div>
+          <div><div class="pm-label">Material Description</div><input id="pmDesc" type="text" placeholder=""></div>
+        </div>
+        <div class="pm-actions"><button class="btn primary" onclick="searchProducts()">🔍 Search</button> <button class="btn secondary" onclick="clearProductFilters()">⟲ Clear</button></div>
+      </div>
+      <div class="pm-table-wrap">
+        <table class="pm-table">
+          <thead><tr><th></th><th>Material Code</th><th>Material Description</th><th>Group</th><th>Quantity</th><th>Order Amount</th><th>Suggest Price Per Kg.</th><th>Suggest Price Per Pcs.</th><th>Remain Qty. (Pcs.)</th><th>น้ำหนักต่อชิ้น (Kg.)</th><th>ช่วงน้ำหนักเสนอขาย (Kg.)</th><th>Remark จัดซื้อ</th><th>จำนวน (เส้น/มัด)</th></tr></thead>
+          <tbody id="pmTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pm-pagination" id="pmPagination"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" onclick="saveProductSelection()">💾 Save</button>
+      <button class="btn secondary" onclick="closeProductsModal()">✕ Exit</button>
+    </div>
+  </div>
+</div>
+
 <footer id="prototypeFooter">Phase C Prototype V1.1 · Cut Sheet · Not a production system</footer>
 </div>
 
@@ -260,6 +346,131 @@ let fieldDefs = productFieldDefs[currentProduct];
 
 const fieldState = {};
 let summaryFilterCat = null;
+
+// --- Products lookup modal (Prototype sample data — not live stock/pricing) ---
+function generateProductMasterData(){
+ const thicknesses=[1.00,1.20,1.40,1.50,1.60,1.80,2.00,2.30,2.50,3.00];
+ const sizes=[[1219,2438],[1219,3048],[1524,2438],[1524,3048]];
+ const rows=[]; let seq=23;
+ thicknesses.forEach(t=>{
+  sizes.forEach(([w,l],i)=>{
+   const group=i%2===0?'Sheet Group A':'Sheet Group B';
+   const plant=seq%2===0?'1200':'1300';
+   const weight=+(t*w*l*7.85/1e6).toFixed(2);
+   const priceKg=+(20+((seq*37)%600)/100).toFixed(2);
+   const pricePcs=+(priceKg*weight).toFixed(2);
+   const remain=((seq*211)%4000)-2000;
+   const codeBase=String(Math.round(t*100)).padStart(4,'0')+'-'+String(seq).padStart(4,'0');
+   const sizeLabel=`${w} X ${l}mm`;
+   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`1HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} mm x 4' x 8'`,group,sizeLabel,priceKg:'-',pricePcs:'-',remain:0,weight,range:weight});
+   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HSSF${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${w} X ${l}mm`,group,sizeLabel,priceKg,pricePcs,remain,weight,range:weight});
+   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${w} X ${l}mm`,group,sizeLabel,priceKg,pricePcs,remain:remain-137,weight,range:weight});
+   seq++;
+  });
+ });
+ return rows;
+}
+const productMasterData=generateProductMasterData();
+let selectedProductMaster=null;
+let pmSelectedCode=null;
+let pmCurrentPage=1;
+const pmPageSize=10;
+let pmFiltered=productMasterData;
+function chooseCutSheet(){
+ selectProduct('Cut Sheet');
+ openProductsModal();
+}
+function openProductsModal(){
+ document.getElementById('productsModalOverlay').style.display='flex';
+ if(!document.getElementById('pmSize').dataset.filled){
+  const sizes=[...new Set(productMasterData.map(r=>r.sizeLabel))];
+  document.getElementById('pmSize').innerHTML='<option value="All">All</option>'+sizes.map(s=>`<option value="${s}">${s}</option>`).join('');
+  document.getElementById('pmSize').dataset.filled='1';
+ }
+ searchProducts();
+}
+function closeProductsModal(){
+ document.getElementById('productsModalOverlay').style.display='none';
+}
+function clearProductFilters(){
+ document.getElementById('pmMaterialType').value='';
+ document.getElementById('pmSize').value='All';
+ document.getElementById('pmCode').value='';
+ document.getElementById('pmDesc').value='';
+ searchProducts();
+}
+function searchProducts(){
+ const type=document.querySelector('input[name="pmType"]:checked').value;
+ const plant=document.querySelector('input[name="pmPlant"]:checked').value;
+ const matType=document.getElementById('pmMaterialType').value;
+ const size=document.getElementById('pmSize').value;
+ const code=document.getElementById('pmCode').value.trim().toLowerCase();
+ const desc=document.getElementById('pmDesc').value.trim().toLowerCase();
+ pmFiltered=productMasterData.filter(r=>
+  r.type===type && r.plant===plant &&
+  (!matType||r.materialType===matType) &&
+  (size==='All'||r.sizeLabel===size) &&
+  (!code||r.code.toLowerCase().includes(code)) &&
+  (!desc||r.desc.toLowerCase().includes(desc))
+ );
+ pmCurrentPage=1;
+ renderProductsTable();
+}
+function renderProductsTable(){
+ const start=(pmCurrentPage-1)*pmPageSize;
+ const pageRows=pmFiltered.slice(start,start+pmPageSize);
+ document.getElementById('pmTableBody').innerHTML=pageRows.length?pageRows.map(r=>`<tr class="${pmSelectedCode===r.code?'selected':''}" onclick="selectProductRow('${r.code}')">
+  <td><input type="checkbox" ${pmSelectedCode===r.code?'checked':''} onclick="event.stopPropagation();selectProductRow('${r.code}')"></td>
+  <td>${esc(r.code)}</td><td>${esc(r.desc)}</td><td>${esc(r.group)}</td><td></td><td></td>
+  <td>${r.priceKg==='-'?'-':r.priceKg.toFixed(2)}</td><td>${r.pricePcs==='-'?'-':r.pricePcs.toFixed(2)}</td>
+  <td style="color:${r.remain<0?'#B42318':'#0A5F9E'}">${r.remain.toFixed(2)}</td>
+  <td>${r.weight.toFixed(2)}</td><td>${r.range.toFixed(2)}</td><td></td><td></td></tr>`).join('')
+  :`<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--muted)">No results — ไม่พบสินค้าตามเงื่อนไขที่เลือก</td></tr>`;
+ renderPmPagination();
+}
+function selectProductRow(code){
+ pmSelectedCode=(pmSelectedCode===code)?null:code;
+ renderProductsTable();
+}
+function renderPmPagination(){
+ const totalPages=Math.max(1,Math.ceil(pmFiltered.length/pmPageSize));
+ document.getElementById('pmPagination').innerHTML=`<span>Page ${pmCurrentPage} of ${totalPages} (${pmFiltered.length} items)</span>
+  <button ${pmCurrentPage<=1?'disabled':''} onclick="pmGoPage(${pmCurrentPage-1})">‹ Prev</button>
+  <button ${pmCurrentPage>=totalPages?'disabled':''} onclick="pmGoPage(${pmCurrentPage+1})">Next ›</button>`;
+}
+function pmGoPage(p){
+ const totalPages=Math.max(1,Math.ceil(pmFiltered.length/pmPageSize));
+ pmCurrentPage=Math.max(1,Math.min(totalPages,p));
+ renderProductsTable();
+}
+function saveProductSelection(){
+ if(!pmSelectedCode){ alert('กรุณาเลือก Product ก่อน Save'); return; }
+ const row=productMasterData.find(r=>r.code===pmSelectedCode);
+ applyProductToSpec(row);
+ closeProductsModal();
+}
+function trySelectOption(fieldId,matchFn){
+ const f=fieldDefs.find(x=>x.id===fieldId);
+ if(!f) return;
+ const idx=f.opts.findIndex(o=>matchFn(o[0]));
+ if(idx<0) return;
+ const sel=document.getElementById(fieldId);
+ if(sel){ sel.selectedIndex=idx; onFieldChange(f,idx); }
+}
+function applyProductToSpec(row){
+ selectedProductMaster=row;
+ const banner=document.getElementById('productBanner');
+ if(banner){
+  banner.style.display='flex';
+  banner.querySelector('.pb-text').innerHTML=`<strong>Product ที่เลือก:</strong> ${esc(row.code)} — ${esc(row.desc)}`;
+ }
+ const m=row.desc.match(/(\d{3,4})\s*X\s*(\d{3,4})/i);
+ if(m){
+  trySelectOption('width',opt=>opt.includes(m[1]));
+  trySelectOption('length',opt=>opt.includes(m[2]));
+ }
+}
+
 function statusClass(s){return s==='STD'?'std':s==='EXTRA'?'extra':'review'}
 function statusText(s){return s==='STD'?'STD':s==='EXTRA'?'EXTRA':'REVIEW'}
 function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
@@ -282,6 +493,8 @@ function renderProgress(){
 function renderFields(){
  fieldDefs = productFieldDefs[currentProduct];
  summaryFilterCat = null;
+ selectedProductMaster = null;
+ const pmBanner=document.getElementById('productBanner'); if(pmBanner) pmBanner.style.display='none';
  Object.keys(fieldState).forEach(k=>delete fieldState[k]);
  const targets={2:'productSpecFields',3:'qualityFields',4:'packingFields',5:'serviceFields',6:'documentFields'};
  Object.values(targets).forEach(id=>document.getElementById(id).innerHTML='');

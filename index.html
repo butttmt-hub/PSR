@@ -19,7 +19,7 @@ header{background:linear-gradient(90deg,var(--blue),#0B5E98);color:#fff;padding:
 .brand h1{margin:0;font-size:22px;letter-spacing:.2px}.brand p{margin:5px 0 0;font-size:13px;opacity:.86}
 .proto{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);padding:8px 12px;border-radius:10px;font-size:12px;white-space:nowrap}
 .progress-wrap{background:#fff;border-bottom:1px solid var(--line);padding:13px 22px;position:sticky;top:0;z-index:10}
-.progress{max-width:1420px;margin:auto;display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.progress{max-width:1420px;margin:auto;display:grid;grid-template-columns:repeat(9,1fr);gap:8px}
 .step-pill{position:relative;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 6px;text-align:center;font-size:11px;color:var(--muted);cursor:pointer;transition:.2s}
 .step-pill.active{border-color:var(--blue);background:#EAF3FA;color:var(--blue);font-weight:700}.step-pill.done{background:#F0F8F4;color:#166534;border-color:#B8DFC7}
 .step-pill .num{display:block;font-weight:800;font-size:12px;margin-bottom:3px}
@@ -58,6 +58,40 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .price-table th{color:var(--muted);font-weight:700}
 .price-table tfoot td{border-top:2px solid var(--line);border-bottom:0;font-weight:800;font-size:14px;color:var(--blue)}
 .price-summary.empty{color:var(--muted);font-size:12px;text-align:center;padding:18px;border-style:dashed}
+.quote-doc{background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px;font-size:12.5px;color:#222}
+.quote-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.quote-logo{display:flex;align-items:center;gap:10px}
+.quote-logo .mark{width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex-shrink:0}
+.quote-logo .co{font-weight:800;color:var(--blue);font-size:14px;line-height:1.35}
+.quote-logo .co span{display:block;font-weight:500;font-size:10.5px;color:var(--muted)}
+.quote-docno{text-align:right;font-size:11px;color:var(--muted)}
+.quote-title{text-align:center;font-size:19px;font-weight:800;margin:14px 0 6px;color:var(--text)}
+.quote-subhead{text-align:right;font-size:11px;color:var(--muted);margin-bottom:14px}
+.quote-meta{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:16px}
+.quote-meta .qm-cell{padding:8px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.quote-meta .qm-cell:nth-child(2n){border-right:0}
+.quote-meta label{font-size:10.5px;color:var(--muted);display:block;margin-bottom:2px}
+.quote-meta .qm-cell input{border:0;background:transparent;font-size:12px;width:100%;padding:0;color:#222}
+.quote-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:10px}
+.quote-table th,.quote-table td{border:1px solid var(--line);padding:7px 8px;text-align:center}
+.quote-table th{background:#F4F7FA;color:var(--blue);font-weight:700}
+.quote-table td.left{text-align:left}
+.quote-table tbody tr{height:56px;vertical-align:top}
+.quote-foot-grid{display:flex;justify-content:space-between;gap:24px;margin-top:8px;flex-wrap:wrap}
+.quote-terms{flex:1;min-width:240px;font-size:11.5px;line-height:2}
+.quote-terms input{border:0;border-bottom:1px dotted #C9D6E1;background:transparent;font-size:11.5px;color:#222}
+.quote-totals{width:280px}
+.quote-totals table{width:100%;border-collapse:collapse;font-size:12px}
+.quote-totals td{padding:5px 4px;border-bottom:1px solid var(--line)}
+.quote-totals td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.quote-totals tr.grand td{font-weight:800;font-size:14px;color:var(--blue);border-top:2px solid var(--line);border-bottom:0;padding-top:8px}
+.quote-notes{font-size:10.5px;color:var(--muted);line-height:1.8;margin-top:18px}
+.quote-sign{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:6px;margin-top:18px;font-size:10.5px;overflow:hidden}
+.quote-sign>div{padding:12px}
+.quote-sign>div:first-child{border-right:1px solid var(--line);color:var(--muted)}
+.quote-sign .sig-line{margin-top:40px;border-top:1px solid var(--line);text-align:center;padding-top:6px;color:var(--muted)}
+.quote-address{font-size:9.5px;color:var(--muted);margin-top:16px;line-height:1.7}
+@media print{.quote-doc{border:0;padding:0}}
 footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 .product-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#EAF3FA;border:1px solid #BFDCEF;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#0A4B75}
 .product-banner button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
@@ -87,7 +121,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 .pm-pagination button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:1050px){main{grid-template-columns:1fr}.side{position:static}.progress{grid-template-columns:repeat(4,1fr)}.grid,.grid.three{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){header{padding:15px}.header-row{align-items:flex-start}.proto{display:none}.progress{grid-template-columns:repeat(2,1fr)}main{width:94%;margin-top:14px}.grid,.grid.three,.customer-grid,.hero-choice,.summary-grid,.owner-grid{grid-template-columns:1fr}.panel-head,.panel-body,.actions{padding-left:15px;padding-right:15px}.field{min-height:auto}}
-@media print{.progress-wrap,.actions,.side,header .proto{display:none!important}body{background:#fff}main{display:block;width:100%;margin:0}.panel{box-shadow:none;border:0}.screen{display:none!important}.screen[data-screen="7"],.screen[data-screen="8"]{display:block!important}.panel-head{border-bottom:1px solid #ccc}}
+@media print{.progress-wrap,.actions,.side,header .proto{display:none!important}body{background:#fff}main{display:block;width:100%;margin:0}.panel{box-shadow:none;border:0}.screen{display:none!important}.screen[data-screen="9"]{display:block!important}.panel-head,.section-title{display:none!important}}
 </style>
 </head>
 <body>
@@ -180,6 +214,12 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
           <div class="owner-grid" id="ownerGrid"></div>
         </div>
         <div class="notice danger" id="commitGate" style="margin-top:16px"></div>
+      </div>
+
+      <!-- Screen 9 -->
+      <div class="screen" data-screen="9">
+        <div class="section-title">Quotation / ใบเสนอราคา</div>
+        <div class="quote-doc" id="quoteDoc"></div>
       </div>
 
     </div>
@@ -301,7 +341,8 @@ const steps = [
  {t:'Service', th:'บริการ', d:'Loading · Unloading · Vehicle'},
  {t:'Document', th:'เอกสาร', d:'Certificate · Delivery Docs'},
  {t:'Summary', th:'สรุป', d:'Requirement Classification'},
- {t:'Handover', th:'ส่งต่อ', d:'Structured Handover to Operation'}
+ {t:'Handover', th:'ส่งต่อ', d:'Structured Handover to Operation'},
+ {t:'Quotation', th:'ใบเสนอราคา', d:'Print-ready Auction Quotation'}
 ];
 let current=1;
 const productFieldDefs = {
@@ -670,11 +711,11 @@ function refreshAll(){
  const cats=getMainStatuses();
  document.getElementById('sideStatuses').innerHTML=Object.entries(cats).map(([k,v])=>`<div class="mini-status"><span>${k}</span><span class="badge ${statusClass(v)}">${statusText(v)}</span></div>`).join('');
  const ov=overallStatus();const ob=document.getElementById('overallBox');ob.className='overall '+statusClass(ov);ob.textContent=ov==='STD'?'STANDARD ORDER':ov==='EXTRA'?'EXTRA REQUIREMENT':'REVIEW REQUIRED';
- renderSummary();renderHandover();updateStepBadge();
+ renderSummary();renderHandover();renderQuotation();updateStepBadge();
 }
 function updateStepBadge(){
  let s='STD'; if(current>=2&&current<=6){const sts=fieldDefs.filter(f=>f.step===current).map(f=>fieldState[f.id]?.status||'STD');s=sts.includes('REVIEW')?'REVIEW':sts.includes('EXTRA')?'EXTRA':'STD'}
- else if(current===7||current===8)s=overallStatus();
+ else if(current===7||current===8||current===9)s=overallStatus();
  const b=document.getElementById('stepStatus');b.className='badge '+statusClass(s);b.textContent=current===1?'OPEN':statusText(s);
 }
 function currentSelection(f){const st=fieldState[f.id];return st.detail?`${st.value} — ${st.detail}`:st.value}
@@ -735,7 +776,90 @@ function renderHandover(){
  const ov=overallStatus();document.getElementById('commitGate').innerHTML=ov==='STD'?'<strong>Final Gate:</strong> All requirements are STD. Proceed normal process and submit structured handover.':ov==='EXTRA'?'<strong>Final Gate:</strong> Extra requirement exists. Request Operation review before final commitment where applicable.':'<strong>Final Gate:</strong> REVIEW REQUIRED. ห้าม Commit รายการที่ถูก Flag ก่อน Operation Confirm.';
  document.getElementById('commitGate').className='notice '+(ov==='STD'?'info':ov==='EXTRA'?'warn':'danger');
 }
-function showScreen(n){current=Math.max(1,Math.min(8,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('nextBtn').textContent=current===8?'Print Summary':'Next →';document.getElementById('nextBtn').onclick=current===8?()=>window.print():()=>go(1);renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
+let quoteExtra={attention:'',tel:'',paymentTerm:'',deliveryPlace:'',deliveryDate:'',validity:'',discountPct:0};
+let quoteBaseTotal=0;
+function recalcQuoteTotals(){
+ const discount=+(quoteBaseTotal*(quoteExtra.discountPct||0)/100).toFixed(2);
+ const net=+(quoteBaseTotal-discount).toFixed(2);
+ const vat=+(net*0.07).toFixed(2);
+ const grand=+(net+vat).toFixed(2);
+ const set=(id,val)=>{const el=document.getElementById(id); if(el) el.textContent=val;};
+ set('qTotal',fmtMoney(quoteBaseTotal));
+ set('qDiscountAmt',fmtMoney(discount));
+ set('qNet',fmtMoney(net));
+ set('qVat',fmtMoney(vat));
+ set('qGrand',fmtMoney(grand));
+}
+function renderQuotation(){
+ const doc=document.getElementById('quoteDoc'); if(!doc) return;
+ const row=selectedProductMaster;
+ const today=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'});
+ const customer=document.getElementById('customer').value;
+ const sales=document.getElementById('sales').value;
+ const refNo=document.getElementById('refNo').value;
+ const gradeField=fieldState['grade']?'grade':(fieldState['tubeGrade']?'tubeGrade':null);
+ const grade=gradeField?fieldState[gradeField].value:'-';
+ let rowsHtml;
+ if(row){
+  const totalWeight=+(row.qty*row.weight).toFixed(2);
+  const priceKg=row.pricePcs==='-'?0:row.priceKg;
+  const amount=+(totalWeight*priceKg).toFixed(2);
+  quoteBaseTotal=amount;
+  rowsHtml=`<tr><td>1</td><td class="left">${esc(row.desc)}</td><td>${esc(grade)}</td><td>${row.weight.toLocaleString()}</td><td>${totalWeight.toLocaleString()}</td><td>${row.qty.toLocaleString()}</td><td>${priceKg?fmtMoney(priceKg):'-'}</td><td>KG</td><td>${priceKg?fmtMoney(amount):'รอกำหนดราคา'}</td><td>${priceKg?fmtMoney(priceKg):'-'}</td></tr>`;
+ } else {
+  quoteBaseTotal=0;
+  rowsHtml=`<tr><td colspan="10" style="color:var(--muted);padding:22px;text-align:center">ยังไม่ได้เลือก Product / จำนวน — กลับไป Step 1 เพื่อเลือกสินค้าก่อนออกใบเสนอราคา</td></tr>`;
+ }
+ doc.innerHTML=`
+  <div class="quote-head">
+   <div class="quote-logo"><div class="mark">TMT</div><div class="co">TMT STEEL PUBLIC COMPANY LIMITED<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div></div>
+   <div class="quote-docno">S-FM-SM-31 R02<br>หน้า 1 / 1</div>
+  </div>
+  <div class="quote-title">ใบเสนอราคา (Quotation)</div>
+  <div class="quote-subhead">เลขที่ No.: ${esc(refNo)} &nbsp;·&nbsp; วันที่ Date: ${today}</div>
+  <div class="quote-meta">
+   <div class="qm-cell"><label>บริษัทฯ To</label>${esc(customer)}</div>
+   <div class="qm-cell"><label>ผู้เสนอราคา From</label>${esc(sales)}</div>
+   <div class="qm-cell"><label>ผู้ติดต่อ Attention</label><input id="qAttention" value="${esc(quoteExtra.attention)}" placeholder="ระบุผู้ติดต่อ" oninput="quoteExtra.attention=this.value"></div>
+   <div class="qm-cell"><label>โทรศัพท์ Tel</label><input id="qTel" value="${esc(quoteExtra.tel)}" placeholder="ระบุเบอร์โทร" oninput="quoteExtra.tel=this.value"></div>
+  </div>
+  <table class="quote-table">
+   <thead><tr><th>ที่<br>No.</th><th>รายการ<br>Description</th><th>เกรด<br>Grade</th><th>นน/ชิ้น<br>Wt/Pcs.</th><th>นน.รวม<br>Total</th><th>จำนวน<br>Q'ty</th><th>ราคา/หน่วย<br>Unit Price</th><th>หน่วย<br>Unit</th><th>จำนวนเงิน<br>Amount</th><th>บาท/กก.<br>Price/kg</th></tr></thead>
+   <tbody>${rowsHtml}</tbody>
+  </table>
+  <div class="quote-foot-grid">
+   <div class="quote-terms">
+    <div>เงื่อนไขการชำระเงิน Payment Term: <input value="${esc(quoteExtra.paymentTerm)}" placeholder="ระบุ" oninput="quoteExtra.paymentTerm=this.value" style="width:150px"></div>
+    <div>สถานที่ส่งมอบ Delivery Place: <input value="${esc(quoteExtra.deliveryPlace)}" placeholder="ระบุ" oninput="quoteExtra.deliveryPlace=this.value" style="width:230px"></div>
+    <div>วันที่ส่งมอบ Delivery Date: <input value="${esc(quoteExtra.deliveryDate)}" placeholder="ระบุ" oninput="quoteExtra.deliveryDate=this.value" style="width:150px"></div>
+    <div>กำหนดยืนราคา Validity: <input value="${esc(quoteExtra.validity)}" placeholder="ระบุ" oninput="quoteExtra.validity=this.value" style="width:150px"></div>
+   </div>
+   <div class="quote-totals">
+    <table>
+     <tr><td>รวมเงิน Total</td><td id="qTotal">${fmtMoney(quoteBaseTotal)}</td></tr>
+     <tr><td>ส่วนลด Discount <input type="number" min="0" max="100" step="0.01" value="${quoteExtra.discountPct}" style="width:52px;border:1px solid #C9D6E1;border-radius:4px;padding:1px 4px" oninput="quoteExtra.discountPct=parseFloat(this.value)||0;recalcQuoteTotals()">%</td><td id="qDiscountAmt">0.00</td></tr>
+     <tr><td>ราคาก่อนภาษี Net Price</td><td id="qNet">0.00</td></tr>
+     <tr><td>ภาษีมูลค่าเพิ่ม VAT 7%</td><td id="qVat">0.00</td></tr>
+     <tr class="grand"><td>จำนวนเงินทั้งสิ้น Grand Total</td><td id="qGrand">0.00</td></tr>
+    </table>
+   </div>
+  </div>
+  <div class="quote-notes">
+   หมายเหตุ: 1. กรณีชำระค่าสินค้าเกินกำหนด บริษัทจะคิดดอกเบี้ยในอัตราร้อยละ 1.25 ต่อเดือน<br>
+   2. เกณฑ์ความคลาดเคลื่อนของสินค้าข้างต้นเป็นไปตามที่มาตรฐานมอก. กำหนด (มอก. บังคับ) หรือ ตามมาตรฐานของผู้ผลิต (กรณีสินค้าทั่วไป)
+  </div>
+  <div class="quote-sign">
+   <div>เอกสารฉบับนี้ออกโดยระบบอัตโนมัติไม่จำเป็นต้องลงลายมือชื่อ<br>This document is computer generated that requires no signature.</div>
+   <div style="text-align:center">ยืนยันการสั่งซื้อ Confirmed by<div class="sig-line">ลูกค้า Customer</div></div>
+  </div>
+  <div class="quote-address">
+   สำนักงานใหญ่ : 179 อาคารบางกอกซิตี้ทาวเวอร์ ชั้น 22 ถนนสาทรใต้ แขวงทุ่งมหาเมฆ เขตสาทร กรุงเทพมหานคร 10120 โทร. 02-6854000 แฟกซ์. 02-6709090<br>
+   Head office : 179 Bangkok City Tower 22nd Floor, South Sathorn Rd., Thungmahamek, Sathorn, Bangkok 10120 Tel. 02-6854000 Fax. 02-6709090
+  </div>
+ `;
+ recalcQuoteTotals();
+}
+function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('nextBtn').textContent=current===9?'🖨️ Print Quotation':'Next →';document.getElementById('nextBtn').onclick=current===9?()=>window.print():()=>go(1);renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
 function go(delta){showScreen(current+delta)}
 function loadExtraDemo(){
  const demoByProduct={

@@ -91,7 +91,12 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .quote-sign>div:first-child{border-right:1px solid var(--line);color:var(--muted)}
 .quote-sign .sig-line{margin-top:40px;border-top:1px solid var(--line);text-align:center;padding-top:6px;color:var(--muted)}
 .quote-address{font-size:9.5px;color:var(--muted);margin-top:16px;line-height:1.7}
-@media print{.quote-doc{border:0;padding:0}}
+@media print{.quote-doc{border:0;padding:0}.internal-only{display:none!important}}
+.internal-only{margin-top:16px;border:1px dashed var(--extra);background:var(--extraBg);border-radius:10px;padding:14px 16px;font-size:12px;color:#7A3B0E}
+.internal-only h4{margin:0 0 8px;font-size:12.5px;color:var(--extra);display:flex;align-items:center;gap:6px}
+.internal-only ul{margin:0 0 8px;padding-left:18px;line-height:1.7}
+.internal-only .ib-total{font-weight:800;border-top:1px dashed #E3B98A;padding-top:8px}
+.internal-only.empty{color:var(--muted);border-color:var(--line);background:#FAFCFE}
 footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 .product-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#EAF3FA;border:1px solid #BFDCEF;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#0A4B75}
 .product-banner button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
@@ -220,6 +225,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
       <div class="screen" data-screen="9">
         <div class="section-title">Quotation / ใบเสนอราคา</div>
         <div class="quote-doc" id="quoteDoc"></div>
+        <div class="internal-only" id="internalBreakdown"></div>
       </div>
 
     </div>
@@ -790,6 +796,24 @@ function recalcQuoteTotals(){
  set('qVat',fmtMoney(vat));
  set('qGrand',fmtMoney(grand));
 }
+function computeExtraSurcharge(){
+ const cats=['Product','Product Quality','Packing'];
+ const items=fieldDefs.filter(f=>cats.includes(f.cat) && fieldState[f.id] && fieldState[f.id].status==='EXTRA');
+ return {count:items.length, pct:items.length*1, items};
+}
+function renderInternalBreakdown(surcharge,basePriceKg,adjPriceKg){
+ const box=document.getElementById('internalBreakdown'); if(!box) return;
+ if(!surcharge.count){
+  box.className='internal-only empty';
+  box.innerHTML=`🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)<br>ไม่มี Extra requirement ในหมวด Product Spec / Product Quality / Packing — ราคาเป็นราคามาตรฐาน ไม่มีการปรับเพิ่ม`;
+  return;
+ }
+ box.className='internal-only';
+ box.innerHTML=`<h4>🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)</h4>
+  <ul>${surcharge.items.map(f=>`<li>[${esc(f.cat)}] ${esc(f.label.split('/')[0].trim())}: ${esc(currentSelection(f))} <strong>+1%</strong></li>`).join('')}</ul>
+  <div>ราคาก่อนปรับ: <strong>${fmtMoney(basePriceKg)}</strong> บาท/กก. → ราคาหลังปรับ: <strong>${fmtMoney(adjPriceKg)}</strong> บาท/กก.</div>
+  <div class="ib-total">รวม Surcharge: +${surcharge.pct}% (${surcharge.count} extra item${surcharge.count>1?'s':''}) — ราคาที่ลูกค้าเห็นในเอกสารรวม surcharge นี้ไว้แล้ว ไม่แยกบรรทัดให้ลูกค้าเห็น</div>`;
+}
 function renderQuotation(){
  const doc=document.getElementById('quoteDoc'); if(!doc) return;
  const row=selectedProductMaster;
@@ -799,16 +823,20 @@ function renderQuotation(){
  const refNo=document.getElementById('refNo').value;
  const gradeField=fieldState['grade']?'grade':(fieldState['tubeGrade']?'tubeGrade':null);
  const grade=gradeField?fieldState[gradeField].value:'-';
+ const surcharge=computeExtraSurcharge();
  let rowsHtml;
  if(row){
   const totalWeight=+(row.qty*row.weight).toFixed(2);
-  const priceKg=row.pricePcs==='-'?0:row.priceKg;
+  const basePriceKg=row.pricePcs==='-'?0:row.priceKg;
+  const priceKg=+(basePriceKg*(1+surcharge.pct/100)).toFixed(2);
   const amount=+(totalWeight*priceKg).toFixed(2);
   quoteBaseTotal=amount;
   rowsHtml=`<tr><td>1</td><td class="left">${esc(row.desc)}</td><td>${esc(grade)}</td><td>${row.weight.toLocaleString()}</td><td>${totalWeight.toLocaleString()}</td><td>${row.qty.toLocaleString()}</td><td>${priceKg?fmtMoney(priceKg):'-'}</td><td>KG</td><td>${priceKg?fmtMoney(amount):'รอกำหนดราคา'}</td><td>${priceKg?fmtMoney(priceKg):'-'}</td></tr>`;
+  renderInternalBreakdown(surcharge,basePriceKg,priceKg);
  } else {
   quoteBaseTotal=0;
   rowsHtml=`<tr><td colspan="10" style="color:var(--muted);padding:22px;text-align:center">ยังไม่ได้เลือก Product / จำนวน — กลับไป Step 1 เพื่อเลือกสินค้าก่อนออกใบเสนอราคา</td></tr>`;
+  renderInternalBreakdown({count:0},0,0);
  }
  doc.innerHTML=`
   <div class="quote-head">

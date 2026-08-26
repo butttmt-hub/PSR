@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TMT Pre-Sale Requirement Configurator V1.1 — Cut Sheet & Tube</title>
+<style>
+:root{
+  --blue:#004B87; --blue2:#0A5F9E; --orange:#F26F21; --bg:#F4F7FA; --card:#FFFFFF;
+  --text:#17324D; --muted:#6B7F91; --line:#DCE5ED; --std:#15803D; --stdBg:#EAF7EE;
+  --extra:#C55A11; --extraBg:#FFF1E7; --review:#B42318; --reviewBg:#FDECEC;
+  --shadow:0 8px 24px rgba(20,50,80,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var(--bg);color:var(--text)}
+.app{min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(90deg,var(--blue),#0B5E98);color:#fff;padding:18px 28px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.header-row{max-width:1420px;margin:auto;display:flex;justify-content:space-between;gap:20px;align-items:center}
+.brand h1{margin:0;font-size:22px;letter-spacing:.2px}.brand p{margin:5px 0 0;font-size:13px;opacity:.86}
+.proto{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);padding:8px 12px;border-radius:10px;font-size:12px;white-space:nowrap}
+.progress-wrap{background:#fff;border-bottom:1px solid var(--line);padding:13px 22px;position:sticky;top:0;z-index:10}
+.progress{max-width:1420px;margin:auto;display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.step-pill{position:relative;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 6px;text-align:center;font-size:11px;color:var(--muted);cursor:pointer;transition:.2s}
+.step-pill.active{border-color:var(--blue);background:#EAF3FA;color:var(--blue);font-weight:700}.step-pill.done{background:#F0F8F4;color:#166534;border-color:#B8DFC7}
+.step-pill .num{display:block;font-weight:800;font-size:12px;margin-bottom:3px}
+main{width:min(1420px,96%);margin:22px auto 40px;display:grid;grid-template-columns:1fr 310px;gap:20px;align-items:start}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.panel-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.panel-head h2{margin:0;font-size:20px}.panel-head p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.panel-body{padding:22px 24px}.screen{display:none}.screen.active{display:block}
+.section-title{display:flex;align-items:center;gap:10px;margin:4px 0 14px;font-size:15px;font-weight:800;color:var(--blue)}
+.section-title:before{content:"";width:5px;height:20px;border-radius:4px;background:var(--orange)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}.grid.one{grid-template-columns:1fr}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.field{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;min-height:128px;position:relative}.field:hover{border-color:#B9CBD9}
+.field-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px}.label{font-size:13px;font-weight:800;line-height:1.35}.sub{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+select,input[type=text],input[type=number],input[type=time],textarea{width:100%;border:1px solid #C9D6E1;border-radius:8px;padding:9px 10px;font:inherit;font-size:13px;color:var(--text);background:#fff;outline:none}textarea{min-height:75px;resize:vertical}select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,75,135,.08)}
+.rule{margin-top:8px;font-size:11px;color:var(--muted);line-height:1.42}.rule strong{color:var(--text)}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}.badge.std{background:var(--stdBg);color:var(--std)}.badge.extra{background:var(--extraBg);color:var(--extra)}.badge.review{background:var(--reviewBg);color:var(--review)}
+.detail{display:none;margin-top:8px}.detail.show{display:block}.attach{margin-top:8px;padding:9px;border:1px dashed #C6D3DF;border-radius:8px;background:#FAFCFE;font-size:11px;color:var(--muted)}
+.mchk-wrap{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.mgroup{border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#FAFCFE}
+.mgroup-title{font-size:11px;font-weight:800;color:var(--blue);margin-bottom:5px}
+.mchk{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;cursor:pointer}
+.mchk input[type=checkbox]{width:15px;height:15px;flex-shrink:0;accent-color:var(--blue)}
+.mchk-baseline{opacity:.7;cursor:default}
+.mchk .badge{margin-left:auto;font-size:9px;padding:3px 7px}
+.mchk-detail{margin:4px 0 2px 23px;width:calc(100% - 23px)}
+.actions{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:16px 24px;background:#FBFCFD}.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer}.btn.secondary{background:#EAF0F5;color:var(--blue)}.btn.primary{background:var(--blue);color:#fff}.btn.orange{background:var(--orange);color:#fff}.btn:disabled{opacity:.4;cursor:not-allowed}
+.side{position:sticky;top:92px;display:flex;flex-direction:column;gap:14px}.side-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}.side-card h3{font-size:13px;margin:0 0 12px}.legend{display:grid;gap:8px;font-size:11px}.legend-row{display:flex;gap:8px;align-items:center}.mini-status{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding:9px 0;font-size:12px}.mini-status:first-of-type{border-top:0}.overall{border-radius:12px;padding:13px;margin-top:10px;font-weight:800;font-size:12px}.overall.std{background:var(--stdBg);color:var(--std)}.overall.extra{background:var(--extraBg);color:var(--extra)}.overall.review{background:var(--reviewBg);color:var(--review)}
+.customer-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.hero-choice{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}.product-choice{border:2px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:.2s;background:#fff}.product-choice.selected{border-color:var(--blue);background:#EEF6FB}.product-choice.disabled{opacity:.45;cursor:not-allowed}.product-choice h3{margin:0 0 5px}.product-choice p{margin:0;font-size:12px;color:var(--muted)}
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}.summary-card{border:1px solid var(--line);border-radius:12px;padding:13px;background:#fff;cursor:pointer;transition:.15s}.summary-card:hover{border-color:var(--blue2)}.summary-card.active{border-color:var(--blue);background:#EEF6FB;box-shadow:0 0 0 2px rgba(0,75,135,.15)}.summary-card .k{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:6px}.summary-card .k .cardhint{font-size:9px;color:var(--blue);font-weight:700;white-space:nowrap}.summary-card .v{font-size:14px;font-weight:800;margin-top:4px}.summary-filter-hint{font-size:12px;color:var(--muted);margin:-6px 0 14px}.summary-filter-hint a{color:var(--blue);font-weight:700;text-decoration:none;cursor:pointer}.req-table{width:100%;border-collapse:collapse;font-size:12px}.req-table th,.req-table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}.req-table th{background:#F4F7FA;color:var(--blue);font-size:11px}.req-table tr:last-child td{border-bottom:0}.req-table tbody tr.req-row{cursor:pointer}.req-table tbody tr.req-row:hover{background:#EAF3FA}
+@keyframes fieldPulse{0%{box-shadow:0 0 0 4px rgba(0,75,135,.35);border-color:var(--blue)}100%{box-shadow:0 0 0 0 rgba(0,75,135,0);border-color:var(--line)}}
+.field-highlight{animation:fieldPulse 1.6s ease}
+.owner-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.owner-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.owner-card h4{margin:0 0 9px;color:var(--blue)}.owner-card ul{margin:0;padding-left:18px;font-size:12px;line-height:1.55}.owner-card.empty{opacity:.5}.handover{border:2px solid var(--blue);border-radius:14px;background:#F8FCFF;padding:18px}.handover h3{margin:0 0 8px}.notice{padding:12px;border-radius:10px;font-size:12px;line-height:1.5}.notice.info{background:#EAF3FA;color:#0A4B75}.notice.warn{background:#FFF3E8;color:#9A4C0B}.notice.danger{background:#FDECEC;color:#8B1E16}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
+@media(max-width:1050px){main{grid-template-columns:1fr}.side{position:static}.progress{grid-template-columns:repeat(4,1fr)}.grid,.grid.three{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:680px){header{padding:15px}.header-row{align-items:flex-start}.proto{display:none}.progress{grid-template-columns:repeat(2,1fr)}main{width:94%;margin-top:14px}.grid,.grid.three,.customer-grid,.hero-choice,.summary-grid,.owner-grid{grid-template-columns:1fr}.panel-head,.panel-body,.actions{padding-left:15px;padding-right:15px}.field{min-height:auto}}
+@media print{.progress-wrap,.actions,.side,header .proto{display:none!important}body{background:#fff}main{display:block;width:100%;margin:0}.panel{box-shadow:none;border:0}.screen{display:none!important}.screen[data-screen="7"],.screen[data-screen="8"]{display:block!important}.panel-head{border-bottom:1px solid #ccc}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="header-row">
+    <div class="brand">
+      <h1>TMT Pre-Sale Requirement Configurator</h1>
+      <p id="journeySubtitle">Cut Sheet Complete Journey · STD / EXTRA / REVIEW Classification</p>
+    </div>
+    <div class="proto">PHASE C · Prototype V1.1 · Cut Sheet + Tube</div>
+  </div>
+</header>
+<div class="progress-wrap"><div class="progress" id="progress"></div></div>
+<main>
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2 id="screenTitle">Step 1</h2><p id="screenDesc"></p></div>
+      <span class="badge std" id="stepStatus">OPEN</span>
+    </div>
+    <div class="panel-body">
+
+      <!-- Screen 1 -->
+      <div class="screen active" data-screen="1">
+        <div class="section-title">Customer & Product / ลูกค้าและประเภทสินค้า</div>
+        <div class="customer-grid">
+          <div><div class="label">Customer / ลูกค้า</div><input id="customer" type="text" value="ABC Customer"></div>
+          <div><div class="label">Project / โครงการ</div><input id="project" type="text" value="Demo Project"></div>
+          <div><div class="label">Sales / ฝ่ายขาย</div><input id="sales" type="text" value="Demo Sales"></div>
+          <div><div class="label">Requirement Ref.</div><input id="refNo" type="text" value="REQ-CS-001"></div>
+        </div>
+        <div class="hero-choice">
+          <div class="product-choice selected" data-product="Cut Sheet" onclick="selectProduct('Cut Sheet')"><h3>Cut Sheet</h3><p>Steel Cut Sheet · Complete Journey</p></div>
+          <div class="product-choice" data-product="Tube" onclick="selectProduct('Tube')"><h3>Tube</h3><p>Steel Tube · Complete Journey</p></div>
+        </div>
+        <div class="notice info" style="margin-top:16px"><strong>Sales principle:</strong> เริ่มจาก Requirement ของลูกค้า แล้วให้ระบบช่วยเทียบกับ TMT Standard — ฝ่ายขายเลือก Cut Sheet หรือ Tube แล้วให้ระบบช่วยเทียบ Requirement กับ TMT Standard — ฝ่ายขายไม่จำเป็นต้องจำ STD ทั้งหมดเอง</div>
+      </div>
+
+      <!-- Screen 2 -->
+      <div class="screen" data-screen="2">
+        <div class="section-title">Product Specification / สเปกสินค้า</div>
+        <div class="grid" id="productSpecFields"></div>
+      </div>
+
+      <!-- Screen 3 -->
+      <div class="screen" data-screen="3">
+        <div class="section-title">Product Quality Requirements / คุณลักษณะและคุณภาพพิเศษ</div>
+        <div class="grid" id="qualityFields"></div>
+      </div>
+
+      <!-- Screen 4 -->
+      <div class="screen" data-screen="4">
+        <div class="section-title">Packing Requirement / ข้อกำหนดการบรรจุ</div>
+        <div class="grid" id="packingFields"></div>
+        <div class="notice warn" style="margin-top:15px">Packing พิเศษอาจมีผลต่อ Cost, Warehouse operation และวิธีการขนส่ง — ระบบจะ Flag เพื่อ Review เมื่อ Matrix ระบุ Extra/Review.</div>
+      </div>
+
+      <!-- Screen 5 -->
+      <div class="screen" data-screen="5">
+        <div class="section-title">Service Requirement / ข้อกำหนดบริการและโลจิสติกส์</div>
+        <div class="grid" id="serviceFields"></div>
+      </div>
+
+      <!-- Screen 6 -->
+      <div class="screen" data-screen="6">
+        <div class="section-title">Document Requirement / เอกสารและ Certificate</div>
+        <div class="grid" id="documentFields"></div>
+      </div>
+
+      <!-- Screen 7 -->
+      <div class="screen" data-screen="7">
+        <div class="section-title">System Summary / Requirement Classification</div>
+        <div class="summary-grid" id="summaryCards"></div>
+        <div class="summary-filter-hint" id="summaryFilterHint"></div>
+        <div id="overallNotice"></div>
+        <div style="margin-top:18px;overflow:auto"><table class="req-table"><thead><tr><th>Category</th><th>Requirement</th><th>Customer Selection</th><th>Status</th><th>Review by</th></tr></thead><tbody id="summaryBody"></tbody></table></div>
+      </div>
+
+      <!-- Screen 8 -->
+      <div class="screen" data-screen="8">
+        <div class="section-title">Submit to Operation / Structured Handover</div>
+        <div class="handover">
+          <h3 id="handoverTitle">Requirement Handover</h3>
+          <div id="handoverMeta" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
+          <div class="owner-grid" id="ownerGrid"></div>
+        </div>
+        <div class="notice danger" id="commitGate" style="margin-top:16px"></div>
+      </div>
+
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="backBtn" onclick="go(-1)">← Back</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn secondary" onclick="loadExtraDemo()">Load Extra Demo</button>
+        <button class="btn primary" id="nextBtn" onclick="go(1)">Next →</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="side-card">
+      <h3>Classification Legend</h3>
+      <div class="legend">
+        <div class="legend-row"><span class="badge std">STD</span><span>Standard Requirement · Proceed</span></div>
+        <div class="legend-row"><span class="badge extra">EXTRA</span><span>Special Requirement · Capture detail</span></div>
+        <div class="legend-row"><span class="badge review">REVIEW</span><span>Operation confirmation before commit</span></div>
+      </div>
+    </div>
+    <div class="side-card">
+      <h3>Live Order Status</h3>
+      <div id="sideStatuses"></div>
+      <div id="overallBox" class="overall std">STANDARD ORDER</div>
+    </div>
+    <div class="side-card">
+      <h3>Matrix-based Rule</h3>
+      <div style="font-size:11px;line-height:1.55;color:var(--muted)">
+        <span id="matrixRuleText">ทุก Field ใน Prototype นี้อ้างอิง Cut Sheet STD–EXTRA Sales Matrix: Product → Packing → Service → Document และ Operation Owner ตาม Matrix.</span>
+      </div>
+    </div>
+  </aside>
+</main>
+<footer id="prototypeFooter">Phase C Prototype V1.1 · Cut Sheet · Not a production system</footer>
+</div>
+
+<script>
+const steps = [
+ {t:'Select Product', th:'เลือกสินค้า', d:'Customer & Product Type'},
+ {t:'Product Spec', th:'สเปกสินค้า', d:'Grade · Dimension · Mill · Tolerance'},
+ {t:'Quality', th:'คุณภาพ', d:'Appearance · Marking · Chemistry'},
+ {t:'Packing', th:'การบรรจุ', d:'Packing · Sticker · Bundle'},
+ {t:'Service', th:'บริการ', d:'Loading · Unloading · Vehicle'},
+ {t:'Document', th:'เอกสาร', d:'Certificate · Delivery Docs'},
+ {t:'Summary', th:'สรุป', d:'Requirement Classification'},
+ {t:'Handover', th:'ส่งต่อ', d:'Structured Handover to Operation'}
+];
+let current=1;
+const productFieldDefs = {
+ 'Cut Sheet': [
+
+ // Step 2 Product Specification
+ {step:2,cat:'Product',id:'mill',label:'Mill / แหล่งผลิต',owner:'Planning / Material Sourcing',std:'Any (SA, GJ, GS, เหล็กนำเข้า)',extra:'Specific: SA / GJ / GS / เหล็กไทย / อื่นๆ',type:'select',opts:[['Any','STD'],['Specific SA','EXTRA'],['Specific GJ','EXTRA'],['Specific GS','EXTRA'],['เหล็กไทย / Thai steel','EXTRA'],['Other','EXTRA']],detail:true,rule:'Any = STD; ระบุ Mill เฉพาะ = Extra'},
+ {step:2,cat:'Product',id:'thkCert',label:'Thickness Certificate / หนา Cert. ที่ต้องการ',owner:'Planning / QA',std:'ตาม Spec',extra:'ระบุ Requirement เพิ่มเติม',type:'select',opts:[['ตาม Spec','STD'],['Specify certificate thickness','EXTRA']],detail:true,rule:'ตาม Spec = STD; Requirement เพิ่มเติม = Extra'},
+ {step:2,cat:'Product',id:'aiming',label:'Thickness Aiming / หนา Aiming',owner:'Planning / Production',std:'5.80 ขึ้นไป (ตัวอย่าง 5.80)',extra:'5.70 / 5.90 / 5.8-5.9 only / Specific aiming',type:'select',opts:[['Standard ≥ 5.80','STD'],['5.70','EXTRA'],['5.90','EXTRA'],['5.8-5.9 only','EXTRA'],['Specific aiming','EXTRA']],detail:true,rule:'Standard aiming = STD; Specific aiming = Extra'},
+ {step:2,cat:'Product',id:'thkTol',label:'Thickness Tolerance / Tolerance ความหนา',owner:'Planning / Production / QA',std:'TMT standard tolerance',extra:'Customer specified +__/−__ mm',type:'select',opts:[['TMT standard tolerance','STD'],['Customer specified tolerance','EXTRA']],detail:true,rule:'Customer tolerance = Extra'},
+ {step:2,cat:'Product',id:'width',label:'Width / ความกว้าง',owner:'Planning / Production',std:'1219 (−0/+30), 1524 (−0/+35)',extra:'Other width',type:'select',opts:[['1219 mm (−0/+30)','STD'],['1524 mm (−0/+35)','STD'],['Other width','EXTRA']],detail:true,rule:'1219 หรือ 1524 = STD; ค่าอื่น = Extra'},
+ {step:2,cat:'Product',id:'grade',label:'Grade / เกรด',owner:'Planning / QA / Procurement',std:'SS400, HR1/SPHC, SM490YA, A572 Gr50, A36/A283C, SS540, SS490 (มี Material Code)',extra:'Other grade',type:'select',opts:[['SS400','STD'],['HR1/SPHC','STD'],['SM490YA','STD'],['A572 Gr50','STD'],['A36/A283C','STD'],['SS540','STD'],['SS490','STD'],['Other grade','EXTRA']],detail:true,rule:'Existing Material Code = STD; Other grade = Extra'},
+ {step:2,cat:'Product',id:'length',label:'Length / ความยาว',owner:'Planning / Production',std:'2438 (−0/+3), 3048 (−0/+3), 6096 (−0/+10)',extra:'6000 / Other',type:'select',opts:[['2438 mm (−0/+3)','STD'],['3048 mm (−0/+3)','STD'],['6096 mm (−0/+10)','STD'],['6000 mm','EXTRA'],['Other length','EXTRA']],detail:true,rule:'Listed standard lengths = STD; ค่าอื่น = Extra'},
+ {step:2,cat:'Product',id:'lengthTol',label:'Length Tolerance / Tolerance ความยาว',owner:'Production / QA',std:'ตาม TMT STD ของความยาวมาตรฐาน',extra:'Customer specified tolerance / special length',type:'select',opts:[['TMT STD length tolerance','STD'],['Customer specified tolerance','EXTRA']],detail:true,rule:'Customer specified tolerance = Extra'},
+ {step:2,cat:'Product',id:'productType',label:'Product Type / ประเภทสินค้า',owner:'Planning / Production',std:'Stayflat / Hot Rolled Cut Sheet',extra:'Other product type',type:'select',opts:[['Stayflat','STD'],['Hot Rolled Cut Sheet','STD'],['Other product type','EXTRA']],detail:true,rule:'Listed product type = STD; Other = Extra'},
+ // Step 3 Quality
+ {step:3,cat:'Product Quality',id:'chemMech',label:'Chemical & Mechanical Properties / ค่าเคมีและคุณสมบัติเชิงกล',owner:'Planning / QA',std:'Standard ตาม Grade',extra:'Specific Chemistry / Yield / Tensile ฯลฯ',type:'select',opts:[['Standard by grade','STD'],['Specific chemistry / mechanical properties','EXTRA']],detail:true,attach:true,rule:'Standard ตาม Grade = STD; Specific property = Extra'},
+ {step:3,cat:'Product Quality',id:'flatness',label:'Flatness Tolerance / ความเรียบ',owner:'Production / QA',std:'Stayflat ≤5 mm; Non-Stayflat ≤12 mm (ตาม Protocol)',extra:'Tighter / special flatness',type:'select',opts:[['Standard flatness per protocol','STD'],['Tighter / special flatness','EXTRA']],detail:true,rule:'Tighter than standard = Extra'},
+ {step:3,cat:'Product Quality',id:'appearance',label:'Appearance / ลักษณะผิว',owner:'Production / QA',std:'TMT Std: รอยกัด/สนิม/Scale ระดับ 1.5',extra:'เรียบสวยเป็นพิเศษ เช่น Level 1',type:'select',opts:[['TMT Std appearance','STD'],['Special appearance / Level 1','EXTRA']],detail:true,attach:true,rule:'Special appearance = Extra'},
+ {step:3,cat:'Product Quality',id:'marking',label:'Marking Format / รูปแบบ Marking',owner:'Production / Warehouse',std:'TMT No. (<3 mm HR1/SPHC) / Heat No. (≥3 mm)',extra:'ไม่พ่น / Heat+Coil / TMT no. no size / Other',type:'select',opts:[['Standard marking per matrix','STD'],['No marking','EXTRA'],['Heat + Coil','EXTRA'],['TMT no. no size','EXTRA'],['Other marking','EXTRA']],detail:true,rule:'Special marking = Extra'},
+ // Step 4 Packing
+ {step:4,cat:'Packing',id:'packing',label:'Packing / การแพ็ก',owner:'Warehouse',std:'ไม่รัดสายรัด',extra:'Strapping / ขาไม้ / ขาไม้+กระดาษ / Pallet / Pallet+paper',type:'select',opts:[['No strapping','STD'],['Strapping','EXTRA'],['ขาไม้ / Wood support','EXTRA'],['ขาไม้ + กระดาษ','EXTRA'],['Pallet','EXTRA'],['Pallet + paper','EXTRA']],detail:true,rule:'Anything beyond no-strapping = Extra'},
+ {step:4,cat:'Packing',id:'sticker',label:'Tag / Sticker',owner:'Warehouse',std:'ไม่ติด Sticker แต่มี Barcode',extra:'Hang sticker / pallet sticker / product sticker',type:'select',opts:[['Barcode only / no sticker','STD'],['Hang sticker','EXTRA'],['Pallet sticker','EXTRA'],['Product sticker','EXTRA']],detail:true,rule:'Special sticker = Extra'},
+ {step:4,cat:'Packing',id:'bundle',label:'Pcs/Bundle',owner:'Warehouse / Transport',std:'ตาม STD การผลิต',extra:'กำหนด pcs/ton per bundle ตามอุปกรณ์ลูกค้า',type:'select',opts:[['Standard production bundle','STD'],['Customer specified pcs/ton per bundle','REVIEW']],detail:true,rule:'Specific bundle requirement = Extra/Review'},
+ // Step 5 Service
+ {step:5,cat:'Service',id:'loading',label:'Loading / การจัดเรียง',owner:'Warehouse',std:'วางแนวตั้งตรงกัน; แยกตาม width; standard wood separator between sizes',extra:'สลับฟันปลา / รองขาไม้ระหว่าง Pack / special arrangement',type:'select',opts:[['Standard straight stacking','STD'],['สลับฟันปลา','EXTRA'],['Wood between packs','EXTRA'],['Special arrangement','EXTRA']],detail:true,rule:'Special loading = Extra'},
+ {step:5,cat:'Service',id:'unloading',label:'Unloading Equipment / อุปกรณ์การลงของ',owner:'Transport / Warehouse',std:'ไม่กำหนดพิเศษ',extra:'Crane / Forklift / Hoist / Hiab / manual + capacity',type:'select',opts:[['No special constraint','STD'],['Crane','REVIEW'],['Forklift','REVIEW'],['Hoist','REVIEW'],['Hiab','REVIEW'],['Manual + capacity','REVIEW']],detail:true,rule:'Customer unloading constraint = Extra/Review'},
+ {step:5,cat:'Service',id:'vehicle',label:'Vehicle / ประเภทรถขนส่ง',owner:'Transport',std:'รถปกติ อะไรก็เข้าได้',extra:'ห้าม trailer / max 6-wheel / no cage / pickup / Hiab / other',type:'select',opts:[['Normal vehicle / no restriction (ปกติเข้าได้ทุกประเภท)','STD'],['No trailer (ห้าม TL)','EXTRA'],['Max 6-wheel (ไม่เกิน 6W)','EXTRA'],['No cage (ห้ามรถคอก)','EXTRA'],['Pickup (Pick-up)','EXTRA'],['Hiab (รถเฮี้ยบ)','EXTRA'],['Other restriction','EXTRA']],detail:true,rule:'Vehicle restriction = Extra',multi:true,multiDetailIdx:[6]},
+ {step:5,cat:'Service',id:'delivery',label:'Delivery Condition / เงื่อนไขการขนส่ง',owner:'Transport',std:'ไม่กำหนดเวลา; ส่งไม่เกิน 16:00; TMT Safety',extra:'Time window / special PPE / driver rule / photo / cert / site rule',type:'select',opts:[['Standard delivery ≤16:00 + TMT Safety','STD'],['Specific time window (ระบุเวลา)','REVIEW'],['Special PPE (ระบุ PPE)','REVIEW'],['Driver rule (เอกสารคนขับ + Cert.)','REVIEW'],['Photo / Certificate requirement (ถ่ายรูป)','REVIEW'],['Site rule (เอกสาร ปจ.2)','REVIEW']],detail:true,rule:'Special delivery condition = Extra/Review',multi:true,multiGroups:[{title:'Time / เวลา',stdNote:'STD: ไม่กำหนดเวลา',idxs:[1]},{title:'PPE / อุปกรณ์ป้องกัน',stdNote:'STD: รองเท้า+หมวก',idxs:[2]},{title:'Site Rule / กฎเฉพาะพื้นที่',stdNote:'STD: ไม่มี',idxs:[3,4,5]}],multiDetailIdx:[1,2]},
+ // Step 6 Documents
+ {step:6,cat:'Document',id:'cert',label:'Document / Certificate',owner:'QA / Sales Admin',std:'Mill Cert.',extra:'Inspection sheet / TIS permission / MIT / purchase cert / TMT property cert / cover sheet / customer sticker format',type:'select',opts:[['Mill Cert.','STD'],['Inspection sheet','EXTRA'],['TIS permission','EXTRA'],['MIT','EXTRA'],['Purchase cert','EXTRA'],['TMT property cert','EXTRA'],['Cover sheet','EXTRA'],['Customer sticker format','EXTRA']],detail:true,attach:true,rule:'Any additional document = Extra'},
+ {step:6,cat:'Document',id:'deliveryDoc',label:'Delivery Documents / เอกสารใบส่งของ',owner:'Sales Admin / Finance / Transport',std:'ปกติ / ใบลงราคา / กระดาษขาวไม่ลงราคา / บิลลูกค้า',extra:'Special billing docs / PO copy / VAT handling / customs docs / other',type:'select',opts:[['TMT standard delivery document','STD'],['Special billing documents (เอกสารลูกค้า)','REVIEW'],['PO copy','REVIEW'],['VAT handling (VAT)','REVIEW'],['Customs documents','REVIEW'],['Other special document process (อื่นๆ ระบุ)','REVIEW'],['บิลปกติ','STD'],['ใบลงราคา','STD'],['กระดาษขาวไม่ลงราคา','STD'],['บิลลูกค้า','STD']],detail:true,rule:'Non-standard document workflow = Extra/Review',multi:true,noBaseline:true,multiGroups:[{title:'STD',idxs:[6,7,8,9]},{title:'Extra',idxs:[2,3,1,5,4]}],multiDetailIdx:[5]}
+ ],
+ 'Tube': [
+
+ // Step 2 Product Specification — Tube
+ {step:2,cat:'Product',id:'tubeOD',label:'OD / เส้นผ่านศูนย์กลาง',owner:'Planning / Production',std:'ตาม OD Stock / TIS STD',extra:'Non-stock / special OD',type:'select',opts:[['Stock OD / TIS STD','STD'],['Non-stock / special OD','EXTRA']],detail:true,rule:'Stock OD = STD; Non-stock = Extra'},
+ {step:2,cat:'Product',id:'tubeODTol',label:'OD Tolerance / Tolerance OD',owner:'Production / QA',std:'TIS/JIS standard table',extra:'TIS/ASTM / TIS/BS EN / other tolerance',type:'select',opts:[['TIS/JIS standard tolerance','STD'],['TIS/ASTM tolerance','EXTRA'],['TIS/BS EN tolerance','EXTRA'],['Other / tighter tolerance','EXTRA']],detail:true,rule:'Different standard or tighter tolerance = Extra'},
+ {step:2,cat:'Product',id:'tubeThk',label:'Thickness / ความหนา',owner:'Planning / Production',std:'ตาม TIS STD (Spec thickness)',extra:'Other thickness',type:'select',opts:[['TIS STD thickness','STD'],['Other thickness','EXTRA']],detail:true,rule:'STD thickness table = STD; Other thickness = Extra'},
+ {step:2,cat:'Product',id:'tubeAiming',label:'Thickness Aiming / ความหนา Aiming',owner:'Planning / Production',std:'TMT production aiming',extra:'Specific aiming / full coil order',type:'select',opts:[['TMT production aiming','STD'],['Specific aiming','REVIEW'],['Full coil order / special aiming','REVIEW']],detail:true,rule:'Specific aiming = Extra/Review'},
+ {step:2,cat:'Product',id:'tubeThkTol',label:'Thickness Tolerance / Tolerance ความหนา',owner:'Production / QA',std:'TIS/JIS/A53 standard',extra:'ASTM A500 / BS EN 10219 / other',type:'select',opts:[['TIS/JIS/A53 standard','STD'],['ASTM A500','EXTRA'],['BS EN 10219','EXTRA'],['Other tolerance standard','EXTRA']],detail:true,rule:'Alternative tolerance standard = Extra'},
+ {step:2,cat:'Product',id:'tubeLength',label:'Length / ความยาว',owner:'Planning / Production',std:'6000 mm',extra:'Other length',type:'select',opts:[['6000 mm','STD'],['Other length','EXTRA']],detail:true,rule:'6000 mm = STD; Other length = Extra'},
+ {step:2,cat:'Product',id:'tubeLengthTol',label:'Length Tolerance / Tolerance ความยาว',owner:'Production / QA',std:'−0 / +20 mm',extra:'Customer specified −__/+__ mm',type:'select',opts:[['−0 / +20 mm','STD'],['Customer specified tolerance','EXTRA']],detail:true,rule:'Custom tolerance = Extra'},
+ {step:2,cat:'Product',id:'tubeMill',label:'Mill / แหล่งผลิต',owner:'Planning / Material Sourcing',std:'Any (SA, GJ, GS)',extra:'Specific SA / GJ / GS',type:'select',opts:[['Any (SA, GJ, GS)','STD'],['Specific SA','EXTRA'],['Specific GJ','EXTRA'],['Specific GS','EXTRA']],detail:true,rule:'Any = STD; Specific Mill = Extra'},
+ {step:2,cat:'Product',id:'tubeGrade',label:'Grade / เกรด',owner:'Planning / QA / Procurement',std:'STK290 / STKR290 / STK400 / STKR400 ตาม Material Code',extra:'Other grade',type:'select',opts:[['STK290','STD'],['STKR290','STD'],['STK400','STD'],['STKR400','STD'],['Other grade','EXTRA']],detail:true,rule:'Existing Material Code = STD; Other grade = Extra'},
+ // Step 3 Product Quality — Tube
+ {step:3,cat:'Product Quality',id:'tubeChemMech',label:'Chemical & Mechanical Properties / ค่าเคมีและคุณสมบัติเชิงกล',owner:'Planning / QA',std:'ตาม STD table',extra:'Specific chemistry / YS / TS / Hardness / Elongation',type:'select',opts:[['Standard property table','STD'],['Specific chemistry / mechanical properties','EXTRA']],detail:true,attach:true,rule:'Specific property = Extra'},
+ {step:3,cat:'Product Quality',id:'tubeGI',label:'GI Coating / มวลเคลือบ GI',owner:'Planning / Production / QA',std:'Z060',extra:'K08 / Z__ / K__',type:'select',opts:[['Z060','STD'],['K08','EXTRA'],['Specific Z__ coating','EXTRA'],['Specific K__ coating','EXTRA']],detail:true,rule:'Z060 = STD; Other coating = Extra'},
+ {step:3,cat:'Product Quality',id:'tubeMarking',label:'Marking Format / รูปแบบ Marking',owner:'Production / Warehouse',std:'TIS/JIS',extra:'TIS/ASTM / TIS/BS EN / other',type:'select',opts:[['TIS/JIS','STD'],['TIS/ASTM','EXTRA'],['TIS/BS EN','EXTRA'],['Other marking format','EXTRA']],detail:true,rule:'Other marking format = Extra'},
+ // Step 4 Packing — Tube
+ {step:4,cat:'Packing',id:'tubePackingType',label:'Packing Type / รูปแบบแพ็ก',owner:'Warehouse',std:'Square / Hexagonal ตาม STD',extra:'N/A unless product-specific',type:'select',opts:[['Square / Hexagonal per STD','STD']],detail:false,rule:'System-derived standard packing type'},
+ {step:4,cat:'Packing',id:'tubeStrap',label:'Strapping Pattern / รูปแบบสายรัด',owner:'Warehouse',std:'3 straps (square/rect.) / 4 straps (round)',extra:'Custom no. straps / wire',type:'select',opts:[['Standard strap pattern','STD'],['Custom number of straps','EXTRA'],['Wire / other strapping','EXTRA']],detail:true,rule:'Custom strapping = Extra'},
+ {step:4,cat:'Packing',id:'tubeSticker',label:'Sticker',owner:'Warehouse',std:'1 Sticker / Bundle',extra:'N/A unless special',type:'select',opts:[['1 Sticker / Bundle','STD'],['Special sticker requirement','EXTRA']],detail:true,rule:'Standard sticker = STD; Special sticker = Extra'},
+ {step:4,cat:'Packing',id:'tubePcsPack',label:'Pcs/Pack',owner:'Warehouse',std:'STD pack TM',extra:'Customer specified pcs/rows',type:'select',opts:[['STD pack TM','STD'],['Customer specified pcs/rows','REVIEW']],detail:true,rule:'Specific pack = Extra/Review'},
+ {step:4,cat:'Packing',id:'tubePcsPackExtra',label:'Pcs/Pack Extra / จำนวนและการเรียงพิเศษ',owner:'Warehouse',std:'—',extra:'___ pcs, vertical rows ___, horizontal rows ___',type:'select',opts:[['No extra pcs/rows requirement','STD'],['Specify pcs / vertical rows / horizontal rows','EXTRA']],detail:true,rule:'Any specified extra value = Extra'},
+ // Step 5 Service — Tube
+ {step:5,cat:'Service',id:'tubeLoading',label:'Loading / การจัดเรียง',owner:'Warehouse',std:'วางไม้รองแนวนอนทุกชั้น 2–3 pieces',extra:'วางไม้รองแนวตั้ง / special arrangement',type:'select',opts:[['Standard horizontal wood support','STD'],['Vertical wood support','EXTRA'],['Special arrangement','EXTRA']],detail:true,rule:'Special loading = Extra'},
+ {step:5,cat:'Service',id:'tubeUnloading',label:'Unloading Equipment / อุปกรณ์การลงของ',owner:'Transport / Warehouse',std:'ไม่กำหนดพิเศษ',extra:'Crane / Forklift / Hoist / Hiab / manual + capacity',type:'select',opts:[['No special constraint','STD'],['Crane','REVIEW'],['Forklift','REVIEW'],['Hoist','REVIEW'],['Hiab','REVIEW'],['Manual + capacity','REVIEW']],detail:true,rule:'Customer unloading constraint = Extra/Review'},
+ {step:5,cat:'Service',id:'tubeVehicle',label:'Vehicle / ประเภทรถขนส่ง',owner:'Transport',std:'รถปกติ อะไรก็เข้าได้',extra:'Vehicle restriction / Hiab / pickup / other',type:'select',opts:[['Normal vehicle / no restriction (ปกติเข้าได้ทุกประเภท)','STD'],['No trailer (ห้าม TL)','EXTRA'],['Max 6-wheel (ไม่เกิน 6W)','EXTRA'],['Hiab (รถเฮี้ยบ)','EXTRA'],['Pickup (Pick-up)','EXTRA'],['Other restriction','EXTRA']],detail:true,rule:'Vehicle restriction = Extra',multi:true,multiDetailIdx:[5]},
+ {step:5,cat:'Service',id:'tubeDelivery',label:'Delivery Condition / เงื่อนไขการขนส่ง',owner:'Transport',std:'ไม่กำหนดเวลา; ≤16:00; TMT Safety',extra:'Specific time / special PPE / driver/site rules',type:'select',opts:[['Standard delivery ≤16:00 + TMT Safety','STD'],['Specific time window (ระบุเวลา)','REVIEW'],['Special PPE (ระบุ PPE)','REVIEW'],['Driver rule (เอกสารคนขับ + Cert.)','REVIEW'],['Site rule (เอกสาร ปจ.2)','REVIEW']],detail:true,rule:'Special delivery = Extra/Review',multi:true,multiGroups:[{title:'Time / เวลา',stdNote:'STD: ไม่กำหนดเวลา',idxs:[1]},{title:'PPE / อุปกรณ์ป้องกัน',stdNote:'STD: รองเท้า+หมวก',idxs:[2]},{title:'Site Rule / กฎเฉพาะพื้นที่',stdNote:'STD: ไม่มี',idxs:[3,4]}],multiDetailIdx:[1,2]},
+ // Step 6 Document — Tube
+ {step:6,cat:'Document',id:'tubeCert',label:'Document / Certificate',owner:'QA / Sales Admin',std:'TMT Cert. / Mill Cert. per product',extra:'Inspection sheet / TIS permission / MIT / special cert',type:'select',opts:[['TMT Cert. / Mill Cert. per product','STD'],['Inspection sheet','EXTRA'],['TIS permission','EXTRA'],['MIT','EXTRA'],['Special certificate','EXTRA']],detail:true,attach:true,rule:'Additional document = Extra'},
+ {step:6,cat:'Document',id:'tubeDeliveryDoc',label:'Delivery Documents / เอกสารใบส่งของ',owner:'Sales Admin / Finance / Transport',std:'TMT standard formats',extra:'Special billing/document process',type:'select',opts:[['TMT standard formats','STD'],['Special billing documents (เอกสารลูกค้า)','REVIEW'],['PO copy','REVIEW'],['VAT handling (VAT)','REVIEW'],['Customs documents','REVIEW'],['Other special document process (อื่นๆ ระบุ)','REVIEW'],['บิลปกติ','STD'],['ใบลงราคา','STD'],['กระดาษขาวไม่ลงราคา','STD'],['บิลลูกค้า','STD']],detail:true,rule:'Special document process = Extra/Review',multi:true,noBaseline:true,multiGroups:[{title:'STD',idxs:[6,7,8,9]},{title:'Extra',idxs:[2,3,1,5,4]}],multiDetailIdx:[5]}
+
+ ]
+};
+let currentProduct='Cut Sheet';
+let fieldDefs = productFieldDefs[currentProduct];
+
+const fieldState = {};
+let summaryFilterCat = null;
+function statusClass(s){return s==='STD'?'std':s==='EXTRA'?'extra':'review'}
+function statusText(s){return s==='STD'?'STD':s==='EXTRA'?'EXTRA':'REVIEW'}
+function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function selectProduct(product){
+ if(!productFieldDefs[product]) return;
+ currentProduct=product;
+ document.querySelectorAll('.product-choice[data-product]').forEach(el=>el.classList.toggle('selected',el.dataset.product===product));
+ const sub=document.getElementById('journeySubtitle');if(sub)sub.textContent=`${product} Complete Journey · STD / EXTRA / REVIEW Classification`;
+ const matrix=document.getElementById('matrixRuleText');if(matrix)matrix.textContent=`ทุก Field ใน Prototype นี้อ้างอิง ${product} STD–EXTRA Sales Matrix: Product → Packing → Service → Document และ Operation Owner ตาม Matrix.`;
+ const foot=document.getElementById('prototypeFooter');if(foot)foot.textContent=`Phase C Prototype V1.1 · ${product} · Not a production system`;
+ const ref=document.getElementById('refNo');if(ref){const d=/^REQ-(CS|TB)-001$/.test(ref.value.trim());if(d||!ref.value.trim())ref.value=product==='Cut Sheet'?'REQ-CS-001':'REQ-TB-001';}
+ renderFields();
+ showScreen(1);
+}
+
+function renderProgress(){
+ const p=document.getElementById('progress');p.innerHTML='';
+ steps.forEach((s,i)=>{const n=i+1;const d=document.createElement('div');d.className='step-pill '+(n===current?'active':n<current?'done':'');d.innerHTML=`<span class="num">${n}</span>${s.th}<br><span style="font-size:9px">${s.t}</span>`;d.onclick=()=>showScreen(n);p.appendChild(d)});
+}
+function renderFields(){
+ fieldDefs = productFieldDefs[currentProduct];
+ summaryFilterCat = null;
+ Object.keys(fieldState).forEach(k=>delete fieldState[k]);
+ const targets={2:'productSpecFields',3:'qualityFields',4:'packingFields',5:'serviceFields',6:'documentFields'};
+ Object.values(targets).forEach(id=>document.getElementById(id).innerHTML='');
+ fieldDefs.forEach(f=>{
+  const el=document.createElement('div');el.className='field';el.id='field_'+f.id;
+  if(f.multi){
+   fieldState[f.id]={status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}};
+   el.innerHTML=buildMultiFieldHTML(f);
+   document.getElementById(targets[f.step]).appendChild(el);
+   wireMultiField(f,el);
+  } else {
+   fieldState[f.id]={status:f.opts[0][1],value:f.opts[0][0],detail:''};
+   let opts=f.opts.map((o,i)=>`<option value="${i}">${esc(o[0])}</option>`).join('');
+   el.innerHTML=`<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge ${statusClass(f.opts[0][1])}" id="badge_${f.id}">${statusText(f.opts[0][1])}</span></div>
+   <select id="${f.id}">${opts}</select>
+   <div class="detail" id="detail_${f.id}"><input type="text" id="detailInput_${f.id}" placeholder="ระบุ Customer Requirement / Exact requirement"></div>
+   ${f.attach?`<div class="attach">Attach Spec / แนบเอกสาร (Prototype placeholder)</div>`:''}
+   <div class="rule"><strong>STD:</strong> ${f.std}<br><strong>Extra:</strong> ${f.extra}<br><strong>Decision Rule:</strong> ${f.rule}</div>`;
+   document.getElementById(targets[f.step]).appendChild(el);
+   el.querySelector('select').addEventListener('change',e=>onFieldChange(f,e.target.selectedIndex));
+   const di=el.querySelector(`#detailInput_${f.id}`); if(di) di.addEventListener('input',e=>{fieldState[f.id].detail=e.target.value;refreshAll()});
+  }
+ });
+}
+function onFieldChange(f,index){
+ const opt=f.opts[index];fieldState[f.id].status=opt[1];fieldState[f.id].value=opt[0];
+ const det=document.getElementById('detail_'+f.id); if(det) det.classList.toggle('show',opt[1]!=='STD');
+ const b=document.getElementById('badge_'+f.id);b.className='badge '+statusClass(opt[1]);b.textContent=statusText(opt[1]);
+ refreshAll();
+}
+function multiCheckboxRow(f,idx){
+ const [label,status]=f.opts[idx];
+ const needsDetail=(f.multiDetailIdx||[]).includes(idx);
+ return `<label class="mchk" for="${f.id}_opt${idx}"><input type="checkbox" id="${f.id}_opt${idx}"><span>${esc(label)}</span><span class="badge ${statusClass(status)}">${statusText(status)}</span></label>
+ ${needsDetail?`<input type="text" class="mchk-detail" id="${f.id}_detail${idx}" placeholder="ระบุรายละเอียด / Exact requirement" style="display:none">`:''}`;
+}
+function buildMultiFieldHTML(f){
+ const baseline=f.noBaseline?'':`<label class="mchk mchk-baseline" for="${f.id}_base"><input type="checkbox" id="${f.id}_base" disabled checked><span>${esc(f.opts[0][0])}</span><span class="badge std">STD</span></label>`;
+ let body;
+ if(f.multiGroups){
+  body=f.multiGroups.map(g=>`<div class="mgroup"><div class="mgroup-title">${esc(g.title)}${g.stdNote?` <span style="font-weight:400;color:var(--muted)">· ${esc(g.stdNote)}</span>`:''}</div>${g.idxs.map(idx=>multiCheckboxRow(f,idx)).join('')}</div>`).join('');
+ } else {
+  body=f.opts.map((_,i)=>i).filter(i=>i>0).map(idx=>multiCheckboxRow(f,idx)).join('');
+ }
+ return `<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge std" id="badge_${f.id}">STD</span></div>
+ <div class="mchk-wrap">${baseline}${body}</div>
+ ${f.attach?`<div class="attach">Attach Spec / แนบเอกสาร (Prototype placeholder)</div>`:''}
+ <div class="rule"><strong>STD:</strong> ${f.std}<br><strong>Extra:</strong> ${f.extra}<br><strong>Decision Rule:</strong> ${f.rule}</div>`;
+}
+function wireMultiField(f,el){
+ const idxs=f.multiGroups?f.multiGroups.flatMap(g=>g.idxs):f.opts.map((_,i)=>i).filter(i=>i>0);
+ idxs.forEach(idx=>{
+  const cb=el.querySelector(`#${f.id}_opt${idx}`);
+  cb.addEventListener('change',e=>{
+   const st=fieldState[f.id];
+   if(e.target.checked){ if(!st.selected.includes(idx)) st.selected.push(idx); }
+   else { st.selected=st.selected.filter(x=>x!==idx); delete st.detailByIdx[idx]; }
+   const detailInput=el.querySelector(`#${f.id}_detail${idx}`);
+   if(detailInput){ detailInput.style.display=e.target.checked?'block':'none'; if(!e.target.checked) detailInput.value=''; }
+   onMultiFieldChange(f,el);
+  });
+  const di=el.querySelector(`#${f.id}_detail${idx}`);
+  if(di) di.addEventListener('input',e=>{ fieldState[f.id].detailByIdx[idx]=e.target.value; onMultiFieldChange(f,el); });
+ });
+}
+function onMultiFieldChange(f,el){
+ const st=fieldState[f.id];
+ if(st.selected.length===0){
+  st.status='STD'; st.value=f.opts[0][0];
+ } else {
+  const statuses=st.selected.map(idx=>f.opts[idx][1]);
+  st.status=statuses.includes('REVIEW')?'REVIEW':statuses.includes('EXTRA')?'EXTRA':'STD';
+  st.value=st.selected.map(idx=>{
+   const d=st.detailByIdx[idx];
+   return d?`${f.opts[idx][0]} (${d})`:f.opts[idx][0];
+  }).join(', ');
+ }
+ const baseCb=el.querySelector(`#${f.id}_base`); if(baseCb) baseCb.checked=st.selected.length===0;
+ const badge=el.querySelector(`#badge_${f.id}`); badge.className='badge '+statusClass(st.status); badge.textContent=statusText(st.status);
+ refreshAll();
+}
+function getCatStatus(cat){
+ const list=fieldDefs.filter(f=>f.cat===cat || (cat==='Product' && f.cat==='Product Quality')).map(f=>fieldState[f.id]?.status||'STD');
+ return list.includes('REVIEW')?'REVIEW':list.includes('EXTRA')?'EXTRA':'STD';
+}
+function getMainStatuses(){
+ const productFields=fieldDefs.filter(f=>f.cat==='Product'||f.cat==='Product Quality').map(f=>fieldState[f.id]?.status||'STD');
+ const statusOf=arr=>arr.includes('REVIEW')?'REVIEW':arr.includes('EXTRA')?'EXTRA':'STD';
+ return {
+  Product:statusOf(productFields),
+  Packing:statusOf(fieldDefs.filter(f=>f.cat==='Packing').map(f=>fieldState[f.id]?.status||'STD')),
+  Service:statusOf(fieldDefs.filter(f=>f.cat==='Service').map(f=>fieldState[f.id]?.status||'STD')),
+  Document:statusOf(fieldDefs.filter(f=>f.cat==='Document').map(f=>fieldState[f.id]?.status||'STD')),
+ };
+}
+function overallStatus(){
+ const vals=Object.values(fieldState).map(x=>x.status);
+ return vals.includes('REVIEW')?'REVIEW':vals.includes('EXTRA')?'EXTRA':'STD';
+}
+function refreshAll(){
+ const cats=getMainStatuses();
+ document.getElementById('sideStatuses').innerHTML=Object.entries(cats).map(([k,v])=>`<div class="mini-status"><span>${k}</span><span class="badge ${statusClass(v)}">${statusText(v)}</span></div>`).join('');
+ const ov=overallStatus();const ob=document.getElementById('overallBox');ob.className='overall '+statusClass(ov);ob.textContent=ov==='STD'?'STANDARD ORDER':ov==='EXTRA'?'EXTRA REQUIREMENT':'REVIEW REQUIRED';
+ renderSummary();renderHandover();updateStepBadge();
+}
+function updateStepBadge(){
+ let s='STD'; if(current>=2&&current<=6){const sts=fieldDefs.filter(f=>f.step===current).map(f=>fieldState[f.id]?.status||'STD');s=sts.includes('REVIEW')?'REVIEW':sts.includes('EXTRA')?'EXTRA':'STD'}
+ else if(current===7||current===8)s=overallStatus();
+ const b=document.getElementById('stepStatus');b.className='badge '+statusClass(s);b.textContent=current===1?'OPEN':statusText(s);
+}
+function currentSelection(f){const st=fieldState[f.id];return st.detail?`${st.value} — ${st.detail}`:st.value}
+function getSummaryCardStatuses(){
+ const statusOf=arr=>arr.includes('REVIEW')?'REVIEW':arr.includes('EXTRA')?'EXTRA':'STD';
+ const cats=[['Product','Product Spec'],['Product Quality','Product Quality'],['Packing','Packing'],['Service','Service'],['Document','Document']];
+ return cats.map(([cat,label])=>({cat,label,status:statusOf(fieldDefs.filter(f=>f.cat===cat).map(f=>fieldState[f.id]?.status||'STD'))}));
+}
+function toggleSummaryFilter(cat){
+ summaryFilterCat = (summaryFilterCat===cat) ? null : cat;
+ renderSummary();
+}
+function jumpToField(id){
+ const f=fieldDefs.find(x=>x.id===id); if(!f) return;
+ showScreen(f.step);
+ requestAnimationFrame(()=>{
+  const el=document.getElementById('field_'+id); if(!el) return;
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+  el.classList.remove('field-highlight'); void el.offsetWidth; el.classList.add('field-highlight');
+  el.addEventListener('animationend',()=>el.classList.remove('field-highlight'),{once:true});
+ });
+}
+function renderSummary(){
+ const sc=document.getElementById('summaryCards');if(!sc)return;
+ const cards=getSummaryCardStatuses();
+ sc.innerHTML=cards.map(c=>`<div class="summary-card${summaryFilterCat===c.cat?' active':''}" onclick="toggleSummaryFilter('${c.cat}')"><div class="k">${c.label}<span class="cardhint">ดูรายละเอียด ›</span></div><div class="v"><span class="badge ${statusClass(c.status)}">${statusText(c.status)}</span></div></div>`).join('');
+ const hint=document.getElementById('summaryFilterHint');
+ if(hint) hint.innerHTML=summaryFilterCat?`กำลังกรองตาม <strong>${esc(summaryFilterCat)}</strong> — <a onclick="toggleSummaryFilter(null)">ดูทั้งหมด ×</a>`:'';
+ const ov=overallStatus();const on=document.getElementById('overallNotice');
+ on.innerHTML=`<div class="notice ${ov==='STD'?'info':ov==='EXTRA'?'warn':'danger'}"><strong>Overall:</strong> ${ov==='STD'?'STANDARD ORDER — Proceed Normal Process':ov==='EXTRA'?'EXTRA REQUIREMENT — Operation review is required for flagged items':'REVIEW REQUIRED — Do not commit flagged requirements before Operation confirmation'}</div>`;
+ const rows=summaryFilterCat?fieldDefs.filter(f=>f.cat===summaryFilterCat):fieldDefs;
+ document.getElementById('summaryBody').innerHTML=rows.map(f=>`<tr class="req-row" onclick="jumpToField('${f.id}')" title="คลิกเพื่อไปแก้ไข"><td>${f.cat}</td><td>${f.label}</td><td>${esc(currentSelection(f))}</td><td><span class="badge ${statusClass(fieldState[f.id].status)}">${statusText(fieldState[f.id].status)}</span></td><td>${f.owner}</td></tr>`).join('');
+}
+function renderHandover(){
+ const meta=document.getElementById('handoverMeta'); if(!meta)return;
+ meta.innerHTML=`Product: <strong>${esc(currentProduct)}</strong> · Customer: <strong>${esc(document.getElementById('customer').value)}</strong> · Project: <strong>${esc(document.getElementById('project').value)}</strong> · Sales: <strong>${esc(document.getElementById('sales').value)}</strong> · Ref: <strong>${esc(document.getElementById('refNo').value)}</strong>`;
+ const owners=['Planning','Production','QA','Material Sourcing','Procurement','Warehouse','Transport','Sales Admin','Finance'];
+ const grid=document.getElementById('ownerGrid');
+ grid.innerHTML=owners.map(owner=>{
+  const items=fieldDefs.filter(f=>f.owner.includes(owner) && fieldState[f.id].status!=='STD');
+  return `<div class="owner-card ${items.length?'':'empty'}"><h4>${owner}</h4>${items.length?`<ul>${items.map(f=>`<li><strong>${f.label.split('/')[0]}</strong>: ${esc(currentSelection(f))} <span class="badge ${statusClass(fieldState[f.id].status)}">${statusText(fieldState[f.id].status)}</span></li>`).join('')}</ul>`:'<div style="font-size:11px;color:var(--muted)">No extra/review item</div>'}</div>`;
+ }).join('');
+ const ov=overallStatus();document.getElementById('commitGate').innerHTML=ov==='STD'?'<strong>Final Gate:</strong> All requirements are STD. Proceed normal process and submit structured handover.':ov==='EXTRA'?'<strong>Final Gate:</strong> Extra requirement exists. Request Operation review before final commitment where applicable.':'<strong>Final Gate:</strong> REVIEW REQUIRED. ห้าม Commit รายการที่ถูก Flag ก่อน Operation Confirm.';
+ document.getElementById('commitGate').className='notice '+(ov==='STD'?'info':ov==='EXTRA'?'warn':'danger');
+}
+function showScreen(n){current=Math.max(1,Math.min(8,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('nextBtn').textContent=current===8?'Print Summary':'Next →';document.getElementById('nextBtn').onclick=current===8?()=>window.print():()=>go(1);renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
+function go(delta){showScreen(current+delta)}
+function loadExtraDemo(){
+ const demoByProduct={
+  'Cut Sheet':{mill:1,aiming:1,chemMech:1,appearance:1,packing:4,bundle:1,unloading:2,vehicle:1,delivery:1,cert:2,deliveryDoc:2},
+  'Tube':{tubeOD:1,tubeAiming:1,tubeChemMech:1,tubeGI:1,tubeStrap:1,tubePcsPack:1,tubeUnloading:2,tubeVehicle:2,tubeDelivery:1,tubeCert:2,tubeDeliveryDoc:2}
+ };
+ const choices=demoByProduct[currentProduct]||{};
+ Object.entries(choices).forEach(([id,idx])=>{
+   const f=fieldDefs.find(x=>x.id===id);
+   if(!f) return;
+   if(f.multi){
+     const cb=document.getElementById(`${id}_opt${idx}`);
+     if(!cb) return;
+     cb.checked=true;
+     cb.dispatchEvent(new Event('change'));
+     if((f.multiDetailIdx||[]).includes(idx)){
+       const di=document.getElementById(`${id}_detail${idx}`);
+       if(di){
+         let detail='Customer special requirement';
+         if(id.toLowerCase().includes('delivery'))detail='Before 10:00';
+         di.value=detail; fieldState[id].detailByIdx[idx]=detail;
+         onMultiFieldChange(f,cb.closest('.field'));
+       }
+     }
+   } else {
+     const sel=document.getElementById(id);
+     if(sel){
+       sel.selectedIndex=idx;
+       onFieldChange(f,idx);
+       const di=document.getElementById('detailInput_'+id);
+       if(di&&f.opts[idx][1]!=='STD'){
+         let detail='Customer special requirement';
+         if(id.toLowerCase().includes('unloading'))detail='Forklift 2.5 ton';
+         if(id.toLowerCase().includes('delivery'))detail='Before 10:00';
+         if(id==='tubeOD')detail='Special OD requested by customer';
+         di.value=detail;fieldState[id].detail=detail;
+       }
+     }
+   }
+ });
+ refreshAll();
+}
+['customer','project','sales','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
+selectProduct('Cut Sheet');
+</script>
+</body>
+</html>

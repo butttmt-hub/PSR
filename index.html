@@ -51,6 +51,13 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 @keyframes fieldPulse{0%{box-shadow:0 0 0 4px rgba(0,75,135,.35);border-color:var(--blue)}100%{box-shadow:0 0 0 0 rgba(0,75,135,0);border-color:var(--line)}}
 .field-highlight{animation:fieldPulse 1.6s ease}
 .owner-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.owner-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.owner-card h4{margin:0 0 9px;color:var(--blue)}.owner-card ul{margin:0;padding-left:18px;font-size:12px;line-height:1.55}.owner-card.empty{opacity:.5}.handover{border:2px solid var(--blue);border-radius:14px;background:#F8FCFF;padding:18px}.handover h3{margin:0 0 8px}.notice{padding:12px;border-radius:10px;font-size:12px;line-height:1.5}.notice.info{background:#EAF3FA;color:#0A4B75}.notice.warn{background:#FFF3E8;color:#9A4C0B}.notice.danger{background:#FDECEC;color:#8B1E16}
+.price-summary{border:1px solid var(--line);border-radius:12px;background:#fff;padding:16px;overflow:auto}
+.price-summary h4{margin:0 0 12px;color:var(--blue);font-size:14px}
+.price-table{width:100%;border-collapse:collapse;font-size:12px}
+.price-table th,.price-table td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
+.price-table th{color:var(--muted);font-weight:700}
+.price-table tfoot td{border-top:2px solid var(--line);border-bottom:0;font-weight:800;font-size:14px;color:var(--blue)}
+.price-summary.empty{color:var(--muted);font-size:12px;text-align:center;padding:18px;border-style:dashed}
 footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 .product-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#EAF3FA;border:1px solid #BFDCEF;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#0A4B75}
 .product-banner button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
@@ -169,6 +176,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
         <div class="handover">
           <h3 id="handoverTitle">Requirement Handover</h3>
           <div id="handoverMeta" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
+          <div id="priceSummaryBox" style="margin-bottom:16px"></div>
           <div class="owner-grid" id="ownerGrid"></div>
         </div>
         <div class="notice danger" id="commitGate" style="margin-top:16px"></div>
@@ -258,6 +266,25 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     <div class="modal-foot">
       <button class="btn primary" onclick="saveProductSelection()">💾 Save</button>
       <button class="btn secondary" onclick="closeProductsModal()">✕ Exit</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="qtyModalOverlay" style="display:none">
+  <div class="modal-card" style="max-width:440px">
+    <div class="modal-head">
+      <h2>ระบุจำนวน / Quantity</h2>
+      <button class="modal-close" onclick="closeQtyModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="qtyProductInfo" style="font-size:13px;line-height:1.5;margin-bottom:16px;padding:12px;background:#F4F7FA;border-radius:10px"></div>
+      <div class="pm-label">จำนวน (Pcs.)</div>
+      <input type="number" id="qtyInput" min="1" step="1" value="1" oninput="updateQtyLineTotal()">
+      <div id="qtyLineTotal" style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn primary" onclick="confirmQuantity()">✓ ยืนยัน</button>
+      <button class="btn secondary" onclick="closeQtyModal()">← กลับไปเลือก Product</button>
     </div>
   </div>
 </div>
@@ -452,11 +479,44 @@ function pmGoPage(p){
  pmCurrentPage=Math.max(1,Math.min(totalPages,p));
  renderProductsTable();
 }
+let pmPendingRow=null;
 function saveProductSelection(){
  if(!pmSelectedCode){ alert('กรุณาเลือก Product ก่อน Save'); return; }
- const row=productMasterData.find(r=>r.code===pmSelectedCode);
- applyProductToSpec(row);
+ pmPendingRow=productMasterData.find(r=>r.code===pmSelectedCode);
+ openQtyModal();
+}
+function fmtMoney(n){ return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function openQtyModal(){
+ document.getElementById('productsModalOverlay').style.display='none';
+ document.getElementById('qtyProductInfo').innerHTML=`<strong>${esc(pmPendingRow.code)}</strong><br>${esc(pmPendingRow.desc)}<br>น้ำหนักต่อแผ่น: ${pmPendingRow.weight.toLocaleString()} kg.`;
+ document.getElementById('qtyInput').value=1;
+ updateQtyLineTotal();
+ document.getElementById('qtyModalOverlay').style.display='flex';
+}
+function closeQtyModal(){
+ document.getElementById('qtyModalOverlay').style.display='none';
+ document.getElementById('productsModalOverlay').style.display='flex';
+}
+function updateQtyLineTotal(){
+ const row=pmPendingRow; const el=document.getElementById('qtyLineTotal');
+ if(!row){ el.textContent=''; return; }
+ const qty=Math.max(1,parseInt(document.getElementById('qtyInput').value)||0);
+ const totalWeight=+(qty*row.weight).toFixed(2);
+ if(row.pricePcs==='-'){
+  el.innerHTML=`น้ำหนักรวม: <strong>${totalWeight.toLocaleString()}</strong> kg.<br><span style="color:var(--extra)">ยังไม่มีราคาอ้างอิงสำหรับ SKU นี้ — ให้ Sales Admin กำหนดราคาภายหลัง</span>`;
+ } else {
+  const total=qty*row.pricePcs;
+  el.innerHTML=`น้ำหนักรวม: <strong>${totalWeight.toLocaleString()}</strong> kg. · ราคารวมโดยประมาณ: <strong>${fmtMoney(total)}</strong> บาท`;
+ }
+}
+function confirmQuantity(){
+ if(!pmPendingRow) return;
+ const qty=Math.max(1,parseInt(document.getElementById('qtyInput').value)||1);
+ pmPendingRow.qty=qty;
+ applyProductToSpec(pmPendingRow);
+ document.getElementById('qtyModalOverlay').style.display='none';
  closeProductsModal();
+ pmPendingRow=null;
 }
 function trySelectOption(fieldId,matchFn){
  const f=fieldDefs.find(x=>x.id===fieldId);
@@ -471,8 +531,11 @@ function applyProductToSpec(row){
  const banner=document.getElementById('productBanner');
  if(banner){
   banner.style.display='flex';
-  banner.querySelector('.pb-text').innerHTML=`<strong>Product ที่เลือก:</strong> ${esc(row.code)} — ${esc(row.desc)}`;
+  const totalWeight=+(row.qty*row.weight).toFixed(2);
+  const totalPriceText=row.pricePcs==='-'?'ไม่มีราคาอ้างอิง':fmtMoney(row.qty*row.pricePcs)+' บาท';
+  banner.querySelector('.pb-text').innerHTML=`<strong>Product ที่เลือก:</strong> ${esc(row.code)} — ${esc(row.desc)} · จำนวน <strong>${row.qty.toLocaleString()}</strong> แผ่น · น้ำหนักรวม ${totalWeight.toLocaleString()} kg. · ราคารวม ${totalPriceText}`;
  }
+ refreshAll();
  const m=row.desc.match(/(\d{3,4})\s*X\s*(\d{3,4})/i);
  if(m){
   trySelectOption('width',opt=>opt.includes(m[1]));
@@ -648,6 +711,21 @@ function renderSummary(){
 function renderHandover(){
  const meta=document.getElementById('handoverMeta'); if(!meta)return;
  meta.innerHTML=`Product: <strong>${esc(currentProduct)}</strong> · Customer: <strong>${esc(document.getElementById('customer').value)}</strong> · Project: <strong>${esc(document.getElementById('project').value)}</strong> · Sales: <strong>${esc(document.getElementById('sales').value)}</strong> · Ref: <strong>${esc(document.getElementById('refNo').value)}</strong>`;
+ const psb=document.getElementById('priceSummaryBox');
+ if(psb){
+  const row=selectedProductMaster;
+  if(!row){
+   psb.innerHTML=`<div class="price-summary empty">ยังไม่ได้เลือก Product / จำนวน — กลับไป Step 1 เพื่อเลือก Product ก่อนออกใบเสนอราคา</div>`;
+  } else {
+   const totalWeight=+(row.qty*row.weight).toFixed(2);
+   const hasPrice=row.pricePcs!=='-';
+   const total=hasPrice?row.qty*row.pricePcs:0;
+   psb.innerHTML=`<div class="price-summary"><h4>Price Summary / สรุปราคาใบเสนอราคา</h4>
+    <table class="price-table"><thead><tr><th>Material Code</th><th>Description</th><th>Qty (Pcs.)</th><th>น้ำหนักรวม (Kg.)</th><th>Unit Price (Pcs.)</th><th>Total</th></tr></thead>
+    <tbody><tr><td>${esc(row.code)}</td><td>${esc(row.desc)}</td><td>${row.qty.toLocaleString()}</td><td>${totalWeight.toLocaleString()}</td><td>${hasPrice?fmtMoney(row.pricePcs):'-'}</td><td>${hasPrice?fmtMoney(total):'ยังไม่มีราคา'}</td></tr></tbody>
+    <tfoot><tr><td colspan="5" style="text-align:right">Grand Total</td><td>${hasPrice?fmtMoney(total)+' บาท':'รอ Sales Admin กำหนดราคา'}</td></tr></tfoot></table></div>`;
+  }
+ }
  const owners=['Planning','Production','QA','Material Sourcing','Procurement','Warehouse','Transport','Sales Admin','Finance','Billing'];
  const grid=document.getElementById('ownerGrid');
  grid.innerHTML=owners.map(owner=>{

@@ -349,22 +349,31 @@ let summaryFilterCat = null;
 
 // --- Products lookup modal (Prototype sample data — not live stock/pricing) ---
 function generateProductMasterData(){
- const thicknesses=[1.00,1.20,1.40,1.50,1.60,1.80,2.00,2.30,2.50,3.00];
- const sizes=[[1219,2438],[1219,3048],[1524,2438],[1524,3048]];
+ const sizeDefs=[
+  {seg:'1408',w:1219,l:2438,feet:"4' x 8'"},
+  {seg:'1410',w:1219,l:3048,feet:"4' x 10'"},
+  {seg:'1510',w:1524,l:3048,feet:"5' x 10'"},
+  {seg:'1520',w:1524,l:6096,feet:"5' x 20'"},
+  {seg:'1610',w:1830,l:3048,feet:null}
+ ];
+ const thicknesses=[1.00,1.20,1.40,1.50,1.60,1.80,2.00,2.30,2.50,3.00,6.00];
  const rows=[]; let seq=23;
- thicknesses.forEach(t=>{
-  sizes.forEach(([w,l],i)=>{
-   const group=i%2===0?'Sheet Group A':'Sheet Group B';
+ thicknesses.forEach((t,tIdx)=>{
+  const thkSeg=String(Math.round(t*10)).padStart(3,'0');
+  const priceKg=+(24-t*0.6).toFixed(2);
+  sizeDefs.forEach(sz=>{
+   const group=sz.seg==='1610'?'Sheet Group D':(tIdx%2===0?'Sheet Group B':'Sheet Group A');
    const plant=seq%2===0?'1200':'1300';
-   const weight=+(t*w*l*7.85/1e6).toFixed(2);
-   const priceKg=+(20+((seq*37)%600)/100).toFixed(2);
+   const weight=Math.round(t*sz.w*sz.l*7.85/1e6);
    const pricePcs=+(priceKg*weight).toFixed(2);
    const remain=((seq*211)%4000)-2000;
-   const codeBase=String(Math.round(t*100)).padStart(4,'0')+'-'+String(seq).padStart(4,'0');
-   const sizeLabel=`${w} X ${l}mm`;
-   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`1HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} mm x 4' x 8'`,group,sizeLabel,priceKg:'-',pricePcs:'-',remain:0,weight,range:weight});
-   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HSSF${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${w} X ${l}mm`,group,sizeLabel,priceKg,pricePcs,remain,weight,range:weight});
-   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${w} X ${l}mm`,group,sizeLabel,priceKg,pricePcs,remain:remain-137,weight,range:weight});
+   const codeBase=`${sz.seg}-${thkSeg}-${String(seq).padStart(4,'0')}`;
+   const sizeLabel=`${sz.w} X ${sz.l}mm`;
+   if(sz.feet){
+    rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`1HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} mm x ${sz.feet}`,group,sizeLabel,priceKg:'-',pricePcs:'-',remain:0,weight,range:weight});
+   }
+   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HSSF${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${sz.w} X ${sz.l}mm`,group,sizeLabel,priceKg,pricePcs,remain,weight,range:weight});
+   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${sz.w} X ${sz.l}mm`,group,sizeLabel,priceKg,pricePcs,remain:remain-137,weight,range:weight});
    seq++;
   });
  });
@@ -374,7 +383,7 @@ const productMasterData=generateProductMasterData();
 let selectedProductMaster=null;
 let pmSelectedCode=null;
 let pmCurrentPage=1;
-const pmPageSize=10;
+const pmPageSize=25;
 let pmFiltered=productMasterData;
 function chooseCutSheet(){
  selectProduct('Cut Sheet');

@@ -526,10 +526,10 @@ function generateProductMasterData(){
    const codeBase=`${sz.seg}-${thkSeg}-${String(seq).padStart(4,'0')}`;
    const sizeLabel=`${sz.w} X ${sz.l}mm`;
    if(sz.feet){
-    rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`1HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} mm x ${sz.feet}`,group,sizeLabel,priceKg:'-',pricePcs:'-',remain:0,weight,range:weight});
+    rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`1HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} mm x ${sz.feet}`,group,sizeLabel,priceKg:'-',pricePcs:'-',remain:0,weight,range:weight,thickness:t,width:sz.w});
    }
-   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HSSF${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${sz.w} X ${sz.l}mm`,group,sizeLabel,priceKg,pricePcs,remain,weight,range:weight});
-   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${sz.w} X ${sz.l}mm`,group,sizeLabel,priceKg,pricePcs,remain:remain-137,weight,range:weight});
+   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HSSF${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${sz.w} X ${sz.l}mm`,group,sizeLabel,priceKg,pricePcs,remain,weight,range:weight,thickness:t,width:sz.w});
+   rows.push({type:'Stock',plant,materialType:'เหล็กแผ่นดำ',code:`2HS${codeBase}`,desc:`เหล็กแผ่นดำ ${t.toFixed(2)} X ${sz.w} X ${sz.l}mm`,group,sizeLabel,priceKg,pricePcs,remain:remain-137,weight,range:weight,thickness:t,width:sz.w});
    seq++;
   });
  });
@@ -608,15 +608,27 @@ function searchProducts(){
  pmCurrentPage=1;
  renderProductsTable();
 }
+function stockCheckLink(r){
+ const params=new URLSearchParams();
+ if(r.thickness!==undefined) params.set('thk',r.thickness);
+ if(r.width!==undefined) params.set('wid',r.width);
+ return `stock-rm-visibility-sale-view.html?${params.toString()}`;
+}
 function renderProductsTable(){
  const start=(pmCurrentPage-1)*pmPageSize;
  const pageRows=pmFiltered.slice(start,start+pmPageSize);
- document.getElementById('pmTableBody').innerHTML=pageRows.length?pageRows.map(r=>`<tr class="${pmSelectedCode===r.code?'selected':''}" onclick="selectProductRow('${r.code}')">
+ document.getElementById('pmTableBody').innerHTML=pageRows.length?pageRows.map(r=>{
+  const canCheckPlan=r.remain<0 && pmFamily==='Cut Sheet' && r.thickness!==undefined;
+  const remainCell=canCheckPlan
+   ?`<a href="${stockCheckLink(r)}" target="_blank" onclick="event.stopPropagation()" style="color:#B42318;font-weight:700;text-decoration:underline;cursor:pointer;white-space:nowrap" title="สต็อกติดลบ — คลิกเพื่อเช็คแผนผลิต">${r.remain.toFixed(2)} 🔍</a>`
+   :`<span style="color:${r.remain<0?'#B42318':'#0A5F9E'}">${r.remain.toFixed(2)}</span>`;
+  return `<tr class="${pmSelectedCode===r.code?'selected':''}" onclick="selectProductRow('${r.code}')">
   <td><input type="checkbox" ${pmSelectedCode===r.code?'checked':''} onclick="event.stopPropagation();selectProductRow('${r.code}')"></td>
   <td>${esc(r.code)}</td><td>${esc(r.desc)}</td><td>${esc(r.group)}</td><td></td><td></td>
   <td>${r.priceKg==='-'?'-':r.priceKg.toFixed(2)}</td><td>${r.pricePcs==='-'?'-':r.pricePcs.toFixed(2)}</td>
-  <td style="color:${r.remain<0?'#B42318':'#0A5F9E'}">${r.remain.toFixed(2)}</td>
-  <td>${r.weight.toFixed(2)}</td><td>${r.range.toFixed(2)}</td><td></td><td></td></tr>`).join('')
+  <td>${remainCell}</td>
+  <td>${r.weight.toFixed(2)}</td><td>${r.range.toFixed(2)}</td><td></td><td></td></tr>`;
+  }).join('')
   :`<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--muted)">No results — ไม่พบสินค้าตามเงื่อนไขที่เลือก</td></tr>`;
  renderPmPagination();
 }

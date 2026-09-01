@@ -97,17 +97,34 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .internal-only ul{margin:0 0 8px;padding-left:18px;line-height:1.7}
 .internal-only .ib-total{font-weight:800;border-top:1px dashed #E3B98A;padding-top:8px}
 .internal-only.empty{color:var(--muted);border-color:var(--line);background:#FAFCFE}
-.cust-search-wrap{position:relative}
-.cust-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:20;max-height:260px;overflow:auto}
-.cust-result-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--line);font-size:13px}
-.cust-result-item:last-child{border-bottom:0}
-.cust-result-item:hover{background:#EAF3FA}
-.cust-result-item strong{display:block;color:var(--text)}
-.cust-result-item span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
-.cust-result-empty{padding:14px;font-size:12px;color:var(--muted)}
-.customer-profile-card{border:1px solid #BFDCEF;background:#EAF3FA;border-radius:10px;padding:14px 16px;margin-top:10px;font-size:12px;color:#0A4B75;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.customer-profile-card .cp-info div{margin-bottom:3px}
-.customer-profile-card button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.cd-wrap{border-top:1px solid var(--line);padding-top:16px;margin-top:18px}
+.cd-head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;color:var(--blue);cursor:pointer;user-select:none;margin-bottom:18px}
+.cd-head .chev{display:inline-block;transition:transform .15s;font-size:12px}
+.cd-head.collapsed .chev{transform:rotate(-90deg)}
+.cd-body.collapsed{display:none}
+.cd-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 40px}
+.cd-field{display:grid;grid-template-columns:140px 1fr;align-items:start;gap:10px}
+.cd-field label{font-size:13px;font-weight:700;color:var(--text);padding-top:9px}
+.cd-field label .req{color:#E4572E;margin-right:2px}
+.cd-field select,.cd-field input[type=text]{
+  width:100%;border:1px solid #D7DEE6;border-radius:22px;padding:9px 16px;font:inherit;font-size:13.5px;
+  color:var(--text);background:#fff;outline:none;
+}
+.cd-field select:focus,.cd-field input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,75,135,.08)}
+.cd-field .cd-readonly{padding:9px 4px;font-size:13.5px;color:var(--text)}
+.cd-sub{font-size:11px;color:var(--muted);margin-top:4px;padding-left:16px}
+@media(max-width:680px){.cd-grid{grid-template-columns:1fr}.cd-field{grid-template-columns:1fr}.cd-field label{padding-top:0}}
+.credit-box{margin-top:20px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:#FAFCFE}
+.credit-box .credit-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.credit-box .credit-title{font-size:13px;font-weight:800;color:var(--text)}
+.credit-box .credit-badge{font-size:10.5px;font-weight:800;padding:4px 11px;border-radius:999px;white-space:nowrap}
+.credit-box .credit-badge.green{background:var(--stdBg);color:var(--std)}
+.credit-box .credit-badge.amber{background:var(--extraBg);color:var(--extra)}
+.credit-box .credit-badge.red{background:var(--reviewBg);color:var(--review)}
+.credit-bar-track{width:100%;height:16px;border-radius:9px;background:#E7E9EE;border:1px solid #D6DAE1;overflow:hidden}
+.credit-bar-fill{height:100%;border-radius:9px 0 0 9px;transition:width .25s ease}
+.credit-legend{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted)}
+.credit-legend b{color:var(--text)}
 .cart-box{margin-top:14px}
 .cart-empty{border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--muted);font-size:12px}
 .cart-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
@@ -172,17 +189,53 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 
       <!-- Screen 1 -->
       <div class="screen active" data-screen="1">
-        <div class="section-title">Customer Profile / โปรไฟล์ลูกค้า</div>
-        <div class="cust-search-wrap">
-          <input id="customerSearchInput" type="text" placeholder="🔍 ค้นหาลูกค้าจากระบบ (พิมพ์ชื่อบริษัท)" oninput="searchCustomers()" onfocus="searchCustomers()" autocomplete="off">
-          <div id="customerSearchResults" class="cust-results" style="display:none"></div>
-        </div>
-        <div class="customer-profile-card" id="customerProfileCard" style="display:none"></div>
-        <div class="customer-grid" style="margin-top:14px">
-          <div><div class="label">Customer / ลูกค้า</div><input id="customer" type="text" value="ABC Customer"></div>
+        <div class="customer-grid">
           <div><div class="label">Project / โครงการ</div><input id="project" type="text" value="Demo Project"></div>
-          <div><div class="label">Sales / ฝ่ายขาย</div><input id="sales" type="text" value="Demo Sales"></div>
           <div><div class="label">Requirement Ref.</div><input id="refNo" type="text" value="REQ-CS-001"></div>
+        </div>
+        <input type="hidden" id="customer" value="">
+        <input type="hidden" id="sales" value="">
+
+        <div class="cd-wrap">
+          <div class="cd-head" id="cdHead" onclick="toggleCustomerDetail()"><span class="chev" id="cdChevron">▾</span> Customer Detail</div>
+          <div class="cd-body" id="cdBody">
+            <div class="cd-grid">
+              <div class="cd-field">
+                <label><span class="req">*</span> Sold To</label>
+                <div>
+                  <select id="soldTo" onchange="onSoldToChange()"><option value="">Please select</option></select>
+                  <div class="cd-sub" id="soldToSub">-</div>
+                </div>
+              </div>
+              <div class="cd-field">
+                <label><span class="req">*</span> Distribution Channel</label>
+                <div class="cd-readonly" id="distChannel">-</div>
+              </div>
+              <div class="cd-field">
+                <label><span class="req">*</span> Ship To</label>
+                <div>
+                  <select id="shipTo" onchange="onShipToChange()"><option value="">Please select</option></select>
+                  <div class="cd-sub" id="shipToSub">-</div>
+                </div>
+              </div>
+              <div class="cd-field">
+                <label>Ship To Text</label>
+                <input id="shipToText" type="text">
+              </div>
+              <div class="cd-field">
+                <label>Customer Group</label>
+                <div class="cd-readonly" id="custGroup">-</div>
+              </div>
+              <div class="cd-field">
+                <label><span class="req">*</span> Sale Employee</label>
+                <div>
+                  <select id="saleEmployee" onchange="onSaleEmployeeChange()"></select>
+                  <div class="cd-sub" id="saleEmployeeSub">-</div>
+                </div>
+              </div>
+            </div>
+            <div class="credit-box" id="creditBox" style="display:none"></div>
+          </div>
         </div>
 
         <div class="section-title" style="margin-top:26px">Add Product / เพิ่มสินค้าเข้ารายการ</div>
@@ -385,53 +438,101 @@ function isHiddenStep(n){ return !visibleSteps.includes(n); }
 function phaseOf(n){ return n===1?1:(n>=2&&n<=7?7:n); }
 let current=1;
 
-// --- Customer lookup (Prototype sample data — fictional customers, not real records) ---
-const customerMasterData=[
- {id:1,name:'บริษัท เอบีซี สตีล จำกัด',nameEn:'ABC Steel Co., Ltd.',contact:'คุณสมชาย ใจดี',phone:'02-123-4567',taxId:'0-1055-00001-11-1',creditTerm:'C060',salesOwner:'Demo Sales',address:'123 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110'},
- {id:2,name:'บริษัท ไทย เมทัล เวิร์คส์ จำกัด',nameEn:'Thai Metal Works Co., Ltd.',contact:'คุณวิภา ศรีสุข',phone:'02-234-5678',taxId:'0-1055-00002-22-2',creditTerm:'C030',salesOwner:'Sales A',address:'45 ถ.พระราม 3 แขวงบางโพงพาง เขตยานนาวา กรุงเทพฯ 10120'},
- {id:3,name:'บริษัท โกลบอล คอนสตรัคชั่น จำกัด',nameEn:'Global Construction Co., Ltd.',contact:'คุณอนันต์ พงษ์ไทย',phone:'038-345-678',taxId:'0-1055-00003-33-3',creditTerm:'C060',salesOwner:'Sales B',address:'99 นิคมอุตสาหกรรมอมตะนคร ต.บ้านเก่า อ.พานทอง จ.ชลบุรี 20160'},
- {id:4,name:'บริษัท สยาม เอ็นจิเนียริ่ง จำกัด',nameEn:'Siam Engineering Co., Ltd.',contact:'คุณธนกร วัฒนกิจ',phone:'02-456-7890',taxId:'0-1055-00004-44-4',creditTerm:'C090',salesOwner:'Sales A',address:'77 ถ.บางนา-ตราด แขวงบางนา เขตบางนา กรุงเทพฯ 10260'},
- {id:5,name:'บริษัท นอร์ทเทิร์น แฟบริเคชั่น จำกัด',nameEn:'Northern Fabrication Co., Ltd.',contact:'คุณปิยะดา ทองอินทร์',phone:'053-567-890',taxId:'0-1055-00005-55-5',creditTerm:'C060',salesOwner:'Sales C',address:'12 ถ.เชียงใหม่-ลำปาง ต.ท่าศาลา อ.เมือง จ.เชียงใหม่ 50000'},
- {id:6,name:'บริษัท เดลต้า ทูลส์ แอนด์ ไดส์ จำกัด',nameEn:'Delta Tools & Dies Co., Ltd.',contact:'คุณกิตติ รุ่งเรือง',phone:'038-678-901',taxId:'0-1055-00006-66-6',creditTerm:'C030',salesOwner:'Demo Sales',address:'56 นิคมอุตสาหกรรมแหลมฉบัง ต.ทุ่งสุขลา อ.ศรีราชา จ.ชลบุรี 20230'},
+// --- Customer Detail: Sold To / Ship To / Sale Employee (Prototype sample data — fictional, not real records) ---
+const soldToMasterData=[
+ {code:'0010001',name:'บริษัท เอบีซี สตีล จำกัด (ABC Steel Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:5000000,creditRemaining:3500000,
+  shipTos:[{code:'0010001-01',name:'คลังสินค้าใหญ่ กรุงเทพฯ'},{code:'0010001-02',name:'สาขาสมุทรปราการ'}]},
+ {code:'0010002',name:'บริษัท ไทย เมทัล เวิร์คส์ จำกัด (Thai Metal Works Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:3000000,creditRemaining:900000,
+  shipTos:[{code:'0010002-01',name:'โรงงานพระราม 3'}]},
+ {code:'0010003',name:'บริษัท โกลบอล คอนสตรัคชั่น จำกัด (Global Construction Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z3 - Contractor',creditLimit:8000000,creditRemaining:1200000,
+  shipTos:[{code:'0010003-01',name:'ไซต์งานชลบุรี'}]},
+ {code:'0010004',name:'บริษัท สยาม เอ็นจิเนียริ่ง จำกัด (Siam Engineering Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:4000000,creditRemaining:3600000,
+  shipTos:[{code:'0010004-01',name:'คลังบางนา'}]},
+ {code:'0010005',name:'บริษัท นอร์ทเทิร์น แฟบริเคชั่น จำกัด (Northern Fabrication Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z2 - Fabricator',creditLimit:2000000,creditRemaining:500000,
+  shipTos:[{code:'0010005-01',name:'โรงงานเชียงใหม่'}]},
+ {code:'0010006',name:'บริษัท เดลต้า ทูลส์ แอนด์ ไดส์ จำกัด (Delta Tools & Dies Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:1500000,creditRemaining:100000,
+  shipTos:[{code:'0010006-01',name:'นิคมแหลมฉบัง'}]},
 ];
-let selectedCustomer=null;
-function searchCustomers(){
- const q=document.getElementById('customerSearchInput').value.trim().toLowerCase();
- const box=document.getElementById('customerSearchResults');
- if(!q){ box.style.display='none'; box.innerHTML=''; return; }
- const matches=customerMasterData.filter(c=>c.name.toLowerCase().includes(q)||c.nameEn.toLowerCase().includes(q));
- box.style.display='block';
- box.innerHTML=matches.length?matches.map(c=>`<div class="cust-result-item" onclick="pickCustomer(${c.id})"><strong>${esc(c.name)}</strong><span>${esc(c.nameEn)} · ${esc(c.contact)} · ${esc(c.phone)}</span></div>`).join('')
-  :`<div class="cust-result-empty">ไม่พบลูกค้าในระบบ — พิมพ์ชื่อลูกค้าลงในช่อง Customer ด้านล่างเพื่อกรอกข้อมูลลูกค้าใหม่ด้วยตนเอง</div>`;
+const salesEmployeeMasterData=[
+ {code:'Sale01',name:'Sale01'},
+ {code:'Sales A',name:'Sales A'},
+ {code:'Sales B',name:'Sales B'},
+ {code:'Sales C',name:'Sales C'},
+ {code:'Demo Sales',name:'Demo Sales'},
+];
+function getLoggedInSalesUser(){
+ try{ return sessionStorage.getItem('tmt_sales_portal_user') || null; }catch(e){ return null; }
 }
-function pickCustomer(id){
- selectedCustomer=customerMasterData.find(c=>c.id===id);
- if(!selectedCustomer) return;
- document.getElementById('customer').value=selectedCustomer.name;
- document.getElementById('sales').value=selectedCustomer.salesOwner;
- document.getElementById('customerSearchInput').value='';
- document.getElementById('customerSearchResults').style.display='none';
- renderCustomerProfile();
+function toggleCustomerDetail(){
+ document.getElementById('cdHead').classList.toggle('collapsed');
+ document.getElementById('cdBody').classList.toggle('collapsed');
+}
+function populateCustomerDetailOptions(){
+ const soldToSel=document.getElementById('soldTo');
+ soldToSel.innerHTML='<option value="">Please select</option>'+soldToMasterData.map(c=>`<option value="${c.code}">${esc(c.name)}</option>`).join('');
+ const saleEmpSel=document.getElementById('saleEmployee');
+ saleEmpSel.innerHTML='<option value="">Please select</option>'+salesEmployeeMasterData.map(s=>`<option value="${s.code}">${esc(s.name)}</option>`).join('');
+ const loggedIn=getLoggedInSalesUser();
+ if(loggedIn && salesEmployeeMasterData.some(s=>s.code===loggedIn)){
+  saleEmpSel.value=loggedIn;
+  document.getElementById('saleEmployeeSub').textContent='อ้างอิงจาก Login: '+loggedIn;
+  document.getElementById('sales').value=loggedIn;
+ }
+}
+function fmtBaht(n){ return n.toLocaleString('en-US',{maximumFractionDigits:0}); }
+function renderCreditBox(c){
+ const box=document.getElementById('creditBox');
+ if(!box) return;
+ if(!c || c.creditLimit===undefined){ box.style.display='none'; box.innerHTML=''; return; }
+ const pct=Math.max(0,Math.min(100,(c.creditRemaining/c.creditLimit)*100));
+ let level='green', label='เครดิตปกติ';
+ if(pct<20){ level='red'; label='เครดิตใกล้เต็มวงเงิน'; }
+ else if(pct<50){ level='amber'; label='เครดิตเหลือปานกลาง'; }
+ const color=level==='green'?'var(--std)':level==='amber'?'var(--extra)':'var(--review)';
+ box.style.display='block';
+ box.innerHTML=`<div class="credit-head">
+   <div class="credit-title">วงเงินเครดิต / Credit Limit</div>
+   <span class="credit-badge ${level}">${label} · เหลือ ${pct.toFixed(0)}%</span>
+  </div>
+  <div class="credit-bar-track"><div class="credit-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+  <div class="credit-legend"><span>วงเงินทั้งหมด: <b>${fmtBaht(c.creditLimit)}</b> บาท</span><span>เครดิตคงเหลือ: <b>${fmtBaht(c.creditRemaining)}</b> บาท</span></div>`;
+}
+function onSoldToChange(){
+ const code=document.getElementById('soldTo').value;
+ const c=soldToMasterData.find(x=>x.code===code);
+ const shipToSel=document.getElementById('shipTo');
+ if(!c){
+  document.getElementById('soldToSub').textContent='-';
+  document.getElementById('distChannel').textContent='-';
+  document.getElementById('custGroup').textContent='-';
+  shipToSel.innerHTML='<option value="">Please select</option>';
+  document.getElementById('shipToSub').textContent='-';
+  document.getElementById('customer').value='';
+  renderCreditBox(null);
+  refreshAll();
+  return;
+ }
+ document.getElementById('soldToSub').textContent=c.code;
+ document.getElementById('distChannel').textContent=c.distChannel;
+ document.getElementById('custGroup').textContent=c.custGroup;
+ document.getElementById('customer').value=c.name;
+ renderCreditBox(c);
+ shipToSel.innerHTML='<option value="">Please select</option>'+c.shipTos.map(s=>`<option value="${s.code}">${esc(s.name)}</option>`).join('');
+ document.getElementById('shipToSub').textContent='-';
  refreshAll();
 }
-function changeCustomer(){
- selectedCustomer=null;
- renderCustomerProfile();
- document.getElementById('customerSearchInput').focus();
+function onShipToChange(){
+ const soldToCode=document.getElementById('soldTo').value;
+ const c=soldToMasterData.find(x=>x.code===soldToCode);
+ const shipCode=document.getElementById('shipTo').value;
+ const s=c&&c.shipTos.find(x=>x.code===shipCode);
+ document.getElementById('shipToSub').textContent=s?s.code:'-';
 }
-function renderCustomerProfile(){
- const card=document.getElementById('customerProfileCard');
- if(!card) return;
- if(!selectedCustomer){ card.style.display='none'; card.innerHTML=''; return; }
- const c=selectedCustomer;
- card.style.display='flex';
- card.innerHTML=`<div class="cp-info">
-   <div><strong>${esc(c.name)}</strong> · ${esc(c.nameEn)}</div>
-   <div>ผู้ติดต่อ: ${esc(c.contact)} · โทร: ${esc(c.phone)}</div>
-   <div>เลขผู้เสียภาษี: ${esc(c.taxId)} · เงื่อนไขเครดิต: ${esc(c.creditTerm)}</div>
-   <div>ที่อยู่: ${esc(c.address)}</div>
-  </div>
-  <button onclick="changeCustomer()">↺ เปลี่ยนลูกค้า</button>`;
+function onSaleEmployeeChange(){
+ const code=document.getElementById('saleEmployee').value;
+ document.getElementById('sales').value=code;
+ document.getElementById('saleEmployeeSub').textContent=code?code:'-';
+ refreshAll();
 }
 const productFieldDefs = {
  'Cut Sheet': [
@@ -873,7 +974,7 @@ function refreshAll(){
  const cats=getMainStatuses();
  document.getElementById('sideStatuses').innerHTML=Object.entries(cats).map(([k,v])=>`<div class="mini-status"><span>${k}</span><span class="badge ${statusClass(v)}">${statusText(v)}</span></div>`).join('');
  const ov=overallStatus();const ob=document.getElementById('overallBox');ob.className='overall '+statusClass(ov);ob.textContent=ov==='STD'?'STANDARD ORDER':ov==='EXTRA'?'EXTRA REQUIREMENT':'REVIEW REQUIRED';
- renderSummary();renderHandover();renderQuotation();renderCartBannerOnSpec();renderCart();renderCustomerProfile();updateStepBadge();
+ renderSummary();renderHandover();renderQuotation();renderCartBannerOnSpec();renderCart();updateStepBadge();
 }
 function renderCartBannerOnSpec(){
  const banner=document.getElementById('productBanner');
@@ -1107,7 +1208,8 @@ function loadExtraDemo(){
  });
  refreshAll();
 }
-['customer','project','sales','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
+['project','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
+populateCustomerDetailOptions();
 selectProduct('Cut Sheet');
 </script>
 </body>

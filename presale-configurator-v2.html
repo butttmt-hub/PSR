@@ -47,7 +47,21 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .actions{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:16px 24px;background:#FBFCFD}.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer}.btn.secondary{background:#EAF0F5;color:var(--blue)}.btn.primary{background:var(--blue);color:#fff}.btn.orange{background:var(--orange);color:#fff}.btn:disabled{opacity:.4;cursor:not-allowed}
 .side{position:sticky;top:92px;display:flex;flex-direction:column;gap:14px}.side-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}.side-card h3{font-size:13px;margin:0 0 12px}.legend{display:grid;gap:8px;font-size:11px}.legend-row{display:flex;gap:8px;align-items:center}.mini-status{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding:9px 0;font-size:12px}.mini-status:first-of-type{border-top:0}.overall{border-radius:12px;padding:13px;margin-top:10px;font-weight:800;font-size:12px}.overall.std{background:var(--stdBg);color:var(--std)}.overall.extra{background:var(--extraBg);color:var(--extra)}.overall.review{background:var(--reviewBg);color:var(--review)}
 .customer-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.hero-choice{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}.product-choice{border:2px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:.2s;background:#fff}.product-choice.selected{border-color:var(--blue);background:#EEF6FB}.product-choice.disabled{opacity:.45;cursor:not-allowed}.product-choice h3{margin:0 0 5px}.product-choice p{margin:0;font-size:12px;color:var(--muted)}
-.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}.summary-card{border:1px solid var(--line);border-radius:12px;padding:13px;background:#fff;cursor:pointer;transition:.15s}.summary-card:hover{border-color:var(--blue2)}.summary-card.active{border-color:var(--blue);background:#EEF6FB;box-shadow:0 0 0 2px rgba(0,75,135,.15)}.summary-card .k{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:6px}.summary-card .k .cardhint{font-size:9px;color:var(--blue);font-weight:700;white-space:nowrap}.summary-card .v{font-size:14px;font-weight:800;margin-top:4px}.summary-filter-hint{font-size:12px;color:var(--muted);margin:-6px 0 14px}.summary-filter-hint a{color:var(--blue);font-weight:700;text-decoration:none;cursor:pointer}.req-table{width:100%;border-collapse:collapse;font-size:12px}.req-table th,.req-table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}.req-table th{background:#F4F7FA;color:var(--blue);font-size:11px}.req-table tr:last-child td{border-bottom:0}.req-table tbody tr.req-row{cursor:pointer}.req-table tbody tr.req-row:hover{background:#EAF3FA}
+.req-table{width:100%;border-collapse:collapse;font-size:12px}.req-table th,.req-table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}.req-table th{background:#F4F7FA;color:var(--blue);font-size:11px}.req-table tr:last-child td{border-bottom:0}.req-table tbody tr.req-row{cursor:pointer}.req-table tbody tr.req-row:hover{background:#EAF3FA}
+.matrix-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
+.matrix-table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+.matrix-table th{background:#F4F7FA;color:var(--blue);font-size:12px;font-weight:800;padding:12px 14px;text-align:center;border-bottom:1px solid var(--line)}
+.matrix-table th:first-child{text-align:left}
+.matrix-table td{padding:12px 14px;text-align:center;border-bottom:1px solid var(--line);vertical-align:middle}
+.matrix-table tr:last-child td{border-bottom:0}
+.matrix-item{text-align:left!important;font-size:12.5px;color:var(--text)}
+.matrix-item .muted{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.matrix-badge{cursor:pointer;transition:.15s;border:2px solid transparent}
+.matrix-badge:hover{filter:brightness(.95)}
+.matrix-badge.active{border-color:var(--blue)}
+.matrix-hint{font-size:11.5px;color:var(--muted);margin-top:8px}
+.matrix-detail{margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#FAFCFE}
+.matrix-detail h4{margin:0 0 12px;font-size:13.5px;color:var(--blue)}
 @keyframes fieldPulse{0%{box-shadow:0 0 0 4px rgba(0,75,135,.35);border-color:var(--blue)}100%{box-shadow:0 0 0 0 rgba(0,75,135,0);border-color:var(--line)}}
 .field-highlight{animation:fieldPulse 1.6s ease}
 .owner-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.owner-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.owner-card h4{margin:0 0 9px;color:var(--blue)}.owner-card ul{margin:0;padding-left:18px;font-size:12px;line-height:1.55}.owner-card.empty{opacity:.5}.handover{border:2px solid var(--blue);border-radius:14px;background:#F8FCFF;padding:18px}.handover h3{margin:0 0 8px}.notice{padding:12px;border-radius:10px;font-size:12px;line-height:1.5}.notice.info{background:#EAF3FA;color:#0A4B75}.notice.warn{background:#FFF3E8;color:#9A4C0B}.notice.danger{background:#FDECEC;color:#8B1E16}
@@ -125,8 +139,13 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .credit-bar-fill{height:100%;border-radius:9px 0 0 9px;transition:width .25s ease}
 .credit-legend{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted)}
 .credit-legend b{color:var(--text)}
+.spec-item-group{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:18px;background:#FBFCFD}
+.spec-item-group:last-child{margin-bottom:0}
+.spec-item-head{display:flex;align-items:center;gap:9px;margin-bottom:14px;font-size:13px;color:var(--text);flex-wrap:wrap}
+.spec-item-head .badge{font-size:9px;padding:3px 8px}
+.spec-item-head .muted{color:var(--muted);font-size:12px}
 .cart-box{margin-top:14px}
-.cart-empty{border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--muted);font-size:12px}
+.cart-empty{grid-column:1/-1;border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--muted);font-size:12px}
 .cart-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
 .cart-table{width:100%;border-collapse:collapse;font-size:12px}
 .cart-table th{background:#F4F7FA;color:var(--blue);padding:8px;text-align:left;font-size:11px}
@@ -244,7 +263,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
           <div class="product-choice" data-product="Tube" onclick="openProductsModal('Tube')"><h3>+ Add Tube</h3><p>เพิ่มสินค้า Steel Tube เข้ารายการ</p></div>
         </div>
         <div id="cartBox" class="cart-box"></div>
-        <div class="notice info" style="margin-top:16px"><strong>Sales principle:</strong> เพิ่มสินค้าได้หลายรายการ ทั้ง Cut Sheet และ Tube ผสมกันในใบเสนอราคาเดียว — Requirement (Spec/Quality/Packing/Service/Document) ใช้ชุดเดียวกันสำหรับทั้งรายการ อ้างอิงตามสินค้าตัวแรกที่เพิ่มเข้ามา</div>
+        <div class="notice info" style="margin-top:16px"><strong>Sales principle:</strong> เพิ่มสินค้าได้หลายรายการ ทั้ง Cut Sheet และ Tube ผสมกันในใบเสนอราคาเดียว — Requirement หมวด Product Spec / Quality / Packing กำหนดแยกทีละรายการ (ตาม SKU) ส่วน Service และ Document ใช้ชุดเดียวกันสำหรับทั้งรายการ</div>
       </div>
 
       <!-- Screen 2 -->
@@ -285,10 +304,10 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
       <!-- Screen 7 -->
       <div class="screen" data-screen="7">
         <div class="section-title">System Summary / Requirement Classification</div>
-        <div class="summary-grid" id="summaryCards"></div>
-        <div class="summary-filter-hint" id="summaryFilterHint"></div>
         <div id="overallNotice"></div>
-        <div style="margin-top:18px;overflow:auto"><table class="req-table"><thead><tr><th>Category</th><th>Requirement</th><th>Customer Selection</th><th>Status</th><th>Review by</th></tr></thead><tbody id="summaryBody"></tbody></table></div>
+        <div class="matrix-wrap"><table class="matrix-table" id="matrixTable"></table></div>
+        <div class="matrix-hint">คลิก STD/EXTRA/REVIEW แต่ละช่องเพื่อดูรายละเอียด</div>
+        <div id="matrixDetail" class="matrix-detail" style="display:none"></div>
       </div>
 
       <!-- Screen 8 -->
@@ -602,7 +621,6 @@ let currentProduct='Cut Sheet';
 let fieldDefs = productFieldDefs[currentProduct];
 
 const fieldState = {};
-let summaryFilterCat = null;
 
 // --- Products lookup modal (Prototype sample data — not live stock/pricing) ---
 function generateProductMasterData(){
@@ -796,6 +814,83 @@ function trySelectOption(fieldId,matchFn){
  const sel=document.getElementById(fieldId);
  if(sel){ sel.selectedIndex=idx; onFieldChange(f,idx); }
 }
+// --- Product Spec / Quality / Packing are all per cart item (each SKU can have its own values) ---
+const PER_ITEM_CATS=['Product','Product Quality','Packing'];
+function productSpecDefsFor(family){
+ return productFieldDefs[family].filter(f=>f.cat==='Product');
+}
+function itemCatDefsFor(family,cat){
+ return productFieldDefs[family].filter(f=>f.cat===cat);
+}
+function initItemSpecState(item){
+ item.specState={};
+ productFieldDefs[item.family].filter(f=>PER_ITEM_CATS.includes(f.cat)).forEach(f=>{
+  item.specState[f.id]={status:f.opts[0][1],value:f.opts[0][0],detail:''};
+ });
+}
+function trySelectItemOption(item,f,matchFn){
+ if(!f) return;
+ const idx=f.opts.findIndex(o=>matchFn(o[0]));
+ if(idx<0) return;
+ item.specState[f.id]={status:f.opts[idx][1],value:f.opts[idx][0],detail:''};
+}
+function itemCurrentSelection(item,f){ const st=item.specState[f.id]; return st.detail?`${st.value} — ${st.detail}`:st.value; }
+function getCartCatStatus(cat){
+ const statuses=[];
+ productCart.forEach(item=>{
+  if(!item.specState) return;
+  productFieldDefs[item.family].filter(f=>f.cat===cat).forEach(f=>{
+   const st=item.specState[f.id]; if(st) statuses.push(st.status);
+  });
+ });
+ return statuses.includes('REVIEW')?'REVIEW':statuses.includes('EXTRA')?'EXTRA':'STD';
+}
+function onItemFieldChange(item,f,idx){
+ const opt=f.opts[idx];
+ item.specState[f.id].status=opt[1]; item.specState[f.id].value=opt[0];
+ const uid=`${f.id}__${item.id}`;
+ const det=document.getElementById('detail_'+uid); if(det) det.classList.toggle('show',opt[1]!=='STD');
+ const b=document.getElementById('badge_'+uid); if(b){ b.className='badge '+statusClass(opt[1]); b.textContent=statusText(opt[1]); }
+ refreshAll();
+}
+function renderItemFieldsForCart(containerId,cat){
+ const container=document.getElementById(containerId);
+ if(!container) return;
+ if(!productCart.length){
+  container.innerHTML=`<div class="cart-empty">ยังไม่มีสินค้าในรายการ — กลับไป Step 1 เพื่อเพิ่มสินค้าก่อน</div>`;
+  return;
+ }
+ container.innerHTML='';
+ const gridPrefix='itemGrid_'+cat.replace(/\s+/g,'')+'_';
+ productCart.forEach(item=>{
+  if(!item.specState) initItemSpecState(item);
+  const defs=itemCatDefsFor(item.family,cat);
+  if(!defs.length) return;
+  const group=document.createElement('div');
+  group.className='spec-item-group';
+  group.innerHTML=`<div class="spec-item-head"><span class="badge ${item.family==='Cut Sheet'?'std':'extra'}">${esc(item.family)}</span><strong>${esc(item.code)}</strong><span class="muted">${esc(item.desc)}</span></div>
+   <div class="grid" id="${gridPrefix}${item.id}"></div>`;
+  container.appendChild(group);
+  const grid=group.querySelector(`#${gridPrefix}${item.id}`);
+  defs.forEach(f=>{
+   const uid=`${f.id}__${item.id}`;
+   const st=item.specState[f.id];
+   const el=document.createElement('div');el.className='field';el.id='field_'+uid;
+   let opts=f.opts.map((o,i)=>`<option value="${i}" ${st.value===o[0]?'selected':''}>${esc(o[0])}</option>`).join('');
+   el.innerHTML=`<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge ${statusClass(st.status)}" id="badge_${uid}">${statusText(st.status)}</span></div>
+   <select id="${uid}">${opts}</select>
+   <div class="detail ${st.status!=='STD'?'show':''}" id="detail_${uid}"><input type="text" id="detailInput_${uid}" placeholder="ระบุ Customer Requirement / Exact requirement" value="${esc(st.detail)}"></div>
+   ${f.attach?`<div class="attach">Attach Spec / แนบเอกสาร (Prototype placeholder)</div>`:''}
+   <div class="rule"><strong>STD:</strong> ${f.std}<br><strong>Extra:</strong> ${f.extra}<br><strong>Decision Rule:</strong> ${f.rule}</div>`;
+   grid.appendChild(el);
+   el.querySelector('select').addEventListener('change',e=>onItemFieldChange(item,f,e.target.selectedIndex));
+   const di=el.querySelector(`#detailInput_${uid}`); if(di) di.addEventListener('input',e=>{item.specState[f.id].detail=e.target.value;refreshAll()});
+  });
+ });
+}
+function renderProductSpecForCart(){ renderItemFieldsForCart('productSpecFields','Product'); }
+function renderQualityForCart(){ renderItemFieldsForCart('qualityFields','Product Quality'); }
+function renderPackingForCart(){ renderItemFieldsForCart('packingFields','Packing'); }
 function onCartChanged(newItem){
  if(productCart.length===1 && newItem.family!==currentProduct){
   currentProduct=newItem.family;
@@ -804,18 +899,26 @@ function onCartChanged(newItem){
   const matrix=document.getElementById('matrixRuleText'); if(matrix) matrix.textContent=`ทุก Field ใน Prototype นี้อ้างอิง ${currentProduct} STD–EXTRA Sales Matrix: Product → Packing → Service → Document และ Operation Owner ตาม Matrix.`;
   renderFields();
  }
- if(productCart.length===1 && newItem.family==='Cut Sheet'){
+ initItemSpecState(newItem);
+ if(newItem.family==='Cut Sheet'){
   const m=newItem.desc.match(/(\d{3,4})\s*X\s*(\d{3,4})/i);
   if(m){
-   trySelectOption('width',opt=>opt.includes(m[1]));
-   trySelectOption('length',opt=>opt.includes(m[2]));
+   const defs=productSpecDefsFor('Cut Sheet');
+   trySelectItemOption(newItem,defs.find(f=>f.id==='width'),opt=>opt.includes(m[1]));
+   trySelectItemOption(newItem,defs.find(f=>f.id==='length'),opt=>opt.includes(m[2]));
   }
  }
+ renderProductSpecForCart();
+ renderQualityForCart();
+ renderPackingForCart();
  renderCart();
  refreshAll();
 }
 function removeCartItem(id){
  productCart=productCart.filter(i=>i.id!==id);
+ renderProductSpecForCart();
+ renderQualityForCart();
+ renderPackingForCart();
  renderCart();
  refreshAll();
 }
@@ -870,11 +973,11 @@ function renderProgress(){
 }
 function renderFields(){
  fieldDefs = productFieldDefs[currentProduct];
- summaryFilterCat = null;
+ matrixSelected = null;
  Object.keys(fieldState).forEach(k=>delete fieldState[k]);
- const targets={2:'productSpecFields',3:'qualityFields',4:'packingFields',5:'serviceFields',6:'documentFields'};
+ const targets={5:'serviceFields',6:'documentFields'};
  Object.values(targets).forEach(id=>document.getElementById(id).innerHTML='');
- fieldDefs.forEach(f=>{
+ fieldDefs.filter(f=>!PER_ITEM_CATS.includes(f.cat)).forEach(f=>{
   const el=document.createElement('div');el.className='field';el.id='field_'+f.id;
   if(f.multi){
    fieldState[f.id]={status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}};
@@ -952,22 +1055,18 @@ function onMultiFieldChange(f,el){
  const badge=el.querySelector(`#badge_${f.id}`); badge.className='badge '+statusClass(st.status); badge.textContent=statusText(st.status);
  refreshAll();
 }
-function getCatStatus(cat){
- const list=fieldDefs.filter(f=>f.cat===cat || (cat==='Product' && f.cat==='Product Quality')).map(f=>fieldState[f.id]?.status||'STD');
- return list.includes('REVIEW')?'REVIEW':list.includes('EXTRA')?'EXTRA':'STD';
-}
 function getMainStatuses(){
- const productFields=fieldDefs.filter(f=>f.cat==='Product'||f.cat==='Product Quality').map(f=>fieldState[f.id]?.status||'STD');
  const statusOf=arr=>arr.includes('REVIEW')?'REVIEW':arr.includes('EXTRA')?'EXTRA':'STD';
  return {
-  Product:statusOf(productFields),
-  Packing:statusOf(fieldDefs.filter(f=>f.cat==='Packing').map(f=>fieldState[f.id]?.status||'STD')),
+  Product:statusOf([getCartCatStatus('Product'),getCartCatStatus('Product Quality')]),
+  Packing:getCartCatStatus('Packing'),
   Service:statusOf(fieldDefs.filter(f=>f.cat==='Service').map(f=>fieldState[f.id]?.status||'STD')),
   Document:statusOf(fieldDefs.filter(f=>f.cat==='Document').map(f=>fieldState[f.id]?.status||'STD')),
  };
 }
 function overallStatus(){
  const vals=Object.values(fieldState).map(x=>x.status);
+ productCart.forEach(item=>{ if(item.specState) vals.push(...Object.values(item.specState).map(x=>x.status)); });
  return vals.includes('REVIEW')?'REVIEW':vals.includes('EXTRA')?'EXTRA':'STD';
 }
 function refreshAll(){
@@ -984,40 +1083,95 @@ function renderCartBannerOnSpec(){
  banner.querySelector('.pb-text').innerHTML=`<strong>สินค้าในรายการ (${productCart.length}):</strong> ${productCart.map(i=>esc(i.code)).join(', ')}`;
 }
 function updateStepBadge(){
- let s='STD'; if(current>=2&&current<=6){const sts=fieldDefs.filter(f=>f.step===current).map(f=>fieldState[f.id]?.status||'STD');s=sts.includes('REVIEW')?'REVIEW':sts.includes('EXTRA')?'EXTRA':'STD'}
+ let s='STD';
+ if(current===2){ s=getCartCatStatus('Product'); }
+ else if(current===3){ s=getCartCatStatus('Product Quality'); }
+ else if(current===4){ s=getCartCatStatus('Packing'); }
+ else if(current===5||current===6){const sts=fieldDefs.filter(f=>f.step===current).map(f=>fieldState[f.id]?.status||'STD');s=sts.includes('REVIEW')?'REVIEW':sts.includes('EXTRA')?'EXTRA':'STD'}
  else if(current===7||current===8||current===9)s=overallStatus();
  const b=document.getElementById('stepStatus');b.className='badge '+statusClass(s);b.textContent=current===1?'OPEN':statusText(s);
 }
 function currentSelection(f){const st=fieldState[f.id];return st.detail?`${st.value} — ${st.detail}`:st.value}
-function getSummaryCardStatuses(){
- const statusOf=arr=>arr.includes('REVIEW')?'REVIEW':arr.includes('EXTRA')?'EXTRA':'STD';
- const cats=[['Product','Product Spec'],['Product Quality','Product Quality'],['Packing','Packing'],['Service','Service'],['Document','Document']];
- return cats.map(([cat,label])=>({cat,label,status:statusOf(fieldDefs.filter(f=>f.cat===cat).map(f=>fieldState[f.id]?.status||'STD'))}));
-}
-function toggleSummaryFilter(cat){
- summaryFilterCat = (summaryFilterCat===cat) ? null : cat;
- renderSummary();
-}
-function jumpToField(id){
- const f=fieldDefs.find(x=>x.id===id); if(!f) return;
- showScreen(f.step);
+function jumpToField(id,itemId){
+ let step,domId;
+ if(itemId){
+  const item=productCart.find(i=>i.id==itemId);
+  const f=item?productFieldDefs[item.family].find(x=>x.id===id):null;
+  step=f?f.step:2;
+  domId=`field_${id}__${itemId}`;
+ }
+ else{ const f=fieldDefs.find(x=>x.id===id); if(!f) return; step=f.step; domId='field_'+id; }
+ showScreen(step);
  requestAnimationFrame(()=>{
-  const el=document.getElementById('field_'+id); if(!el) return;
+  const el=document.getElementById(domId); if(!el) return;
   el.scrollIntoView({behavior:'smooth',block:'center'});
   el.classList.remove('field-highlight'); void el.offsetWidth; el.classList.add('field-highlight');
   el.addEventListener('animationend',()=>el.classList.remove('field-highlight'),{once:true});
  });
 }
+const perItemSummaryCats=[['Product','Product Spec'],['Product Quality','Quality'],['Packing','Packing']];
+const sharedSummaryCats=[['Service','Service'],['Document','Document']];
+let matrixSelected=null;
 function renderSummary(){
- const sc=document.getElementById('summaryCards');if(!sc)return;
- const cards=getSummaryCardStatuses();
- sc.innerHTML=cards.map(c=>`<div class="summary-card${summaryFilterCat===c.cat?' active':''}" onclick="toggleSummaryFilter('${c.cat}')"><div class="k">${c.label}<span class="cardhint">ดูรายละเอียด ›</span></div><div class="v"><span class="badge ${statusClass(c.status)}">${statusText(c.status)}</span></div></div>`).join('');
- const hint=document.getElementById('summaryFilterHint');
- if(hint) hint.innerHTML=summaryFilterCat?`กำลังกรองตาม <strong>${esc(summaryFilterCat)}</strong> — <a onclick="toggleSummaryFilter(null)">ดูทั้งหมด ×</a>`:'';
  const ov=overallStatus();const on=document.getElementById('overallNotice');
  on.innerHTML=`<div class="notice ${ov==='STD'?'info':ov==='EXTRA'?'warn':'danger'}"><strong>Overall:</strong> ${ov==='STD'?'STANDARD ORDER — Proceed Normal Process':ov==='EXTRA'?'EXTRA REQUIREMENT — Operation review is required for flagged items':'REVIEW REQUIRED — Do not commit flagged requirements before Operation confirmation'}</div>`;
- const rows=summaryFilterCat?fieldDefs.filter(f=>f.cat===summaryFilterCat):fieldDefs;
- document.getElementById('summaryBody').innerHTML=rows.map(f=>`<tr class="req-row" onclick="jumpToField('${f.id}')" title="คลิกเพื่อไปแก้ไข"><td>${f.cat}</td><td>${f.label}</td><td>${esc(currentSelection(f))}</td><td><span class="badge ${statusClass(fieldState[f.id].status)}">${statusText(fieldState[f.id].status)}</span></td><td>${f.owner}</td></tr>`).join('');
+ renderSummaryMatrix();
+ renderMatrixDetail();
+}
+function renderSummaryMatrix(){
+ const table=document.getElementById('matrixTable'); if(!table) return;
+ if(!productCart.length){
+  table.innerHTML=`<tbody><tr><td style="padding:26px;text-align:center;color:var(--muted)">ยังไม่มีสินค้าในรายการ — กลับไป Step 1 เพื่อเพิ่มสินค้าก่อน</td></tr></tbody>`;
+  return;
+ }
+ const statusOf=arr=>arr.includes('REVIEW')?'REVIEW':arr.includes('EXTRA')?'EXTRA':'STD';
+ const sharedStatus={};
+ sharedSummaryCats.forEach(([cat])=>{ sharedStatus[cat]=statusOf(fieldDefs.filter(f=>f.cat===cat).map(f=>fieldState[f.id]?.status||'STD')); });
+ const rowsHtml=productCart.map(item=>{
+  const perItemCells=perItemSummaryCats.map(([cat])=>{
+   const status=item.specState?statusOf(productFieldDefs[item.family].filter(f=>f.cat===cat).map(f=>item.specState[f.id]?.status||'STD')):'STD';
+   const sel=matrixSelected&&matrixSelected.cat===cat&&matrixSelected.itemId==item.id?' active':'';
+   return `<td><span class="badge ${statusClass(status)} matrix-badge${sel}" onclick="showMatrixDetail('${cat}','${item.id}')">${statusText(status)}</span></td>`;
+  }).join('');
+  const sharedCells=sharedSummaryCats.map(([cat])=>{
+   const sel=matrixSelected&&matrixSelected.cat===cat&&!matrixSelected.itemId?' active':'';
+   return `<td><span class="badge ${statusClass(sharedStatus[cat])} matrix-badge${sel}" onclick="showMatrixDetail('${cat}')">${statusText(sharedStatus[cat])}</span></td>`;
+  }).join('');
+  return `<tr><td class="matrix-item"><strong>${esc(item.code)}</strong><span class="muted">${esc(item.desc)}</span></td>${perItemCells}${sharedCells}</tr>`;
+ }).join('');
+ table.innerHTML=`<thead><tr><th>สินค้า</th><th>Product Spec</th><th>Quality</th><th>Packing</th><th>Service</th><th>Document</th></tr></thead><tbody>${rowsHtml}</tbody>`;
+}
+function showMatrixDetail(cat,itemId){
+ matrixSelected=(matrixSelected&&matrixSelected.cat===cat&&matrixSelected.itemId===itemId)?null:{cat,itemId};
+ renderSummaryMatrix();
+ renderMatrixDetail();
+ if(matrixSelected){ const box=document.getElementById('matrixDetail'); if(box) box.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+function renderMatrixDetail(){
+ const box=document.getElementById('matrixDetail'); if(!box) return;
+ if(!matrixSelected){ box.style.display='none'; box.innerHTML=''; return; }
+ const {cat,itemId}=matrixSelected;
+ const allRows=buildSummaryRows();
+ const rows=itemId?allRows.filter(r=>r.cat===cat&&r.itemId==itemId):allRows.filter(r=>r.cat===cat&&!r.itemId);
+ const catLabel={'Product':'Product Spec','Product Quality':'Product Quality','Packing':'Packing','Service':'Service','Document':'Document'}[cat];
+ const item=itemId?productCart.find(i=>i.id==itemId):null;
+ box.style.display='block';
+ box.innerHTML=`<h4>${catLabel}${item?` — ${esc(item.code)}`:''}</h4>
+  <table class="req-table"><thead><tr><th>Requirement</th><th>Customer Selection</th><th>Status</th></tr></thead>
+  <tbody>${rows.map(r=>`<tr class="req-row" onclick="jumpToField('${r.fieldId}'${r.itemId?`,'${r.itemId}'`:''})" title="คลิกเพื่อไปแก้ไข"><td>${r.label}</td><td>${esc(r.value)}</td><td><span class="badge ${statusClass(r.status)}">${statusText(r.status)}</span></td></tr>`).join('')}</tbody></table>`;
+}
+function buildSummaryRows(){
+ const rows=[];
+ productCart.forEach(item=>{
+  if(!item.specState) return;
+  productFieldDefs[item.family].filter(f=>PER_ITEM_CATS.includes(f.cat)).forEach(f=>{
+   rows.push({cat:f.cat,itemCode:item.code,itemId:item.id,fieldId:f.id,label:f.label,value:itemCurrentSelection(item,f),status:item.specState[f.id].status,owner:f.owner});
+  });
+ });
+ fieldDefs.filter(f=>!PER_ITEM_CATS.includes(f.cat)).forEach(f=>{
+  rows.push({cat:f.cat,itemCode:null,itemId:null,fieldId:f.id,label:f.label,value:currentSelection(f),status:fieldState[f.id].status,owner:f.owner});
+ });
+ return rows;
 }
 function renderHandover(){
  const meta=document.getElementById('handoverMeta'); if(!meta)return;
@@ -1044,8 +1198,17 @@ function renderHandover(){
  const owners=['Planning','Production','QA','Material Sourcing','Procurement','Warehouse','Transport','Sales Admin','Finance','Billing'];
  const grid=document.getElementById('ownerGrid');
  grid.innerHTML=owners.map(owner=>{
-  const items=fieldDefs.filter(f=>f.owner.includes(owner) && fieldState[f.id].status!=='STD');
-  return `<div class="owner-card ${items.length?'':'empty'}"><h4>${owner}</h4>${items.length?`<ul>${items.map(f=>`<li><strong>${f.label.split('/')[0]}</strong>: ${esc(currentSelection(f))} <span class="badge ${statusClass(fieldState[f.id].status)}">${statusText(fieldState[f.id].status)}</span></li>`).join('')}</ul>`:'<div style="font-size:11px;color:var(--muted)">No extra/review item</div>'}</div>`;
+  const sharedItems=fieldDefs.filter(f=>!PER_ITEM_CATS.includes(f.cat) && f.owner.includes(owner) && fieldState[f.id].status!=='STD');
+  const specItems=[];
+  productCart.forEach(item=>{
+   if(!item.specState) return;
+   productFieldDefs[item.family].filter(f=>PER_ITEM_CATS.includes(f.cat)).forEach(f=>{
+    if(f.owner.includes(owner) && item.specState[f.id].status!=='STD') specItems.push({f,item});
+   });
+  });
+  const total=sharedItems.length+specItems.length;
+  const listHtml=total?`<ul>${specItems.map(({f,item})=>`<li><strong>[${esc(item.code)}] ${f.label.split('/')[0]}</strong>: ${esc(itemCurrentSelection(item,f))} <span class="badge ${statusClass(item.specState[f.id].status)}">${statusText(item.specState[f.id].status)}</span></li>`).join('')}${sharedItems.map(f=>`<li><strong>${f.label.split('/')[0]}</strong>: ${esc(currentSelection(f))} <span class="badge ${statusClass(fieldState[f.id].status)}">${statusText(fieldState[f.id].status)}</span></li>`).join('')}</ul>`:'<div style="font-size:11px;color:var(--muted)">No extra/review item</div>';
+  return `<div class="owner-card ${total?'':'empty'}"><h4>${owner}</h4>${listHtml}</div>`;
  }).join('');
  const ov=overallStatus();document.getElementById('commitGate').innerHTML=ov==='STD'?'<strong>Final Gate:</strong> All requirements are STD. Proceed normal process and submit structured handover.':ov==='EXTRA'?'<strong>Final Gate:</strong> Extra requirement exists. Request Operation review before final commitment where applicable.':'<strong>Final Gate:</strong> REVIEW REQUIRED. ห้าม Commit รายการที่ถูก Flag ก่อน Operation Confirm.';
  document.getElementById('commitGate').className='notice '+(ov==='STD'?'info':ov==='EXTRA'?'warn':'danger');
@@ -1064,25 +1227,32 @@ function recalcQuoteTotals(){
  set('qVat',fmtMoney(vat));
  set('qGrand',fmtMoney(grand));
 }
-function computeExtraSurcharge(){
- const cats=['Product','Product Quality','Packing'];
- const items=fieldDefs.filter(f=>cats.includes(f.cat) && fieldState[f.id] && fieldState[f.id].status==='EXTRA');
- return {count:items.length, pct:items.length*1, items};
+function computeExtraSurchargeForItem(item){
+ if(!item.specState) return {count:0,pct:0,entries:[]};
+ const entries=productFieldDefs[item.family].filter(f=>PER_ITEM_CATS.includes(f.cat) && item.specState[f.id].status==='EXTRA').map(f=>({f,item}));
+ return {count:entries.length, pct:entries.length*1, entries};
 }
-function renderInternalBreakdown(surcharge){
+function itemGrade(item){
+ if(!item.specState) return '-';
+ const gradeFieldId=item.family==='Cut Sheet'?'grade':'tubeGrade';
+ return item.specState[gradeFieldId]?item.specState[gradeFieldId].value:'-';
+}
+function renderInternalBreakdown(){
  const box=document.getElementById('internalBreakdown'); if(!box) return;
- const mixedFamily=new Set(productCart.map(i=>i.family)).size>1;
- const mixedNote=mixedFamily?'<div style="margin-top:6px;color:var(--extra)">⚠ รายการนี้มีทั้ง Cut Sheet และ Tube — Requirement (Spec/Quality/ฯลฯ) อ้างอิงตามสินค้าตัวแรกที่เพิ่มเข้ามาเท่านั้น</div>':'';
- if(!surcharge.count){
+ if(!productCart.length){
   box.className='internal-only empty';
-  box.innerHTML=`🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)<br>ไม่มี Extra requirement ในหมวด Product Spec / Product Quality / Packing — ราคาเป็นราคามาตรฐาน ไม่มีการปรับเพิ่ม${mixedNote}`;
+  box.innerHTML=`🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)<br>ยังไม่มีสินค้าในรายการ`;
   return;
  }
- box.className='internal-only';
- box.innerHTML=`<h4>🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)</h4>
-  <ul>${surcharge.items.map(f=>`<li>[${esc(f.cat)}] ${esc(f.label.split('/')[0].trim())}: ${esc(currentSelection(f))} <strong>+1%</strong></li>`).join('')}</ul>
-  <div class="ib-total">รวม Surcharge: +${surcharge.pct}% (${surcharge.count} extra item${surcharge.count>1?'s':''}) — ปรับเพิ่มในราคาต่อกก. ของทุกรายการสินค้าในใบเสนอราคา ไม่แยกบรรทัดให้ลูกค้าเห็น</div>
-  ${mixedNote}`;
+ let anyExtra=false;
+ const blocks=productCart.map(item=>{
+  const s=computeExtraSurchargeForItem(item);
+  if(s.count) anyExtra=true;
+  const list=s.count?`<ul>${s.entries.map(({f,item:it})=>`<li>${esc(f.label.split('/')[0].trim())}: ${esc(itemCurrentSelection(it,f))} <strong>+1%</strong></li>`).join('')}</ul>`:'<div style="color:var(--muted);font-size:11.5px">ไม่มี Extra — ราคามาตรฐาน</div>';
+  return `<div style="margin-bottom:10px"><strong>${esc(item.code)}</strong> <span style="color:var(--muted)">${esc(item.desc)}</span> — Surcharge <strong>+${s.pct}%</strong>${list}</div>`;
+ }).join('');
+ box.className=anyExtra?'internal-only':'internal-only empty';
+ box.innerHTML=`<h4>🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)</h4>${blocks}<div class="ib-total">หมายเหตุ: Extra ในหมวด Product Spec / Quality / Packing มีผลเฉพาะรายการ (SKU) นั้นๆ เท่านั้น — ราคาที่ลูกค้าเห็นในเอกสารรวม surcharge นี้ไว้แล้ว ไม่แยกบรรทัดให้ลูกค้าเห็น</div>`;
 }
 function renderQuotation(){
  const doc=document.getElementById('quoteDoc'); if(!doc) return;
@@ -1090,27 +1260,24 @@ function renderQuotation(){
  const customer=document.getElementById('customer').value;
  const sales=document.getElementById('sales').value;
  const refNo=document.getElementById('refNo').value;
- const gradeField=fieldState['grade']?'grade':(fieldState['tubeGrade']?'tubeGrade':null);
- const grade=gradeField?fieldState[gradeField].value:'-';
- const surcharge=computeExtraSurcharge();
  let rowsHtml;
  if(productCart.length){
   let grand=0;
   rowsHtml=productCart.map((item,i)=>{
+   const surcharge=computeExtraSurchargeForItem(item);
    const totalWeight=+(item.qty*item.weight).toFixed(2);
    const basePriceKg=item.pricePcs==='-'?0:item.priceKg;
    const priceKg=+(basePriceKg*(1+surcharge.pct/100)).toFixed(2);
    const amount=+(totalWeight*priceKg).toFixed(2);
    grand+=amount;
-   return `<tr><td>${i+1}</td><td class="left">${esc(item.desc)}</td><td>${esc(grade)}</td><td>${item.weight.toLocaleString()}</td><td>${totalWeight.toLocaleString()}</td><td>${item.qty.toLocaleString()}</td><td>${priceKg?fmtMoney(priceKg):'-'}</td><td>KG</td><td>${priceKg?fmtMoney(amount):'รอกำหนดราคา'}</td><td>${priceKg?fmtMoney(priceKg):'-'}</td></tr>`;
+   return `<tr><td>${i+1}</td><td class="left">${esc(item.desc)}</td><td>${esc(itemGrade(item))}</td><td>${item.weight.toLocaleString()}</td><td>${totalWeight.toLocaleString()}</td><td>${item.qty.toLocaleString()}</td><td>${priceKg?fmtMoney(priceKg):'-'}</td><td>KG</td><td>${priceKg?fmtMoney(amount):'รอกำหนดราคา'}</td><td>${priceKg?fmtMoney(priceKg):'-'}</td></tr>`;
   }).join('');
   quoteBaseTotal=grand;
-  renderInternalBreakdown(surcharge);
  } else {
   quoteBaseTotal=0;
   rowsHtml=`<tr><td colspan="10" style="color:var(--muted);padding:22px;text-align:center">ยังไม่มีสินค้าในรายการ — กลับไป Step 1 เพื่อเพิ่มสินค้าก่อนออกใบเสนอราคา</td></tr>`;
-  renderInternalBreakdown({count:0});
  }
+ renderInternalBreakdown();
  doc.innerHTML=`
   <div class="quote-head">
    <div class="quote-logo"><div class="mark">TMT</div><div class="co">TMT STEEL PUBLIC COMPANY LIMITED<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div></div>
@@ -1173,7 +1340,25 @@ function loadExtraDemo(){
   'Tube':{tubeOD:1,tubeAiming:1,tubeChemMech:1,tubeGI:1,tubeStrap:1,tubePcsPack:1,tubeUnloading:2,tubeVehicle:2,tubeDelivery:1,tubeCert:2,tubeDeliveryDoc:2}
  };
  const choices=demoByProduct[currentProduct]||{};
+ const specIds=new Set(productFieldDefs[currentProduct].filter(f=>PER_ITEM_CATS.includes(f.cat)).map(f=>f.id));
+ const demoItem=productCart.find(i=>i.family===currentProduct);
  Object.entries(choices).forEach(([id,idx])=>{
+   if(specIds.has(id)){
+     if(!demoItem) return;
+     const f=productFieldDefs[currentProduct].find(x=>x.id===id);
+     const uid=`${id}__${demoItem.id}`;
+     const sel=document.getElementById(uid);
+     if(sel){
+       sel.selectedIndex=idx;
+       onItemFieldChange(demoItem,f,idx);
+       const di=document.getElementById('detailInput_'+uid);
+       if(di&&f.opts[idx][1]!=='STD'){
+         const detail='Customer special requirement';
+         di.value=detail; demoItem.specState[id].detail=detail;
+       }
+     }
+     return;
+   }
    const f=fieldDefs.find(x=>x.id===id);
    if(!f) return;
    if(f.multi){
@@ -1211,6 +1396,9 @@ function loadExtraDemo(){
 ['project','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
 populateCustomerDetailOptions();
 selectProduct('Cut Sheet');
+renderProductSpecForCart();
+renderQualityForCart();
+renderPackingForCart();
 </script>
 </body>
 </html>

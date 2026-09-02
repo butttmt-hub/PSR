@@ -149,6 +149,14 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .ql-btn.transfer{border:0;background:var(--orange);color:#fff}
 .ql-btn.transfer:hover{opacity:.88}
 
+/* ---------- Sales Order list popup ---------- */
+.so-list-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:inherit;transition:.15s}
+.so-list-row:hover{border-color:var(--blue2);background:rgba(139,186,222,.08)}
+.so-status-badge{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+.so-status-badge.waiting{background:#FFF3E8;color:#9A4C0B}
+.so-status-badge.approve{background:#EAF7EE;color:#15803D}
+.so-status-badge.reject{background:#FDECEC;color:#B42318}
+
 /* ---------- Widget picker modal ---------- */
 .wp-overlay{position:fixed;inset:0;background:rgba(12,56,67,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
 .wp-card{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -258,6 +266,16 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   </div>
 </div>
 
+<div class="wp-overlay hidden" id="soListOverlay" onclick="if(event.target===this) closeSOList()">
+  <div class="wp-card">
+    <div class="wp-head">
+      <h3>รายการ Sales Order</h3>
+      <button class="wp-close" onclick="closeSOList()">×</button>
+    </div>
+    <div style="padding:16px 22px 22px" id="soListBody"></div>
+  </div>
+</div>
+
 <script>
 const CREDENTIALS = { username: 'Sale01', password: 'S123' };
 const SESSION_KEY = 'tmt_sales_portal_user';
@@ -294,6 +312,7 @@ const WIDGET_CATALOG = [
  {id:'followUp', icon:'🔔', accent:'orange', title:'ลูกค้าที่ต้องติดตาม', desc:'Customers pending follow-up'},
  {id:'creditAlert', icon:'⚠️', accent:'review', title:'ลูกค้าใกล้เต็มวงเงินเครดิต', desc:'Customers near credit limit'},
  {id:'quotationCount', icon:'📄', accent:'blue2', title:'Quotation ที่สร้างแล้ว', desc:'Saved quotation count — click to view list'},
+ {id:'soStatus', icon:'🧾', accent:'sky', title:'สถานะ Sales Order', desc:'S/O by approval status — click to view list'},
 ];
 function esc(x){ return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 function fmtBaht(n){ return (n||0).toLocaleString('en-US',{maximumFractionDigits:0}); }
@@ -327,6 +346,14 @@ function widgetBodyHTML(id){
   case 'quotationCount': {
    const list = getActiveQuotations();
    return `<div class="w-metric">${list.length} ใบ</div><div class="w-sub">Quotation ที่บันทึกไว้ทั้งหมด</div><button class="w-link-btn" onclick="openQuotationList()">ดูรายการ →</button>`;
+  }
+  case 'soStatus': {
+   const c = getSOCountsByStatus();
+   return `<div class="w-chips">
+    <span class="w-chip" style="background:#FFF3E8;color:#9A4C0B">Waiting Approve ${c.pending_approval}</span>
+    <span class="w-chip win">Approve ${c.approved}</span>
+    <span class="w-chip lost">Reject ${c.rejected}</span>
+   </div><div class="w-sub">สถานะ Sales Order ทั้งหมด</div><button class="w-link-btn" onclick="openSOList()">ดูรายการ →</button>`;
   }
   default: return '';
  }
@@ -365,6 +392,30 @@ function saveSalesOrders(list){
 }
 function generateSONo(){
  return '1300'+String(Math.floor(100000+Math.random()*900000));
+}
+const SO_STATUS_LABELS = {pending_approval:'Waiting Approve', approved:'Approve', rejected:'Reject'};
+function getSOCountsByStatus(){
+ const counts = {pending_approval:0, approved:0, rejected:0};
+ loadSalesOrders().forEach(s=>{ if(counts.hasOwnProperty(s.status)) counts[s.status]++; });
+ return counts;
+}
+function openSOList(){
+ const list = loadSalesOrders()
+  .filter(s=>SO_STATUS_LABELS.hasOwnProperty(s.status))
+  .sort((a,b)=>new Date(b.sentToApprovalAt||b.createdAt||0)-new Date(a.sentToApprovalAt||a.createdAt||0));
+ const body = document.getElementById('soListBody');
+ body.innerHTML = list.length ? `<div class="ql-list">${list.map(s=>{
+   const cls = s.status==='pending_approval'?'waiting':s.status==='approved'?'approve':'reject';
+   return `<a class="so-list-row" href="presale-configurator-v2.html?viewSO=${encodeURIComponent(s.soNo)}">
+    <div><div class="ql-no">${esc(s.soNo)}<span class="so-status-badge ${cls}">${SO_STATUS_LABELS[s.status]}</span></div><div class="ql-cust">${esc(s.customer||'ยังไม่ระบุลูกค้า')}</div></div>
+    <div class="ql-meta"><div class="ql-amt">${fmtBaht(s.grandTotal)} บาท</div><div class="ql-date">${esc(s.createdAtDisplay||'')}</div></div>
+   </a>`;
+  }).join('')}</div>`
+  : `<div class="ql-empty">ยังไม่มี Sales Order ที่ส่ง Approval</div>`;
+ document.getElementById('soListOverlay').classList.remove('hidden');
+}
+function closeSOList(){
+ document.getElementById('soListOverlay').classList.add('hidden');
 }
 function transferQuotationToSO(qNo){
  const qList = getSavedQuotations();

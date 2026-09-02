@@ -128,6 +128,8 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .widget-card .w-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:#EAF3FA;color:var(--blue)}
 .widget-card .w-chip.win{background:#EAF7EE;color:#15803D}
 .widget-card .w-chip.lost{background:#FDECEC;color:#B42318}
+.widget-card .w-chip-btn{border:0;cursor:pointer;font:inherit;transition:.15s}
+.widget-card .w-chip-btn:hover{filter:brightness(.95);transform:translateY(-1px)}
 .widget-card .w-link-btn{align-self:flex-start;border:0;background:none;color:var(--orange);font-weight:700;font-size:11.5px;cursor:pointer;padding:0}
 .widget-card .w-link-btn:hover{text-decoration:underline}
 
@@ -303,7 +305,7 @@ function showDashboard(user){
 // ---------- Configurable dashboard widgets (Prototype — mock data, no live backend) ----------
 const WIDGET_STORAGE_KEY = 'tmt_dashboard_widgets';
 const DEFAULT_SLOT_COUNT = 3;
-const MAX_SLOTS = 6;
+const MAX_SLOTS = 12;
 const WIDGET_CATALOG = [
  {id:'salesThisMonth', icon:'💰', accent:'orange', title:'ยอดขายเดือนนี้', desc:'Sales this month vs last month'},
  {id:'targetVsActual', icon:'🎯', accent:'gold', title:'เป้าหมายเทียบยอดขาย', desc:'Target vs actual achievement'},
@@ -350,10 +352,10 @@ function widgetBodyHTML(id){
   case 'soStatus': {
    const c = getSOCountsByStatus();
    return `<div class="w-chips">
-    <span class="w-chip" style="background:#FFF3E8;color:#9A4C0B">Waiting Approve ${c.pending_approval}</span>
-    <span class="w-chip win">Approve ${c.approved}</span>
-    <span class="w-chip lost">Reject ${c.rejected}</span>
-   </div><div class="w-sub">สถานะ Sales Order ทั้งหมด</div><button class="w-link-btn" onclick="openSOList()">ดูรายการ →</button>`;
+    <button class="w-chip w-chip-btn" style="background:#FFF3E8;color:#9A4C0B" onclick="openSOList('pending_approval')">Waiting Approve ${c.pending_approval}</button>
+    <button class="w-chip w-chip-btn win" onclick="openSOList('approved')">Approve ${c.approved}</button>
+    <button class="w-chip w-chip-btn lost" onclick="openSOList('rejected')">Reject ${c.rejected}</button>
+   </div><div class="w-sub">สถานะ Sales Order ทั้งหมด — คลิกแต่ละสถานะเพื่อดูรายการ</div>`;
   }
   default: return '';
  }
@@ -399,10 +401,12 @@ function getSOCountsByStatus(){
  loadSalesOrders().forEach(s=>{ if(counts.hasOwnProperty(s.status)) counts[s.status]++; });
  return counts;
 }
-function openSOList(){
+function openSOList(statusFilter){
  const list = loadSalesOrders()
-  .filter(s=>SO_STATUS_LABELS.hasOwnProperty(s.status))
+  .filter(s=>SO_STATUS_LABELS.hasOwnProperty(s.status) && (!statusFilter || s.status===statusFilter))
   .sort((a,b)=>new Date(b.sentToApprovalAt||b.createdAt||0)-new Date(a.sentToApprovalAt||a.createdAt||0));
+ const titleEl = document.querySelector('#soListOverlay .wp-head h3');
+ if(titleEl) titleEl.textContent = statusFilter ? `รายการ Sales Order — ${SO_STATUS_LABELS[statusFilter]}` : 'รายการ Sales Order';
  const body = document.getElementById('soListBody');
  body.innerHTML = list.length ? `<div class="ql-list">${list.map(s=>{
    const cls = s.status==='pending_approval'?'waiting':s.status==='approved'?'approve':'reject';
@@ -411,7 +415,7 @@ function openSOList(){
     <div class="ql-meta"><div class="ql-amt">${fmtBaht(s.grandTotal)} บาท</div><div class="ql-date">${esc(s.createdAtDisplay||'')}</div></div>
    </a>`;
   }).join('')}</div>`
-  : `<div class="ql-empty">ยังไม่มี Sales Order ที่ส่ง Approval</div>`;
+  : `<div class="ql-empty">ไม่มี Sales Order ในสถานะนี้</div>`;
  document.getElementById('soListOverlay').classList.remove('hidden');
 }
 function closeSOList(){

@@ -385,7 +385,7 @@ body.view-mode main{grid-template-columns:1fr}
         <button class="btn primary" id="nextBtn" onclick="go(1)">Next →</button>
         <button class="btn secondary" id="qPrintBtn" onclick="window.print()" style="display:none">🖨️ Print</button>
         <button class="btn primary" id="qSaveShareBtn" onclick="saveAndShareQuotation()" style="display:none">💾 Save &amp; Share</button>
-        <button class="btn orange" id="qTransferSoBtn" onclick="transferToSO()" style="display:none">Transfer to S/O →</button>
+        <button class="btn orange" id="qTransferSoBtn" onclick="transferToSO()" style="display:none">Transfer to S/O Request →</button>
       </div>
     </div>
   </section>
@@ -1416,8 +1416,8 @@ function saveAndShareQuotation(){
  alert(`บันทึกใบเสนอราคาแล้ว — เลข Quotation: ${savedQuotationNo}\n(Prototype: ยังไม่มีระบบส่งลิงก์แชร์จริง)`);
 }
 function transferToSO(){
- if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Transfer to S/O'); return; }
- if(!savedQuotationNo){ alert('กรุณาบันทึกเลข Quotation ก่อน Transfer to S/O'); return; }
+ if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Transfer to S/O Request'); return; }
+ if(!savedQuotationNo){ alert('กรุณาบันทึกเลข Quotation ก่อน Transfer to S/O Request'); return; }
  const qList=loadSavedQuotations();
  const qRec=qList.find(q=>q.quotationNo===savedQuotationNo);
  if(!qRec){ alert('ไม่พบข้อมูล Quotation ที่บันทึกไว้'); return; }

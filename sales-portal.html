@@ -396,7 +396,7 @@ function openQuotationList(){
     </div>
     <div class="ql-actions">
      <button class="ql-btn reject" onclick="event.stopPropagation();rejectQuotation('${q.quotationNo}')">✕ Reject</button>
-     <button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O →</button>
+     <button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O Request →</button>
     </div>
    </div>`).join('')}</div>`
   : `<div class="ql-empty">ยังไม่มี Quotation ที่บันทึกไว้ — ไปที่ "Create Request Auction Quotation" แล้วบันทึกเลข Quotation ในหน้าใบเสนอราคา</div>`;

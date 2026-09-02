@@ -6,15 +6,16 @@
 <title>TMT Pre-Sale Requirement Configurator V2.0 — Cut Sheet & Tube</title>
 <style>
 :root{
-  --blue:#004B87; --blue2:#0A5F9E; --orange:#F26F21; --bg:#F4F7FA; --card:#FFFFFF;
+  --blue:#0c3843; --blue2:#155163; --orange:#ff6a05; --gold:#fdc440; --sky:#8bbade;
+  --bg:#F4F7FA; --card:#FFFFFF;
   --text:#17324D; --muted:#6B7F91; --line:#DCE5ED; --std:#15803D; --stdBg:#EAF7EE;
   --extra:#C55A11; --extraBg:#FFF1E7; --review:#B42318; --reviewBg:#FDECEC;
-  --shadow:0 8px 24px rgba(20,50,80,.08);
+  --shadow:0 8px 24px rgba(12,56,67,.10);
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var(--bg);color:var(--text)}
 .app{min-height:100vh;display:flex;flex-direction:column}
-header{background:linear-gradient(90deg,var(--blue),#0B5E98);color:#fff;padding:18px 28px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+header{background:linear-gradient(90deg,var(--blue),var(--blue2));color:#fff;padding:18px 28px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
 .header-row{max-width:1420px;margin:auto;display:flex;justify-content:space-between;gap:20px;align-items:center}
 .brand h1{margin:0;font-size:22px;letter-spacing:.2px}.brand p{margin:5px 0 0;font-size:13px;opacity:.86}
 .proto{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);padding:8px 12px;border-radius:10px;font-size:12px;white-space:nowrap}
@@ -32,7 +33,7 @@ main{width:min(1420px,96%);margin:22px auto 40px;display:grid;grid-template-colu
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}.grid.one{grid-template-columns:1fr}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .field{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;min-height:128px;position:relative}.field:hover{border-color:#B9CBD9}
 .field-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px}.label{font-size:13px;font-weight:800;line-height:1.35}.sub{font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
-select,input[type=text],input[type=number],input[type=time],textarea{width:100%;border:1px solid #C9D6E1;border-radius:8px;padding:9px 10px;font:inherit;font-size:13px;color:var(--text);background:#fff;outline:none}textarea{min-height:75px;resize:vertical}select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,75,135,.08)}
+select,input[type=text],input[type=number],input[type=time],textarea{width:100%;border:1px solid #C9D6E1;border-radius:8px;padding:9px 10px;font:inherit;font-size:13px;color:var(--text);background:#fff;outline:none}textarea{min-height:75px;resize:vertical}select:focus,input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(139,186,222,.4)}
 .rule{margin-top:8px;font-size:11px;color:var(--muted);line-height:1.42}.rule strong{color:var(--text)}
 .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}.badge.std{background:var(--stdBg);color:var(--std)}.badge.extra{background:var(--extraBg);color:var(--extra)}.badge.review{background:var(--reviewBg);color:var(--review)}
 .detail{display:none;margin-top:8px}.detail.show{display:block}.attach{margin-top:8px;padding:9px;border:1px dashed #C6D3DF;border-radius:8px;background:#FAFCFE;font-size:11px;color:var(--muted)}
@@ -62,9 +63,9 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .matrix-hint{font-size:11.5px;color:var(--muted);margin-top:8px}
 .matrix-detail{margin-top:16px;border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#FAFCFE}
 .matrix-detail h4{margin:0 0 12px;font-size:13.5px;color:var(--blue)}
-@keyframes fieldPulse{0%{box-shadow:0 0 0 4px rgba(0,75,135,.35);border-color:var(--blue)}100%{box-shadow:0 0 0 0 rgba(0,75,135,0);border-color:var(--line)}}
+@keyframes fieldPulse{0%{box-shadow:0 0 0 4px rgba(139,186,222,.5);border-color:var(--blue)}100%{box-shadow:0 0 0 0 rgba(139,186,222,0);border-color:var(--line)}}
 .field-highlight{animation:fieldPulse 1.6s ease}
-.owner-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.owner-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.owner-card h4{margin:0 0 9px;color:var(--blue)}.owner-card ul{margin:0;padding-left:18px;font-size:12px;line-height:1.55}.owner-card.empty{opacity:.5}.handover{border:2px solid var(--blue);border-radius:14px;background:#F8FCFF;padding:18px}.handover h3{margin:0 0 8px}.notice{padding:12px;border-radius:10px;font-size:12px;line-height:1.5}.notice.info{background:#EAF3FA;color:#0A4B75}.notice.warn{background:#FFF3E8;color:#9A4C0B}.notice.danger{background:#FDECEC;color:#8B1E16}
+.owner-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.owner-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.owner-card h4{margin:0 0 9px;color:var(--blue)}.owner-card ul{margin:0;padding-left:18px;font-size:12px;line-height:1.55}.owner-card.empty{opacity:.5}.handover{border:2px solid var(--blue);border-radius:14px;background:#F8FCFF;padding:18px}.handover h3{margin:0 0 8px}.notice{padding:12px;border-radius:10px;font-size:12px;line-height:1.5}.notice.info{background:#EAF3FA;color:var(--blue)}.notice.warn{background:#FFF3E8;color:#9A4C0B}.notice.danger{background:#FDECEC;color:#8B1E16}
 .price-summary{border:1px solid var(--line);border-radius:12px;background:#fff;padding:16px;overflow:auto}
 .price-summary h4{margin:0 0 12px;color:var(--blue);font-size:14px}
 .price-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -124,7 +125,7 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
   width:100%;border:1px solid #D7DEE6;border-radius:22px;padding:9px 16px;font:inherit;font-size:13.5px;
   color:var(--text);background:#fff;outline:none;
 }
-.cd-field select:focus,.cd-field input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,75,135,.08)}
+.cd-field select:focus,.cd-field input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(139,186,222,.4)}
 .cd-field .cd-readonly{padding:9px 4px;font-size:13.5px;color:var(--text)}
 .cd-sub{font-size:11px;color:var(--muted);margin-top:4px;padding-left:16px}
 @media(max-width:680px){.cd-grid{grid-template-columns:1fr}.cd-field{grid-template-columns:1fr}.cd-field label{padding-top:0}}
@@ -155,7 +156,7 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .cart-remove{border:1px solid #F0C4B8;background:#FFF1E7;color:var(--extra);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:12px}
 .cart-fam-badge{font-size:9px;padding:3px 6px}
 footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
-.product-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#EAF3FA;border:1px solid #BFDCEF;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#0A4B75}
+.product-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#EAF3FA;border:1px solid var(--sky);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--blue)}
 .product-banner button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .modal-overlay{position:fixed;inset:0;background:rgba(15,30,50,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal-card{background:#fff;border-radius:14px;max-width:1240px;width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -740,7 +741,7 @@ function renderProductsTable(){
   const canCheckPlan=r.remain<0 && pmFamily==='Cut Sheet' && r.thickness!==undefined;
   const remainCell=canCheckPlan
    ?`<a href="${stockCheckLink(r)}" target="_blank" onclick="event.stopPropagation()" style="color:#B42318;font-weight:700;text-decoration:underline;cursor:pointer;white-space:nowrap" title="สต็อกติดลบ — คลิกเพื่อเช็คแผนผลิต">${r.remain.toFixed(2)} 🔍</a>`
-   :`<span style="color:${r.remain<0?'#B42318':'#0A5F9E'}">${r.remain.toFixed(2)}</span>`;
+   :`<span style="color:${r.remain<0?'#B42318':'#155163'}">${r.remain.toFixed(2)}</span>`;
   return `<tr class="${pmSelectedCode===r.code?'selected':''}" onclick="selectProductRow('${r.code}')">
   <td><input type="checkbox" ${pmSelectedCode===r.code?'checked':''} onclick="event.stopPropagation();selectProductRow('${r.code}')"></td>
   <td>${esc(r.code)}</td><td>${esc(r.desc)}</td><td>${esc(r.group)}</td><td></td><td></td>

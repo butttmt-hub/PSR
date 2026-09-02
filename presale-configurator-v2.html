@@ -391,7 +391,7 @@ body.view-mode main{grid-template-columns:1fr}
   </section>
 
   <aside class="side">
-    <div class="side-card" id="customerOverviewCard" style="display:none">
+    <div class="side-card" id="customerOverviewCard">
       <h3>ภาพรวมลูกค้า / Customer Overview</h3>
       <div id="custOverviewBody"></div>
     </div>
@@ -1628,7 +1628,7 @@ function renderQuotation(){
  `;
  recalcQuoteTotals();
 }
-function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('backBtn').textContent=isHiddenStep(current)?'← กลับไป Summary':'← Back';const isLastVisible=current===visibleSteps[visibleSteps.length-1];const onQuoteStep=current===8;document.getElementById('demoBtn').style.display=onQuoteStep?'none':'inline-block';document.getElementById('nextBtn').style.display=onQuoteStep?'none':((isLastVisible&&!isHiddenStep(current))?'none':'inline-block');document.getElementById('nextBtn').textContent=isHiddenStep(current)?'✓ กลับไป Summary':'Next →';document.getElementById('nextBtn').onclick=()=>go(1);document.getElementById('qPrintBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qSaveShareBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qTransferSoBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('customerOverviewCard').style.display=current===1?'block':'none';document.getElementById('legendCard').style.display=current===1?'none':'block';renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
+function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('backBtn').textContent=isHiddenStep(current)?'← กลับไป Summary':'← Back';const isLastVisible=current===visibleSteps[visibleSteps.length-1];const onQuoteStep=current===8;document.getElementById('demoBtn').style.display=onQuoteStep?'none':'inline-block';document.getElementById('nextBtn').style.display=onQuoteStep?'none':((isLastVisible&&!isHiddenStep(current))?'none':'inline-block');document.getElementById('nextBtn').textContent=isHiddenStep(current)?'✓ กลับไป Summary':'Next →';document.getElementById('nextBtn').onclick=()=>go(1);document.getElementById('qPrintBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qSaveShareBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qTransferSoBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('legendCard').style.display=current===1?'none':'block';renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
 function go(delta){
  if(isHiddenStep(current)){ showScreen(7); return; }
  const idx=visibleSteps.indexOf(current);

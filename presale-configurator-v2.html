@@ -19,6 +19,9 @@ header{background:linear-gradient(90deg,var(--blue),var(--blue2));color:#fff;pad
 .header-row{max-width:1420px;margin:auto;display:flex;justify-content:space-between;gap:20px;align-items:center}
 .brand h1{margin:0;font-size:22px;letter-spacing:.2px}.brand p{margin:5px 0 0;font-size:13px;opacity:.86}
 .proto{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);padding:8px 12px;border-radius:10px;font-size:12px;white-space:nowrap}
+.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.header-back-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.08);color:#fff;text-decoration:none;border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:700;white-space:nowrap;transition:.15s}
+.header-back-btn:hover{background:rgba(255,255,255,.18)}
 .progress-wrap{background:#fff;border-bottom:1px solid var(--line);padding:13px 22px;position:sticky;top:0;z-index:10}
 .progress{max-width:1420px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .step-pill{position:relative;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 6px;text-align:center;font-size:11px;color:var(--muted);cursor:pointer;transition:.2s}
@@ -195,7 +198,10 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
       <h1>TMT Pre-Sale Requirement Configurator</h1>
       <p id="journeySubtitle">Cut Sheet Complete Journey · STD / EXTRA / REVIEW Classification</p>
     </div>
-    <div class="proto">PHASE C · Prototype V2.0 · Cut Sheet + Tube</div>
+    <div class="header-actions">
+      <a href="sales-portal.html" class="header-back-btn">← กลับไป Dashboard</a>
+      <div class="proto">PHASE C · Prototype V2.0 · Cut Sheet + Tube</div>
+    </div>
   </div>
 </header>
 <div class="progress-wrap"><div class="progress" id="progress"></div></div>

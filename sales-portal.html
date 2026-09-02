@@ -344,8 +344,9 @@ function getSavedQuotations(){
 function saveSavedQuotations(list){
  try{ localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(list)); }catch(e){}
 }
+const RESOLVED_QUOTATION_STATUSES=['rejected','so_approved','so_rejected'];
 function getActiveQuotations(){
- return getSavedQuotations().filter(q=>q.status!=='rejected');
+ return getSavedQuotations().filter(q=>!RESOLVED_QUOTATION_STATUSES.includes(q.status));
 }
 function rejectQuotation(qNo){
  if(!confirm(`ยืนยัน Reject ใบเสนอราคา ${qNo}?\nรายการนี้จะหายไปจากหน้าจอ แต่ข้อมูลยังถูกเก็บไว้หลังบ้านเพื่อนำไปวิเคราะห์ต่อ`)) return;

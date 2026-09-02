@@ -1671,6 +1671,7 @@ function confirmReject(){
  rec.rejectedAt=new Date().toISOString();
  rec.rejectReason=reason;
  persistSalesOrders(list);
+ markLinkedQuotationResolved(rec.quotationNo,'so_rejected',reason);
  closeRejectModal();
  window.location.href='presale-configurator-v2.html?approvalInbox=1';
 }
@@ -1681,7 +1682,17 @@ function approveSO(soNo){
  rec.status='approved';
  rec.approvedAt=new Date().toISOString();
  persistSalesOrders(list);
+ markLinkedQuotationResolved(rec.quotationNo,'so_approved');
  window.location.href='presale-configurator-v2.html?approvalInbox=1';
+}
+function markLinkedQuotationResolved(quotationNo,status,reason){
+ if(!quotationNo) return;
+ const qList=loadSavedQuotations();
+ const qRec=qList.find(q=>q.quotationNo===quotationNo);
+ if(!qRec) return;
+ qRec.status=status;
+ if(reason) qRec.soRejectReason=reason;
+ persistSavedQuotations(qList);
 }
 function renderApprovalInbox(){
  const pending=loadSalesOrders().filter(s=>s.status==='pending_approval')

@@ -134,13 +134,20 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 /* ---------- Quotation list popup ---------- */
 .ql-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
 .ql-empty{font-size:12.5px;color:var(--muted);text-align:center;padding:24px 0}
-.ql-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:inherit;transition:.15s}
-.ql-row:hover{border-color:var(--blue2);background:rgba(139,186,222,.08)}
+.ql-row{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.ql-row-main{display:flex;justify-content:space-between;align-items:center;gap:12px;text-decoration:none;color:inherit;cursor:pointer;transition:.15s;border-radius:8px}
+.ql-row-main:hover{color:var(--blue2)}
 .ql-no{font-weight:800;font-size:13px;color:var(--blue)}
 .ql-cust{font-size:11.5px;color:var(--muted);margin-top:2px}
 .ql-meta{text-align:right;flex-shrink:0}
 .ql-amt{font-weight:700;font-size:12.5px;color:var(--text)}
 .ql-date{font-size:10.5px;color:var(--muted);margin-top:2px}
+.ql-actions{display:flex;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.ql-btn{flex:1;border-radius:8px;padding:7px 10px;font-size:11.5px;font-weight:700;cursor:pointer;text-align:center;transition:.15s}
+.ql-btn.reject{border:1px solid #F3C6C2;background:#FDECEC;color:#B42318}
+.ql-btn.reject:hover{background:#FBDADA}
+.ql-btn.transfer{border:0;background:var(--orange);color:#fff}
+.ql-btn.transfer:hover{opacity:.88}
 
 /* ---------- Widget picker modal ---------- */
 .wp-overlay{position:fixed;inset:0;background:rgba(12,56,67,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
@@ -318,7 +325,7 @@ function widgetBodyHTML(id){
   case 'followUp': return `<div class="w-metric">5 ราย</div><div class="w-sub">ลูกค้าที่ยังไม่ปิดการขายเกิน 7 วัน</div>`;
   case 'creditAlert': return `<div class="w-metric">2 ราย</div><div class="w-sub">ลูกค้าที่วงเงินเครดิตคงเหลือต่ำกว่า 20%</div>`;
   case 'quotationCount': {
-   const list = getSavedQuotations();
+   const list = getActiveQuotations();
    return `<div class="w-metric">${list.length} ใบ</div><div class="w-sub">Quotation ที่บันทึกไว้ทั้งหมด</div><button class="w-link-btn" onclick="openQuotationList()">ดูรายการ →</button>`;
   }
   default: return '';
@@ -334,14 +341,37 @@ function getSavedQuotations(){
   return Array.isArray(arr) ? arr : [];
  }catch(e){ return []; }
 }
+function saveSavedQuotations(list){
+ try{ localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(list)); }catch(e){}
+}
+function getActiveQuotations(){
+ return getSavedQuotations().filter(q=>q.status!=='rejected');
+}
+function rejectQuotation(qNo){
+ if(!confirm(`ยืนยัน Reject ใบเสนอราคา ${qNo}?\nรายการนี้จะหายไปจากหน้าจอ แต่ข้อมูลยังถูกเก็บไว้หลังบ้านเพื่อนำไปวิเคราะห์ต่อ`)) return;
+ const list = getSavedQuotations();
+ const rec = list.find(q=>q.quotationNo===qNo);
+ if(rec){ rec.status='rejected'; rec.rejectedAt=new Date().toISOString(); saveSavedQuotations(list); }
+ openQuotationList();
+ renderWidgetGrid();
+}
+function transferQuotationToSO(qNo){
+ alert(`Transfer to S/O — Quotation ${qNo}\n(โหมด S/O จะออกแบบในขั้นต่อไป — Prototype นี้ยังไม่รองรับ)`);
+}
 function openQuotationList(){
- const list = getSavedQuotations().slice().reverse();
+ const list = getActiveQuotations().slice().reverse();
  const body = document.getElementById('quotationListBody');
  body.innerHTML = list.length ? `<div class="ql-list">${list.map(q=>`
-   <a class="ql-row" href="presale-configurator-v2.html?viewQuote=${encodeURIComponent(q.quotationNo)}">
-    <div><div class="ql-no">${esc(q.quotationNo)}</div><div class="ql-cust">${esc(q.customer||'ยังไม่ระบุลูกค้า')}</div></div>
-    <div class="ql-meta"><div class="ql-amt">${fmtBaht(q.grandTotal)} บาท</div><div class="ql-date">${esc(q.savedAtDisplay||'')}</div></div>
-   </a>`).join('')}</div>`
+   <div class="ql-row">
+    <div class="ql-row-main" onclick="location.href='presale-configurator-v2.html?viewQuote=${encodeURIComponent(q.quotationNo)}'">
+     <div><div class="ql-no">${esc(q.quotationNo)}</div><div class="ql-cust">${esc(q.customer||'ยังไม่ระบุลูกค้า')}</div></div>
+     <div class="ql-meta"><div class="ql-amt">${fmtBaht(q.grandTotal)} บาท</div><div class="ql-date">${esc(q.savedAtDisplay||'')}</div></div>
+    </div>
+    <div class="ql-actions">
+     <button class="ql-btn reject" onclick="event.stopPropagation();rejectQuotation('${q.quotationNo}')">✕ Reject</button>
+     <button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O →</button>
+    </div>
+   </div>`).join('')}</div>`
   : `<div class="ql-empty">ยังไม่มี Quotation ที่บันทึกไว้ — ไปที่ "Create Request Auction Quotation" แล้วบันทึกเลข Quotation ในหน้าใบเสนอราคา</div>`;
  document.getElementById('quotationListOverlay').classList.remove('hidden');
 }

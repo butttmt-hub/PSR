@@ -79,7 +79,7 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .quote-doc{background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px;font-size:12.5px;color:#222}
 .quote-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
 .quote-logo{display:flex;align-items:center;gap:10px}
-.quote-logo .mark{width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex-shrink:0}
+.quote-logo .mark{height:44px;width:auto;object-fit:contain;flex-shrink:0}
 .quote-logo .co{font-weight:800;color:var(--blue);font-size:14px;line-height:1.35}
 .quote-logo .co span{display:block;font-weight:500;font-size:10.5px;color:var(--muted)}
 .quote-docno{text-align:right;font-size:11px;color:var(--muted)}
@@ -1514,7 +1514,7 @@ function renderSalesOrderDoc(rec){
     ${hasPO?`<div class="so-po-panel">${renderPOPanel(rec.poAttachment)}</div>`:''}
    <div class="so-doc">
     <div class="so-head">
-     <div class="quote-logo"><div class="mark">TMT</div><div class="co">TMT STEEL PUBLIC COMPANY LIMITED<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div></div>
+     <div class="quote-logo"><img class="mark" src="tmt-logo.png" alt="TMT logo"><div class="co">TMT STEEL PUBLIC COMPANY LIMITED<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div></div>
      <div class="so-title">ใบสั่งขาย / Sales Order</div>
      <div class="so-formno">S-FM-SM-35 R00<br>หน้า 1 / 1</div>
     </div>
@@ -1767,7 +1767,7 @@ function renderQuotation(){
  renderInternalBreakdown();
  doc.innerHTML=`
   <div class="quote-head">
-   <div class="quote-logo"><div class="mark">TMT</div><div class="co">TMT STEEL PUBLIC COMPANY LIMITED<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div></div>
+   <div class="quote-logo"><img class="mark" src="tmt-logo.png" alt="TMT logo"><div class="co">TMT STEEL PUBLIC COMPANY LIMITED<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div></div>
    <div class="quote-docno">S-FM-SM-31 R02<br>หน้า 1 / 1</div>
   </div>
   <div class="quote-title">ใบเสนอราคา (Quotation)</div>

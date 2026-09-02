@@ -1715,7 +1715,10 @@ function tryLoadViewMode(){
  const bar=document.getElementById('quotationNoBar');
  if(bar){
   bar.style.display='flex';
-  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — Quotation <strong>${esc(rec.quotationNo)}</strong> (บันทึกเมื่อ ${esc(rec.savedAtDisplay||'')})</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="sales-portal.html" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Dashboard</a></div>`;
+  const soActionHtml=(rec.status==='transferred'&&rec.soNo)
+   ?`<a href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}" style="display:inline-flex;align-items:center;padding:7px 14px;border:0;border-radius:8px;background:var(--orange);color:#fff;font-size:12.5px;font-weight:700;text-decoration:none">📄 ดู S/O ${esc(rec.soNo)}</a>`
+   :`<button onclick="transferToSO()" style="border:0;background:var(--orange);color:#fff">Transfer to S/O Request →</button>`;
+  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — Quotation <strong>${esc(rec.quotationNo)}</strong> (บันทึกเมื่อ ${esc(rec.savedAtDisplay||'')})</div><div style="display:flex;gap:8px;flex-wrap:wrap">${soActionHtml}<button onclick="window.print()">🖨️ Print</button><a href="sales-portal.html" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Dashboard</a></div>`;
  }
  return true;
 }

@@ -161,6 +161,12 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 .product-banner{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#EAF3FA;border:1px solid var(--sky);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--blue)}
 .product-banner button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.qn-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px dashed var(--sky);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px}
+.qn-bar .qn-info{color:var(--blue)}
+.qn-bar .qn-info strong{font-size:14px;letter-spacing:.3px}
+.qn-bar .qn-saved{margin-left:8px;color:var(--std);font-weight:700;font-size:11.5px}
+.qn-bar button{border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.qn-bar button:hover{background:#EAF3FA}
 .modal-overlay{position:fixed;inset:0;background:rgba(15,30,50,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal-card{background:#fff;border-radius:14px;max-width:1240px;width:100%;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line)}
@@ -187,7 +193,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 .pm-pagination button:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:1050px){main{grid-template-columns:1fr}.side{position:static}.progress{grid-template-columns:repeat(4,1fr)}.grid,.grid.three{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){header{padding:15px}.header-row{align-items:flex-start}.proto{display:none}.progress{grid-template-columns:repeat(2,1fr)}main{width:94%;margin-top:14px}.grid,.grid.three,.customer-grid,.hero-choice,.summary-grid,.owner-grid{grid-template-columns:1fr}.panel-head,.panel-body,.actions{padding-left:15px;padding-right:15px}.field{min-height:auto}}
-@media print{.progress-wrap,.actions,.side,header .proto{display:none!important}body{background:#fff}main{display:block;width:100%;margin:0}.panel{box-shadow:none;border:0}.screen{display:none!important}.screen[data-screen="8"]{display:block!important}.panel-head,.section-title{display:none!important}}
+@media print{.progress-wrap,.actions,.side,header .proto,.qn-bar{display:none!important}body{background:#fff}main{display:block;width:100%;margin:0}.panel{box-shadow:none;border:0}.screen{display:none!important}.screen[data-screen="8"]{display:block!important}.panel-head,.section-title{display:none!important}}
 </style>
 </head>
 <body>
@@ -320,6 +326,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
       <!-- Screen 8 -->
       <div class="screen" data-screen="8">
         <div class="section-title">Quotation / ใบเสนอราคา</div>
+        <div class="qn-bar" id="quotationNoBar"></div>
         <div class="quote-doc" id="quoteDoc"></div>
         <div class="internal-only" id="internalBreakdown"></div>
       </div>
@@ -340,9 +347,11 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     <div class="actions">
       <button class="btn secondary" id="backBtn" onclick="go(-1)">← Back</button>
       <div style="display:flex;gap:8px">
-        <button class="btn secondary" onclick="loadExtraDemo()">Load Extra Demo</button>
-        <button class="btn orange" id="printBtn" onclick="window.print()" style="display:none">🖨️ Print Quotation</button>
+        <button class="btn secondary" id="demoBtn" onclick="loadExtraDemo()">Load Extra Demo</button>
         <button class="btn primary" id="nextBtn" onclick="go(1)">Next →</button>
+        <button class="btn secondary" id="qPrintBtn" onclick="window.print()" style="display:none">🖨️ Print</button>
+        <button class="btn primary" id="qSaveShareBtn" onclick="saveAndShareQuotation()" style="display:none">💾 Save &amp; Share</button>
+        <button class="btn orange" id="qTransferSoBtn" onclick="transferToSO()" style="display:none">Transfer to S/O →</button>
       </div>
     </div>
   </section>
@@ -1285,7 +1294,40 @@ function renderInternalBreakdown(){
  box.className=anyExtra?'internal-only':'internal-only empty';
  box.innerHTML=`<h4>🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)</h4>${blocks}<div class="ib-total">หมายเหตุ: Extra ในหมวด Product Spec / Quality / Packing มีผลเฉพาะรายการ (SKU) นั้นๆ เท่านั้น — ราคาที่ลูกค้าเห็นในเอกสารรวม surcharge นี้ไว้แล้ว ไม่แยกบรรทัดให้ลูกค้าเห็น</div>`;
 }
+let savedQuotationNo=null;
+function generateQuotationNo(){
+ const d=new Date();
+ const ymd=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
+ const seq=String(Math.floor(1+Math.random()*9999)).padStart(4,'0');
+ return `QT-${ymd}-${seq}`;
+}
+function renderQuotationNoBar(){
+ const bar=document.getElementById('quotationNoBar'); if(!bar) return;
+ if(!productCart.length){ bar.innerHTML=''; bar.style.display='none'; return; }
+ bar.style.display='flex';
+ if(savedQuotationNo){
+  bar.innerHTML=`<div class="qn-info">เลข Quotation: <strong>${esc(savedQuotationNo)}</strong><span class="qn-saved">✓ บันทึกแล้ว</span></div><button onclick="saveQuotationNumber()">🔄 ออกเลขใหม่</button>`;
+ } else {
+  bar.innerHTML=`<div class="qn-info">ยังไม่ได้บันทึกเลข Quotation — บันทึกไว้ก่อนเพื่อใช้อ้างอิงต่อใน S/O</div><button onclick="saveQuotationNumber()">💾 บันทึกเลข Quotation</button>`;
+ }
+}
+function saveQuotationNumber(){
+ if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อนบันทึกเลข Quotation'); return; }
+ savedQuotationNo=generateQuotationNo();
+ renderQuotationNoBar();
+}
+function saveAndShareQuotation(){
+ if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Save & Share'); return; }
+ if(!savedQuotationNo){ saveQuotationNumber(); }
+ alert(`บันทึกใบเสนอราคาแล้ว — เลข Quotation: ${savedQuotationNo}\n(Prototype: ยังไม่มีระบบส่งลิงก์แชร์จริง)`);
+}
+function transferToSO(){
+ if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Transfer to S/O'); return; }
+ if(!savedQuotationNo){ alert('กรุณาบันทึกเลข Quotation ก่อน Transfer to S/O'); return; }
+ alert(`Transfer to S/O — Quotation ${savedQuotationNo}\n(โหมด S/O จะออกแบบในขั้นต่อไป — Prototype นี้ยังไม่รองรับ)`);
+}
 function renderQuotation(){
+ renderQuotationNoBar();
  const doc=document.getElementById('quoteDoc'); if(!doc) return;
  const today=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'});
  const customer=document.getElementById('customer').value;
@@ -1358,7 +1400,7 @@ function renderQuotation(){
  `;
  recalcQuoteTotals();
 }
-function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('backBtn').textContent=isHiddenStep(current)?'← กลับไป Summary':'← Back';const isLastVisible=current===visibleSteps[visibleSteps.length-1];document.getElementById('printBtn').style.display=(current===8)?'inline-block':'none';document.getElementById('nextBtn').style.display=(isLastVisible&&!isHiddenStep(current))?'none':'inline-block';document.getElementById('nextBtn').textContent=isHiddenStep(current)?'✓ กลับไป Summary':'Next →';document.getElementById('nextBtn').onclick=()=>go(1);document.getElementById('customerOverviewCard').style.display=current===1?'block':'none';document.getElementById('legendCard').style.display=current===1?'none':'block';renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
+function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('backBtn').textContent=isHiddenStep(current)?'← กลับไป Summary':'← Back';const isLastVisible=current===visibleSteps[visibleSteps.length-1];const onQuoteStep=current===8;document.getElementById('demoBtn').style.display=onQuoteStep?'none':'inline-block';document.getElementById('nextBtn').style.display=onQuoteStep?'none':((isLastVisible&&!isHiddenStep(current))?'none':'inline-block');document.getElementById('nextBtn').textContent=isHiddenStep(current)?'✓ กลับไป Summary':'Next →';document.getElementById('nextBtn').onclick=()=>go(1);document.getElementById('qPrintBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qSaveShareBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qTransferSoBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('customerOverviewCard').style.display=current===1?'block':'none';document.getElementById('legendCard').style.display=current===1?'none':'block';renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
 function go(delta){
  if(isHiddenStep(current)){ showScreen(7); return; }
  const idx=visibleSteps.indexOf(current);

@@ -537,10 +537,12 @@ function renderCustomerOverviewCard(){
   return;
  }
  const marginColor=c.marginPct>=18?'var(--std)':c.marginPct>=12?'var(--extra)':'var(--review)';
+ const creditPct=Math.round((c.creditRemaining/c.creditLimit)*100);
+ const creditColor=creditPct>=50?'var(--std)':creditPct>=20?'var(--extra)':'var(--review)';
  body.innerHTML=`
   <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.4">${esc(c.name)}</div>
   <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${esc(c.code)}</div>
-  <div class="mini-status"><span>เครดิตคงเหลือ</span><span style="font-weight:800;color:var(--std)">${fmtBaht(c.creditRemaining)}</span></div>
+  <div class="mini-status"><span>เครดิตคงเหลือ</span><span style="font-weight:800;color:${creditColor}">${fmtBaht(c.creditRemaining)} / ${fmtBaht(c.creditLimit)} (${creditPct}%)</span></div>
   <div class="mini-status"><span>ยอดที่รอเรียกเก็บตามรอบ</span><span style="font-weight:800;color:var(--extra)">${fmtBaht(c.pendingCollection)}</span></div>
   <div class="mini-status"><span>ยอดเก็บแล้วรอ Transfer</span><span style="font-weight:800;color:var(--blue2)">${fmtBaht(c.collectedNotTransferred)}</span></div>
   <div class="mini-status"><span>Margin ลูกค้านี้</span><span style="font-weight:800;color:${marginColor}">${c.marginPct}%</span></div>`;

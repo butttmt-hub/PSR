@@ -1554,11 +1554,12 @@ function renderPOPanel(att){
  const isPdf=att.type==='application/pdf';
  let previewHtml;
  if(isImage){ previewHtml=`<img src="${att.dataUrl}" style="max-width:100%;border-radius:8px;border:1px solid var(--line)">`; }
- else {
-  const icon=isPdf?'📕':'📄';
-  const label=isPdf?'ไฟล์ PDF':'ไฟล์แนบ';
+ else if(isPdf){
+  previewHtml=`<iframe src="${att.dataUrl}#toolbar=0&navpanes=0&scrollbar=0" style="width:100%;height:600px;border:1px solid var(--line);border-radius:8px"></iframe>
+   <div style="margin-top:10px;text-align:center"><button class="btn secondary" onclick="window.open('${att.dataUrl}','_blank')">🔍 เปิดไฟล์ PO ในแท็บใหม่</button></div>`;
+ } else {
   previewHtml=`<div style="border:1px dashed var(--line);border-radius:10px;padding:40px 20px;text-align:center;color:var(--muted)">
-   <div style="font-size:32px;margin-bottom:8px">${icon}</div>${label} — คลิกเพื่อเปิดดูในแท็บใหม่
+   <div style="font-size:32px;margin-bottom:8px">📄</div>ไม่รองรับการแสดงตัวอย่างไฟล์ประเภทนี้<br>แต่ไฟล์ถูกแนบไว้เรียบร้อยแล้ว
    <div style="margin-top:14px"><button class="btn secondary" onclick="window.open('${att.dataUrl}','_blank')">🔍 เปิดไฟล์ PO</button></div>
   </div>`;
  }

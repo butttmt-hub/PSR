@@ -348,7 +348,11 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
   </section>
 
   <aside class="side">
-    <div class="side-card">
+    <div class="side-card" id="customerOverviewCard" style="display:none">
+      <h3>ภาพรวมลูกค้า / Customer Overview</h3>
+      <div id="custOverviewBody"></div>
+    </div>
+    <div class="side-card" id="legendCard">
       <h3>Classification Legend</h3>
       <div class="legend">
         <div class="legend-row"><span class="badge std">STD</span><span>Standard Requirement · Proceed</span></div>
@@ -466,17 +470,17 @@ let current=1;
 
 // --- Customer Detail: Sold To / Ship To / Sale Employee (Prototype sample data — fictional, not real records) ---
 const soldToMasterData=[
- {code:'0010001',name:'บริษัท เอบีซี สตีล จำกัด (ABC Steel Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:5000000,creditRemaining:3500000,
+ {code:'0010001',name:'บริษัท เอบีซี สตีล จำกัด (ABC Steel Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:5000000,creditRemaining:3500000,pendingCollection:800000,collectedNotTransferred:250000,
   shipTos:[{code:'0010001-01',name:'คลังสินค้าใหญ่ กรุงเทพฯ'},{code:'0010001-02',name:'สาขาสมุทรปราการ'}]},
- {code:'0010002',name:'บริษัท ไทย เมทัล เวิร์คส์ จำกัด (Thai Metal Works Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:3000000,creditRemaining:900000,
+ {code:'0010002',name:'บริษัท ไทย เมทัล เวิร์คส์ จำกัด (Thai Metal Works Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:3000000,creditRemaining:900000,pendingCollection:650000,collectedNotTransferred:120000,
   shipTos:[{code:'0010002-01',name:'โรงงานพระราม 3'}]},
- {code:'0010003',name:'บริษัท โกลบอล คอนสตรัคชั่น จำกัด (Global Construction Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z3 - Contractor',creditLimit:8000000,creditRemaining:1200000,
+ {code:'0010003',name:'บริษัท โกลบอล คอนสตรัคชั่น จำกัด (Global Construction Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z3 - Contractor',creditLimit:8000000,creditRemaining:1200000,pendingCollection:2100000,collectedNotTransferred:340000,
   shipTos:[{code:'0010003-01',name:'ไซต์งานชลบุรี'}]},
- {code:'0010004',name:'บริษัท สยาม เอ็นจิเนียริ่ง จำกัด (Siam Engineering Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:4000000,creditRemaining:3600000,
+ {code:'0010004',name:'บริษัท สยาม เอ็นจิเนียริ่ง จำกัด (Siam Engineering Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:4000000,creditRemaining:3600000,pendingCollection:250000,collectedNotTransferred:80000,
   shipTos:[{code:'0010004-01',name:'คลังบางนา'}]},
- {code:'0010005',name:'บริษัท นอร์ทเทิร์น แฟบริเคชั่น จำกัด (Northern Fabrication Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z2 - Fabricator',creditLimit:2000000,creditRemaining:500000,
+ {code:'0010005',name:'บริษัท นอร์ทเทิร์น แฟบริเคชั่น จำกัด (Northern Fabrication Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z2 - Fabricator',creditLimit:2000000,creditRemaining:500000,pendingCollection:480000,collectedNotTransferred:60000,
   shipTos:[{code:'0010005-01',name:'โรงงานเชียงใหม่'}]},
- {code:'0010006',name:'บริษัท เดลต้า ทูลส์ แอนด์ ไดส์ จำกัด (Delta Tools & Dies Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:1500000,creditRemaining:100000,
+ {code:'0010006',name:'บริษัท เดลต้า ทูลส์ แอนด์ ไดส์ จำกัด (Delta Tools & Dies Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:1500000,creditRemaining:100000,pendingCollection:620000,collectedNotTransferred:45000,
   shipTos:[{code:'0010006-01',name:'นิคมแหลมฉบัง'}]},
 ];
 const salesEmployeeMasterData=[
@@ -522,6 +526,22 @@ function renderCreditBox(c){
   </div>
   <div class="credit-bar-track"><div class="credit-bar-fill" style="width:${pct}%;background:${color}"></div></div>
   <div class="credit-legend"><span>วงเงินทั้งหมด: <b>${fmtBaht(c.creditLimit)}</b> บาท</span><span>เครดิตคงเหลือ: <b>${fmtBaht(c.creditRemaining)}</b> บาท</span></div>`;
+}
+function renderCustomerOverviewCard(){
+ const body=document.getElementById('custOverviewBody');
+ if(!body) return;
+ const code=document.getElementById('soldTo').value;
+ const c=soldToMasterData.find(x=>x.code===code);
+ if(!c){
+  body.innerHTML=`<div style="font-size:11.5px;color:var(--muted);line-height:1.6">เลือก Sold To ด้านซ้ายเพื่อดูภาพรวมลูกค้า</div>`;
+  return;
+ }
+ body.innerHTML=`
+  <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.4">${esc(c.name)}</div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${esc(c.code)}</div>
+  <div class="mini-status"><span>เครดิตคงเหลือ</span><span style="font-weight:800;color:var(--std)">${fmtBaht(c.creditRemaining)}</span></div>
+  <div class="mini-status"><span>ยอดที่รอเรียกเก็บตามรอบ</span><span style="font-weight:800;color:var(--extra)">${fmtBaht(c.pendingCollection)}</span></div>
+  <div class="mini-status"><span>ยอดเก็บแล้วรอ Transfer</span><span style="font-weight:800;color:var(--blue2)">${fmtBaht(c.collectedNotTransferred)}</span></div>`;
 }
 function onSoldToChange(){
  const code=document.getElementById('soldTo').value;
@@ -1080,7 +1100,7 @@ function refreshAll(){
  const cats=getMainStatuses();
  document.getElementById('sideStatuses').innerHTML=Object.entries(cats).map(([k,v])=>`<div class="mini-status"><span>${k}</span><span class="badge ${statusClass(v)}">${statusText(v)}</span></div>`).join('');
  const ov=overallStatus();const ob=document.getElementById('overallBox');ob.className='overall '+statusClass(ov);ob.textContent=ov==='STD'?'STANDARD ORDER':ov==='EXTRA'?'EXTRA REQUIREMENT':'REVIEW REQUIRED';
- renderSummary();renderHandover();renderQuotation();renderCartBannerOnSpec();renderCart();updateStepBadge();
+ renderSummary();renderHandover();renderQuotation();renderCartBannerOnSpec();renderCart();updateStepBadge();renderCustomerOverviewCard();
 }
 function renderCartBannerOnSpec(){
  const banner=document.getElementById('productBanner');
@@ -1334,7 +1354,7 @@ function renderQuotation(){
  `;
  recalcQuoteTotals();
 }
-function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('backBtn').textContent=isHiddenStep(current)?'← กลับไป Summary':'← Back';const isLastVisible=current===visibleSteps[visibleSteps.length-1];document.getElementById('printBtn').style.display=(current===8)?'inline-block':'none';document.getElementById('nextBtn').style.display=(isLastVisible&&!isHiddenStep(current))?'none':'inline-block';document.getElementById('nextBtn').textContent=isHiddenStep(current)?'✓ กลับไป Summary':'Next →';document.getElementById('nextBtn').onclick=()=>go(1);renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
+function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('backBtn').textContent=isHiddenStep(current)?'← กลับไป Summary':'← Back';const isLastVisible=current===visibleSteps[visibleSteps.length-1];document.getElementById('printBtn').style.display=(current===8)?'inline-block':'none';document.getElementById('nextBtn').style.display=(isLastVisible&&!isHiddenStep(current))?'none':'inline-block';document.getElementById('nextBtn').textContent=isHiddenStep(current)?'✓ กลับไป Summary':'Next →';document.getElementById('nextBtn').onclick=()=>go(1);document.getElementById('customerOverviewCard').style.display=current===1?'block':'none';document.getElementById('legendCard').style.display=current===1?'none':'block';renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
 function go(delta){
  if(isHiddenStep(current)){ showScreen(7); return; }
  const idx=visibleSteps.indexOf(current);

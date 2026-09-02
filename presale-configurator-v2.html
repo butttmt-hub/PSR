@@ -148,6 +148,17 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .so-po-meta{font-size:11px;color:var(--muted);margin-bottom:12px;word-break:break-all}
 @media(max-width:900px){.so-review-layout{flex-direction:column}.so-po-panel{width:100%}}
 @media print{.so-doc{border:0;padding:0}.so-toolbar{display:none!important}.so-po-panel{display:none!important}.so-review-layout{display:block!important}}
+/* ---------- Approval Inbox ---------- */
+.appr-list{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.appr-row{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
+.appr-row:last-child{border-bottom:0}
+.appr-row:hover{background:#F4F7FA}
+.appr-avatar{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.appr-main{flex:1;min-width:0}
+.appr-subject{font-size:13.5px;font-weight:700;color:var(--text)}
+.appr-snippet{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appr-time{font-size:11px;color:var(--muted);flex-shrink:0}
+.appr-empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
 .internal-only{margin-top:16px;border:1px dashed var(--extra);background:var(--extraBg);border-radius:10px;padding:14px 16px;font-size:12px;color:#7A3B0E}
 .internal-only h4{margin:0 0 8px;font-size:12.5px;color:var(--extra);display:flex;align-items:center;gap:6px}
 .internal-only ul{margin:0 0 8px;padding-left:18px;line-height:1.7}
@@ -1462,17 +1473,43 @@ function renderSalesOrderDoc(rec){
  const docField=(rec.fieldState||{})['cert']||(rec.fieldState||{})['tubeCert'];
  const qe=rec.quoteExtra||{};
  const hasPO=!!rec.poAttachment;
- return `
-  <div style="max-width:${hasPO?'2000px':'1000px'};margin:0 auto">
-   <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
+ const params=new URLSearchParams(window.location.search);
+ const approvalMode=params.get('mode')==='approval'&&rec.status==='pending_approval';
+ let toolbarHtml;
+ if(approvalMode){
+  toolbarHtml=`<div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
+    <a href="presale-configurator-v2.html?approvalInbox=1" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Approval Inbox</a>
+    <div style="display:flex;gap:10px">
+     <button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openRejectModal('${esc(rec.soNo)}')">✕ Reject</button>
+     <button class="btn orange" onclick="approveSO('${esc(rec.soNo)}')">✓ Approve</button>
+    </div>
+   </div>`;
+ } else {
+  let sendBtnHtml;
+  if(rec.status==='pending_approval') sendBtnHtml=`<button class="btn secondary" disabled>🕒 รออนุมัติ</button>`;
+  else if(rec.status==='approved') sendBtnHtml=`<button class="btn secondary" disabled>✅ อนุมัติแล้ว</button>`;
+  else sendBtnHtml=`<button class="btn orange" ${hasPO?'':'disabled'} onclick="sendToApproval('${esc(rec.soNo)}')" title="${hasPO?'':'ต้องแนบไฟล์ PO ก่อนจึงจะส่ง Approval ได้'}">✅ Send to Approval</button>`;
+  toolbarHtml=`<div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
     <div style="display:flex;gap:10px;flex-wrap:wrap">
      <button class="btn secondary" onclick="window.print()">🖨️ Print</button>
      <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
      <label class="btn secondary" style="cursor:pointer;margin:0;display:inline-flex;align-items:center">📎 ${hasPO?'เปลี่ยนไฟล์ PO':'Add PO'}<input type="file" style="display:none" onchange="handlePOFileSelect(event,'${esc(rec.soNo)}')"></label>
-     <button class="btn orange" ${hasPO?'':'disabled'} onclick="sendToApproval('${esc(rec.soNo)}')" title="${hasPO?'':'ต้องแนบไฟล์ PO ก่อนจึงจะส่ง Approval ได้'}">✅ Send to Approval</button>
+     ${sendBtnHtml}
     </div>
     <div style="font-size:11.5px;color:var(--muted)">อ้างอิงจาก Quotation: <strong>${esc(rec.quotationNo||'-')}</strong></div>
-   </div>
+   </div>`;
+ }
+ const statusBannerHtml=rec.status==='rejected'
+  ?`<div class="notice danger" style="margin-bottom:16px"><strong>❌ ถูก Reject</strong> เมื่อ ${esc(new Date(rec.rejectedAt||Date.now()).toLocaleDateString('th-TH'))} — เหตุผล: ${esc(rec.rejectReason||'-')}</div>`
+  :rec.status==='approved'
+  ?`<div class="notice info" style="margin-bottom:16px"><strong>✅ อนุมัติแล้ว</strong> เมื่อ ${esc(new Date(rec.approvedAt||Date.now()).toLocaleDateString('th-TH'))}</div>`
+  :rec.status==='pending_approval'
+  ?`<div class="notice warn" style="margin-bottom:16px"><strong>🕒 รออนุมัติ</strong> — ส่งเมื่อ ${esc(new Date(rec.sentToApprovalAt||Date.now()).toLocaleDateString('th-TH'))}</div>`
+  :'';
+ return `
+  <div style="max-width:${hasPO?'2000px':'1000px'};margin:0 auto">
+   ${toolbarHtml}
+   ${statusBannerHtml}
    <div class="so-review-layout">
     ${hasPO?`<div class="so-po-panel">${renderPOPanel(rec.poAttachment)}</div>`:''}
    <div class="so-doc">
@@ -1542,6 +1579,19 @@ function renderSalesOrderDoc(rec){
     </div>
    </div>
    </div>
+  </div>
+  <div class="modal-overlay" id="rejectModalOverlay" style="display:none">
+   <div class="modal-card" style="max-width:440px">
+    <div class="modal-head"><h2>ระบุเหตุผลการ Reject</h2><button class="modal-close" onclick="closeRejectModal()">×</button></div>
+    <div class="modal-body">
+     <textarea id="rejectReasonInput" rows="4" style="width:100%;border:1px solid #C9D6E1;border-radius:8px;padding:10px;font:inherit;font-size:13px;resize:vertical" placeholder="กรุณาระบุเหตุผล (บังคับกรอก)"></textarea>
+     <div id="rejectReasonError" style="color:#B42318;font-size:11.5px;margin-top:6px;display:none">กรุณาระบุเหตุผลก่อนยืนยัน</div>
+    </div>
+    <div class="modal-foot">
+     <button class="btn primary" style="background:#B42318" onclick="confirmReject()">✕ ยืนยัน Reject</button>
+     <button class="btn secondary" onclick="closeRejectModal()">ยกเลิก</button>
+    </div>
+   </div>
   </div>`;
 }
 function formatFileSize(bytes){
@@ -1592,9 +1642,78 @@ function handlePOFileSelect(e,soNo){
  reader.readAsDataURL(file);
 }
 function sendToApproval(soNo){
- const rec=loadSalesOrders().find(s=>s.soNo===soNo);
+ const list=loadSalesOrders();
+ const rec=list.find(s=>s.soNo===soNo);
  if(!rec||!rec.poAttachment){ alert('กรุณาแนบไฟล์ PO ก่อนส่ง Approval'); return; }
- alert(`Send to Approval — S/O ${soNo}\n(หน้าจอ Approval จะออกแบบในขั้นต่อไป — Prototype นี้ยังไม่รองรับ)`);
+ rec.status='pending_approval';
+ rec.sentToApprovalAt=new Date().toISOString();
+ persistSalesOrders(list);
+ window.location.href='presale-configurator-v2.html?approvalInbox=1';
+}
+let rejectTargetSoNo=null;
+function openRejectModal(soNo){
+ rejectTargetSoNo=soNo;
+ document.getElementById('rejectReasonInput').value='';
+ document.getElementById('rejectReasonError').style.display='none';
+ document.getElementById('rejectModalOverlay').style.display='flex';
+}
+function closeRejectModal(){
+ document.getElementById('rejectModalOverlay').style.display='none';
+ rejectTargetSoNo=null;
+}
+function confirmReject(){
+ const reason=document.getElementById('rejectReasonInput').value.trim();
+ if(!reason){ document.getElementById('rejectReasonError').style.display='block'; return; }
+ const list=loadSalesOrders();
+ const rec=list.find(s=>s.soNo===rejectTargetSoNo);
+ if(!rec) return;
+ rec.status='rejected';
+ rec.rejectedAt=new Date().toISOString();
+ rec.rejectReason=reason;
+ persistSalesOrders(list);
+ closeRejectModal();
+ window.location.href='presale-configurator-v2.html?approvalInbox=1';
+}
+function approveSO(soNo){
+ const list=loadSalesOrders();
+ const rec=list.find(s=>s.soNo===soNo);
+ if(!rec) return;
+ rec.status='approved';
+ rec.approvedAt=new Date().toISOString();
+ persistSalesOrders(list);
+ window.location.href='presale-configurator-v2.html?approvalInbox=1';
+}
+function renderApprovalInbox(){
+ const pending=loadSalesOrders().filter(s=>s.status==='pending_approval')
+  .sort((a,b)=>new Date(b.sentToApprovalAt||0)-new Date(a.sentToApprovalAt||0));
+ const rowsHtml=pending.length?pending.map(rec=>{
+  const initial=esc((rec.customer||'?').charAt(0));
+  const itemCount=rec.cart?rec.cart.length:0;
+  const sentDate=esc(new Date(rec.sentToApprovalAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+  return `<div class="appr-row" onclick="location.href='presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}&mode=approval'">
+   <div class="appr-avatar">${initial}</div>
+   <div class="appr-main">
+    <div class="appr-subject">คำขออนุมัติ Sales Order <strong>${esc(rec.soNo)}</strong></div>
+    <div class="appr-snippet">${esc(rec.customer||'-')} · ${itemCount} รายการ · ${fmtMoney(rec.grandTotal||0)} บาท · แนบ PO: ${esc(rec.poAttachment?.name||'-')}</div>
+   </div>
+   <div class="appr-time">${sentDate}</div>
+  </div>`;
+ }).join(''):`<div class="appr-empty">ไม่มีคำขออนุมัติที่รอดำเนินการ</div>`;
+ return `
+  <div style="max-width:900px;margin:0 auto">
+   <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
+    <h2 style="margin:0;color:var(--blue);font-size:19px">📥 กล่องคำขออนุมัติ / Approval Inbox</h2>
+    <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
+   </div>
+   <div class="appr-list">${rowsHtml}</div>
+  </div>`;
+}
+function tryLoadApprovalInboxMode(){
+ const params=new URLSearchParams(window.location.search);
+ if(!params.has('approvalInbox')) return false;
+ document.body.classList.add('view-mode');
+ document.querySelector('.app').innerHTML=renderApprovalInbox();
+ return true;
 }
 function tryLoadSOViewMode(){
  const params=new URLSearchParams(window.location.search);
@@ -1787,7 +1906,7 @@ function tryLoadViewMode(){
  return true;
 }
 ['project','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
-if(!tryLoadSOViewMode() && !tryLoadViewMode()){
+if(!tryLoadApprovalInboxMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
  populateCustomerDetailOptions();
  selectProduct('Cut Sheet');
  renderProductSpecForCart();

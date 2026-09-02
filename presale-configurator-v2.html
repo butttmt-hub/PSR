@@ -516,7 +516,7 @@ const steps = [
  {t:'Quotation', th:'ใบเสนอราคา', d:'Print-ready Auction Quotation'},
  {t:'Handover', th:'ส่งต่อ', d:'Structured Handover to Operation'}
 ];
-const visibleSteps=[1,7,8,9];
+const visibleSteps=[1,7,8];
 function isHiddenStep(n){ return !visibleSteps.includes(n); }
 function phaseOf(n){ return n===1?1:(n>=2&&n<=7?7:n); }
 let current=1;

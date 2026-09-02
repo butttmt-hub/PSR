@@ -470,17 +470,17 @@ let current=1;
 
 // --- Customer Detail: Sold To / Ship To / Sale Employee (Prototype sample data — fictional, not real records) ---
 const soldToMasterData=[
- {code:'0010001',name:'บริษัท เอบีซี สตีล จำกัด (ABC Steel Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:5000000,creditRemaining:3500000,pendingCollection:800000,collectedNotTransferred:250000,
+ {code:'0010001',name:'บริษัท เอบีซี สตีล จำกัด (ABC Steel Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:5000000,creditRemaining:3500000,pendingCollection:800000,collectedNotTransferred:250000,marginPct:19,
   shipTos:[{code:'0010001-01',name:'คลังสินค้าใหญ่ กรุงเทพฯ'},{code:'0010001-02',name:'สาขาสมุทรปราการ'}]},
- {code:'0010002',name:'บริษัท ไทย เมทัล เวิร์คส์ จำกัด (Thai Metal Works Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:3000000,creditRemaining:900000,pendingCollection:650000,collectedNotTransferred:120000,
+ {code:'0010002',name:'บริษัท ไทย เมทัล เวิร์คส์ จำกัด (Thai Metal Works Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:3000000,creditRemaining:900000,pendingCollection:650000,collectedNotTransferred:120000,marginPct:14,
   shipTos:[{code:'0010002-01',name:'โรงงานพระราม 3'}]},
- {code:'0010003',name:'บริษัท โกลบอล คอนสตรัคชั่น จำกัด (Global Construction Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z3 - Contractor',creditLimit:8000000,creditRemaining:1200000,pendingCollection:2100000,collectedNotTransferred:340000,
+ {code:'0010003',name:'บริษัท โกลบอล คอนสตรัคชั่น จำกัด (Global Construction Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z3 - Contractor',creditLimit:8000000,creditRemaining:1200000,pendingCollection:2100000,collectedNotTransferred:340000,marginPct:22,
   shipTos:[{code:'0010003-01',name:'ไซต์งานชลบุรี'}]},
- {code:'0010004',name:'บริษัท สยาม เอ็นจิเนียริ่ง จำกัด (Siam Engineering Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:4000000,creditRemaining:3600000,pendingCollection:250000,collectedNotTransferred:80000,
+ {code:'0010004',name:'บริษัท สยาม เอ็นจิเนียริ่ง จำกัด (Siam Engineering Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:4000000,creditRemaining:3600000,pendingCollection:250000,collectedNotTransferred:80000,marginPct:16,
   shipTos:[{code:'0010004-01',name:'คลังบางนา'}]},
- {code:'0010005',name:'บริษัท นอร์ทเทิร์น แฟบริเคชั่น จำกัด (Northern Fabrication Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z2 - Fabricator',creditLimit:2000000,creditRemaining:500000,pendingCollection:480000,collectedNotTransferred:60000,
+ {code:'0010005',name:'บริษัท นอร์ทเทิร์น แฟบริเคชั่น จำกัด (Northern Fabrication Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z2 - Fabricator',creditLimit:2000000,creditRemaining:500000,pendingCollection:480000,collectedNotTransferred:60000,marginPct:11,
   shipTos:[{code:'0010005-01',name:'โรงงานเชียงใหม่'}]},
- {code:'0010006',name:'บริษัท เดลต้า ทูลส์ แอนด์ ไดส์ จำกัด (Delta Tools & Dies Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:1500000,creditRemaining:100000,pendingCollection:620000,collectedNotTransferred:45000,
+ {code:'0010006',name:'บริษัท เดลต้า ทูลส์ แอนด์ ไดส์ จำกัด (Delta Tools & Dies Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:1500000,creditRemaining:100000,pendingCollection:620000,collectedNotTransferred:45000,marginPct:24,
   shipTos:[{code:'0010006-01',name:'นิคมแหลมฉบัง'}]},
 ];
 const salesEmployeeMasterData=[
@@ -536,12 +536,14 @@ function renderCustomerOverviewCard(){
   body.innerHTML=`<div style="font-size:11.5px;color:var(--muted);line-height:1.6">เลือก Sold To ด้านซ้ายเพื่อดูภาพรวมลูกค้า</div>`;
   return;
  }
+ const marginColor=c.marginPct>=18?'var(--std)':c.marginPct>=12?'var(--extra)':'var(--review)';
  body.innerHTML=`
   <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.4">${esc(c.name)}</div>
   <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${esc(c.code)}</div>
   <div class="mini-status"><span>เครดิตคงเหลือ</span><span style="font-weight:800;color:var(--std)">${fmtBaht(c.creditRemaining)}</span></div>
   <div class="mini-status"><span>ยอดที่รอเรียกเก็บตามรอบ</span><span style="font-weight:800;color:var(--extra)">${fmtBaht(c.pendingCollection)}</span></div>
-  <div class="mini-status"><span>ยอดเก็บแล้วรอ Transfer</span><span style="font-weight:800;color:var(--blue2)">${fmtBaht(c.collectedNotTransferred)}</span></div>`;
+  <div class="mini-status"><span>ยอดเก็บแล้วรอ Transfer</span><span style="font-weight:800;color:var(--blue2)">${fmtBaht(c.collectedNotTransferred)}</span></div>
+  <div class="mini-status"><span>Margin ลูกค้านี้</span><span style="font-weight:800;color:${marginColor}">${c.marginPct}%</span></div>`;
 }
 function onSoldToChange(){
  const code=document.getElementById('soldTo').value;

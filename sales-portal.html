@@ -355,8 +355,35 @@ function rejectQuotation(qNo){
  openQuotationList();
  renderWidgetGrid();
 }
+const SALES_ORDERS_KEY = 'tmt_sales_orders';
+function loadSalesOrders(){
+ try{ const raw=localStorage.getItem(SALES_ORDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
+}
+function saveSalesOrders(list){
+ try{ localStorage.setItem(SALES_ORDERS_KEY, JSON.stringify(list)); }catch(e){}
+}
+function generateSONo(){
+ return '1300'+String(Math.floor(100000+Math.random()*900000));
+}
 function transferQuotationToSO(qNo){
- alert(`Transfer to S/O — Quotation ${qNo}\n(โหมด S/O จะออกแบบในขั้นต่อไป — Prototype นี้ยังไม่รองรับ)`);
+ const qList = getSavedQuotations();
+ const qRec = qList.find(q=>q.quotationNo===qNo);
+ if(!qRec){ alert('ไม่พบข้อมูล Quotation ที่บันทึกไว้'); return; }
+ const soNo = generateSONo();
+ const now = new Date();
+ const soList = loadSalesOrders();
+ soList.push({
+  soNo, quotationNo:qRec.quotationNo,
+  createdAt:now.toISOString(),
+  createdAtDisplay:now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}),
+  createdTimeDisplay:now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
+  project:qRec.project, refNo:qRec.refNo, customer:qRec.customer, sales:qRec.sales, soldToCode:qRec.soldToCode,
+  currentProduct:qRec.currentProduct, cart:qRec.cart, fieldState:qRec.fieldState, quoteExtra:qRec.quoteExtra, grandTotal:qRec.grandTotal,
+ });
+ saveSalesOrders(soList);
+ qRec.status='transferred'; qRec.soNo=soNo;
+ saveSavedQuotations(qList);
+ location.href = `presale-configurator-v2.html?viewSO=${encodeURIComponent(soNo)}`;
 }
 function openQuotationList(){
  const list = getActiveQuotations().slice().reverse();

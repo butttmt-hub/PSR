@@ -110,6 +110,38 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .quote-sign .sig-line{margin-top:40px;border-top:1px solid var(--line);text-align:center;padding-top:6px;color:var(--muted)}
 .quote-address{font-size:9.5px;color:var(--muted);margin-top:16px;line-height:1.7}
 @media print{.quote-doc{border:0;padding:0}.internal-only{display:none!important}}
+/* ---------- Sales Order (S/O) document — modeled on ตัวอย่างSO.pdf ---------- */
+.so-doc{background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px;font-size:11.5px;color:#222;line-height:1.5}
+.so-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.so-title{font-size:20px;font-weight:800;color:var(--text);align-self:center}
+.so-formno{text-align:right;font-size:10.5px;color:var(--muted)}
+.so-number{text-align:right;font-size:20px;font-weight:800;color:var(--blue);margin-bottom:10px}
+.so-info-table{width:100%;border-collapse:collapse;margin-bottom:10px}
+.so-info-table td{border:1px solid var(--line);padding:8px 10px;vertical-align:top}
+.so-info-table .so-info-left{width:55%}
+.so-info-table .so-info-left div{margin-bottom:5px}
+.so-info-table .so-info-right>div{margin-bottom:6px}
+.so-credit-table{width:100%;border-collapse:collapse;margin-top:4px}
+.so-credit-table td{border:0;padding:2px 0;font-size:11px}
+.so-credit-table td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.so-terms{border:1px solid var(--line);border-top:0;padding:8px 10px;margin-bottom:10px}
+.so-terms div{margin-bottom:3px}
+.so-items-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px}
+.so-items-table th,.so-items-table td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+.so-items-table th{background:#F4F7FA;color:var(--blue);font-weight:700}
+.so-items-table td.left{text-align:left}
+.so-items-table tfoot td{font-weight:700;text-align:left}
+.so-muted{color:var(--muted);font-size:10px}
+.so-bottom-grid{display:flex;justify-content:space-between;gap:20px;margin-bottom:10px;flex-wrap:wrap}
+.so-bottom-left{flex:1;min-width:220px;border:1px solid var(--line);padding:10px 12px}
+.so-bottom-left div{margin-bottom:5px}
+.so-bottom-right{width:260px;border:1px solid var(--line);padding:10px 12px}
+.so-bottom-right table{width:100%;border-collapse:collapse;font-size:11.5px}
+.so-bottom-right td{padding:4px 0}
+.so-bottom-right td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.so-footer-grid{display:flex;justify-content:space-between;gap:20px;border:1px solid var(--line);padding:10px 12px;flex-wrap:wrap}
+.so-footer-grid div{flex:1;min-width:220px}
+@media print{.so-doc{border:0;padding:0}.so-toolbar{display:none!important}}
 .internal-only{margin-top:16px;border:1px dashed var(--extra);background:var(--extraBg);border-radius:10px;padding:14px 16px;font-size:12px;color:#7A3B0E}
 .internal-only h4{margin:0 0 8px;font-size:12.5px;color:var(--extra);display:flex;align-items:center;gap:6px}
 .internal-only ul{margin:0 0 8px;padding-left:18px;line-height:1.7}
@@ -482,16 +514,22 @@ let current=1;
 // --- Customer Detail: Sold To / Ship To / Sale Employee (Prototype sample data — fictional, not real records) ---
 const soldToMasterData=[
  {code:'0010001',name:'บริษัท เอบีซี สตีล จำกัด (ABC Steel Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:5000000,creditRemaining:3500000,pendingCollection:800000,collectedNotTransferred:250000,marginPct:19,
+  address:'เลขที่ 88 ถนนสุขุมวิท แขวงคลองตัน เขตคลองเตย กรุงเทพมหานคร 10110',taxId:'0105561012345',branch:'สำนักงานใหญ่',businessType:'ค้าเหล็กและวัสดุก่อสร้าง',
   shipTos:[{code:'0010001-01',name:'คลังสินค้าใหญ่ กรุงเทพฯ'},{code:'0010001-02',name:'สาขาสมุทรปราการ'}]},
  {code:'0010002',name:'บริษัท ไทย เมทัล เวิร์คส์ จำกัด (Thai Metal Works Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:3000000,creditRemaining:900000,pendingCollection:650000,collectedNotTransferred:120000,marginPct:14,
+  address:'เลขที่ 45 ถนนพระราม 2 แขวงแสมดำ เขตบางขุนเทียน กรุงเทพมหานคร 10150',taxId:'0105551023456',branch:'สาขาพระราม 2',businessType:'งานตัดพับโลหะ',
   shipTos:[{code:'0010002-01',name:'โรงงานพระราม 3'}]},
  {code:'0010003',name:'บริษัท โกลบอล คอนสตรัคชั่น จำกัด (Global Construction Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z3 - Contractor',creditLimit:8000000,creditRemaining:1200000,pendingCollection:2100000,collectedNotTransferred:340000,marginPct:22,
+  address:'เลขที่ 120 นิคมอมตะซิตี้ ตำบลบ่อวิน อำเภอศรีราชา ชลบุรี 20230',taxId:'0105541034567',branch:'สาขาชลบุรี',businessType:'รับเหมาก่อสร้าง',
   shipTos:[{code:'0010003-01',name:'ไซต์งานชลบุรี'}]},
  {code:'0010004',name:'บริษัท สยาม เอ็นจิเนียริ่ง จำกัด (Siam Engineering Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:4000000,creditRemaining:3600000,pendingCollection:250000,collectedNotTransferred:80000,marginPct:16,
+  address:'เลขที่ 9 ถนนบางนา-ตราด แขวงบางนา เขตบางนา กรุงเทพมหานคร 10260',taxId:'0105531045678',branch:'สำนักงานใหญ่',businessType:'งานวิศวกรรมโครงสร้าง',
   shipTos:[{code:'0010004-01',name:'คลังบางนา'}]},
  {code:'0010005',name:'บริษัท นอร์ทเทิร์น แฟบริเคชั่น จำกัด (Northern Fabrication Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z2 - Fabricator',creditLimit:2000000,creditRemaining:500000,pendingCollection:480000,collectedNotTransferred:60000,marginPct:11,
+  address:'เลขที่ 199 ถนนเชียงใหม่-ลำปาง ตำบลท่าศาลา อำเภอเมือง เชียงใหม่ 50000',taxId:'0105521056789',branch:'สาขาเชียงใหม่',businessType:'งานประกอบโครงเหล็ก',
   shipTos:[{code:'0010005-01',name:'โรงงานเชียงใหม่'}]},
  {code:'0010006',name:'บริษัท เดลต้า ทูลส์ แอนด์ ไดส์ จำกัด (Delta Tools & Dies Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:1500000,creditRemaining:100000,pendingCollection:620000,collectedNotTransferred:45000,marginPct:24,
+  address:'เลขที่ 77 นิคมอุตสาหกรรมแหลมฉบัง ตำบลทุ่งสุขลา อำเภอศรีราชา ชลบุรี 20230',taxId:'0105511067890',branch:'สาขาแหลมฉบัง',businessType:'ผลิตแม่พิมพ์และอุปกรณ์',
   shipTos:[{code:'0010006-01',name:'นิคมแหลมฉบัง'}]},
 ];
 const salesEmployeeMasterData=[
@@ -1310,6 +1348,28 @@ function loadSavedQuotations(){
 function persistSavedQuotations(list){
  try{ localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(list)); }catch(e){}
 }
+const SALES_ORDERS_KEY='tmt_sales_orders';
+function loadSalesOrders(){
+ try{ const raw=localStorage.getItem(SALES_ORDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
+}
+function persistSalesOrders(list){
+ try{ localStorage.setItem(SALES_ORDERS_KEY, JSON.stringify(list)); }catch(e){}
+}
+function generateSONo(){
+ return '1300'+String(Math.floor(100000+Math.random()*900000));
+}
+function buildSalesOrderRecord(qRec,soNo){
+ const now=new Date();
+ return {
+  soNo,
+  quotationNo:qRec.quotationNo,
+  createdAt:now.toISOString(),
+  createdAtDisplay:now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}),
+  createdTimeDisplay:now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
+  project:qRec.project, refNo:qRec.refNo, customer:qRec.customer, sales:qRec.sales, soldToCode:qRec.soldToCode,
+  currentProduct:qRec.currentProduct, cart:qRec.cart, fieldState:qRec.fieldState, quoteExtra:qRec.quoteExtra, grandTotal:qRec.grandTotal,
+ };
+}
 function snapshotCurrentQuotation(qNo){
  const discount=+(quoteBaseTotal*(quoteExtra.discountPct||0)/100).toFixed(2);
  const net=+(quoteBaseTotal-discount).toFixed(2);
@@ -1323,6 +1383,7 @@ function snapshotCurrentQuotation(qNo){
   refNo:document.getElementById('refNo').value,
   customer:document.getElementById('customer').value,
   sales:document.getElementById('sales').value,
+  soldToCode:document.getElementById('soldTo').value,
   grandTotal:grand,
   itemCount:productCart.length,
   currentProduct:currentProduct,
@@ -1357,7 +1418,141 @@ function saveAndShareQuotation(){
 function transferToSO(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Transfer to S/O'); return; }
  if(!savedQuotationNo){ alert('กรุณาบันทึกเลข Quotation ก่อน Transfer to S/O'); return; }
- alert(`Transfer to S/O — Quotation ${savedQuotationNo}\n(โหมด S/O จะออกแบบในขั้นต่อไป — Prototype นี้ยังไม่รองรับ)`);
+ const qList=loadSavedQuotations();
+ const qRec=qList.find(q=>q.quotationNo===savedQuotationNo);
+ if(!qRec){ alert('ไม่พบข้อมูล Quotation ที่บันทึกไว้'); return; }
+ const soNo=generateSONo();
+ const soList=loadSalesOrders();
+ soList.push(buildSalesOrderRecord(qRec,soNo));
+ persistSalesOrders(soList);
+ qRec.status='transferred'; qRec.soNo=soNo;
+ persistSavedQuotations(qList);
+ window.location.href=`presale-configurator-v2.html?viewSO=${encodeURIComponent(soNo)}`;
+}
+function soItemSummary(cart,fieldGetter){
+ const vals=[...new Set(cart.map(fieldGetter).filter(Boolean))];
+ return vals.length?vals.join(' / '):'-';
+}
+function renderSalesOrderDoc(rec){
+ const cust=soldToMasterData.find(c=>c.code===rec.soldToCode);
+ const now=new Date(rec.createdAt||Date.now());
+ let rowsHtml='', totalWeight=0, grand=0;
+ const cart=rec.cart||[];
+ if(cart.length){
+  rowsHtml=cart.map(item=>{
+   const surcharge=computeExtraSurchargeForItem(item);
+   const w=+(item.qty*item.weight).toFixed(2);
+   const basePriceKg=item.pricePcs==='-'?0:item.priceKg;
+   const priceKg=+(basePriceKg*(1+surcharge.pct/100)).toFixed(2);
+   const amount=+(w*priceKg).toFixed(2);
+   totalWeight+=w; grand+=amount;
+   return `<tr><td>${esc(item.code)}</td><td class="left">${esc(item.desc)}<br><span class="so-muted">เกรด ${esc(itemGrade(item))}</span></td><td>${priceKg?fmtMoney(priceKg):'-'}</td><td>${w.toLocaleString()}</td><td>${item.qty.toLocaleString()} PC</td><td>${priceKg?fmtMoney(priceKg):'-'}</td><td>0.00</td><td></td><td>${priceKg?fmtMoney(amount):'-'}</td></tr>`;
+  }).join('');
+ } else {
+  rowsHtml=`<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">ไม่มีรายการสินค้า</td></tr>`;
+ }
+ const discount=+(grand*(rec.quoteExtra?.discountPct||0)/100).toFixed(2);
+ const net=+(grand-discount).toFixed(2);
+ const vat=+(net*0.07).toFixed(2);
+ const total=+(net+vat).toFixed(2);
+ const packing=soItemSummary(cart,i=>{
+  const f=productFieldDefs[i.family].find(x=>x.id===(i.family==='Cut Sheet'?'packing':'tubePackingType'));
+  return f&&i.specState&&i.specState[f.id]?i.specState[f.id].value:null;
+ });
+ const vehicleField=(rec.fieldState||{})['vehicle']||(rec.fieldState||{})['tubeVehicle'];
+ const deliveryField=(rec.fieldState||{})['delivery']||(rec.fieldState||{})['tubeDelivery'];
+ const docField=(rec.fieldState||{})['cert']||(rec.fieldState||{})['tubeCert'];
+ const qe=rec.quoteExtra||{};
+ return `
+  <div style="max-width:1000px;margin:0 auto">
+   <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;gap:10px">
+     <button class="btn secondary" onclick="window.print()">🖨️ Print</button>
+     <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted)">อ้างอิงจาก Quotation: <strong>${esc(rec.quotationNo||'-')}</strong></div>
+   </div>
+   <div class="so-doc">
+    <div class="so-head">
+     <div class="quote-logo"><div class="mark">TMT</div><div class="co">TMT STEEL PUBLIC COMPANY LIMITED<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div></div>
+     <div class="so-title">ใบสั่งขาย / Sales Order</div>
+     <div class="so-formno">S-FM-SM-35 R00<br>หน้า 1 / 1</div>
+    </div>
+    <div class="so-number">${esc(rec.soNo)}</div>
+    <table class="so-info-table">
+     <tr>
+      <td class="so-info-left">
+       <div><b>รหัสลูกค้า</b> ${esc(rec.soldToCode||'-')} &nbsp;&nbsp; <b>PO No.</b> -</div>
+       <div><b>ชื่อลูกค้า</b> ${esc(rec.customer||'-')}</div>
+       <div><b>ที่อยู่</b> ${esc(cust?.address||'-')}</div>
+       <div style="height:10px"></div>
+       <div><b>Tax</b> ${esc(cust?.taxId||'-')}</div>
+       <div><b>สาขา</b> ${esc(cust?.branch||'-')}</div>
+       <div><b>ประเภทธุรกิจ</b> ${esc(cust?.businessType||'-')} &nbsp;&nbsp; <b>Project</b> ${esc(rec.project||'-')}</div>
+      </td>
+      <td class="so-info-right">
+       <div><b>วันที่ Date</b> ${esc(rec.createdAtDisplay||'')} &nbsp;&nbsp; <b>เวลา</b> ${esc(rec.createdTimeDisplay||'')}</div>
+       <div><b>พนักงานขาย</b> ${esc(rec.sales||'-')} &nbsp;&nbsp; <b>กลุ่มลูกค้า</b> ${esc(cust?.custGroup||'-')}</div>
+       <table class="so-credit-table">
+        <tr><td>วงเงิน Clean</td><td>-</td></tr>
+        <tr><td>วงเงิน</td><td>${cust?fmtBaht(cust.creditLimit):'-'}</td></tr>
+        <tr><td>วงเงินมัดจำ(DP)</td><td>-</td></tr>
+        <tr><td>ยอดค้างชำระ (RV)</td><td>${cust?fmtBaht(cust.pendingCollection):'-'}</td></tr>
+        <tr><td>ยอดเช็คในมือ(PC)</td><td>${cust?fmtBaht(cust.collectedNotTransferred):'-'}</td></tr>
+        <tr><td>ยอดค้าง SO (SO)</td><td>-</td></tr>
+        <tr><td>ยอดค้างส่ง(DO)</td><td>-</td></tr>
+        <tr><td>Clean คงเหลือ</td><td>-</td></tr>
+        <tr><td>วงเงินคงเหลือ</td><td>${cust?fmtBaht(cust.creditRemaining):'-'}</td></tr>
+       </table>
+      </td>
+     </tr>
+    </table>
+    <div class="so-terms">
+     <div>1. เครดิต : ${cust?('C'+cust.code.slice(-3)):'-'} &nbsp;&nbsp; เงื่อนไขการวางบิล : -</div>
+     <div>เงื่อนไขการชำระเงิน : ${esc(qe.paymentTerm||'-')} &nbsp;&nbsp; ชำระโดย : - &nbsp;&nbsp; Your Reference : ${esc(rec.refNo||'-')}</div>
+     <div>หลักประกันชำระเงิน : - &nbsp;&nbsp; Clean Portion : -</div>
+    </div>
+    <table class="so-items-table">
+     <thead><tr><th>รหัสสินค้า</th><th>รายการ</th><th>บาท/กก.</th><th>นน.รวม</th><th>จำนวน</th><th>ราคา/หน่วย</th><th>Diff</th><th>ลด</th><th>จำนวนเงินรวม</th></tr></thead>
+     <tbody>${rowsHtml}</tbody>
+     <tfoot><tr><td colspan="3">Total</td><td>${totalWeight.toLocaleString()}</td><td colspan="5"></td></tr></tfoot>
+    </table>
+    <div class="so-bottom-grid">
+     <div class="so-bottom-left">
+      <div>2. น้ำหนักที่ขาย : ${totalWeight.toLocaleString()} kg</div>
+      <div>3. รูปแบบการ Pack : ${esc(packing)}</div>
+      <div>4. รูปแบบการจัดส่ง : ${esc(deliveryField?deliveryField.value:'-')}</div>
+      <div>5. รถขนส่ง : ${esc(vehicleField?vehicleField.value:'-')}</div>
+     </div>
+     <div class="so-bottom-right">
+      <table>
+       <tr><td>รวม</td><td>${fmtMoney(grand)}</td></tr>
+       <tr><td>ส่วนลด</td><td>${fmtMoney(discount)}</td></tr>
+       <tr><td>ภาษี 7%</td><td>${fmtMoney(vat)}</td></tr>
+       <tr><td><strong>รวมทั้งสิ้น(THB)</strong></td><td><strong>${fmtMoney(total)}</strong></td></tr>
+      </table>
+     </div>
+    </div>
+    <div class="so-footer-grid">
+     <div>ใบส่งสินค้า : ปกติ<br>เอกสารที่ต้องนำส่งพร้อมสินค้า : ${esc(docField?docField.value:'-')}</div>
+     <div>สถานที่ส่งสินค้า : ${esc(qe.deliveryPlace||'-')}<br>ชื่อผู้ติดต่อ : ${esc(qe.attention||'-')}<br>โทรศัพท์ : ${esc(qe.tel||'-')}</div>
+    </div>
+   </div>
+  </div>`;
+}
+function tryLoadSOViewMode(){
+ const params=new URLSearchParams(window.location.search);
+ const soNo=params.get('viewSO');
+ if(!soNo) return false;
+ const rec=loadSalesOrders().find(s=>s.soNo===soNo);
+ const app=document.querySelector('.app');
+ if(!rec){
+  app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Sales Order เลขที่ ${esc(soNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
+  return true;
+ }
+ document.body.classList.add('view-mode');
+ app.innerHTML=renderSalesOrderDoc(rec);
+ return true;
 }
 function renderQuotation(){
  renderQuotationNoBar();
@@ -1533,7 +1728,7 @@ function tryLoadViewMode(){
  return true;
 }
 ['project','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
-if(!tryLoadViewMode()){
+if(!tryLoadSOViewMode() && !tryLoadViewMode()){
  populateCustomerDetailOptions();
  selectProduct('Cut Sheet');
  renderProductSpecForCart();

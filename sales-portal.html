@@ -79,21 +79,72 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 }
 .dash-header .logout:hover{background:rgba(255,255,255,.18)}
 
-.dash-main{max-width:1200px;margin:0 auto;padding:28px 24px 60px}
+.dash-main{max-width:1240px;margin:0 auto;padding:36px 32px 72px}
 .dash-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .dash-title h1{margin:0 0 4px;font-size:22px;color:var(--text)}
 .dash-title p{margin:0;font-size:13px;color:var(--muted)}
 
-.widget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:22px}
+.widget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-top:26px}
 .widget-placeholder{
   border:2px dashed var(--sky);border-radius:16px;min-height:170px;background:var(--card);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);
+  cursor:pointer;transition:.15s;padding:16px;text-align:center;
 }
+.widget-placeholder:hover{background:rgba(139,186,222,.12);border-color:var(--blue2);color:var(--blue)}
 .widget-placeholder .ic{font-size:22px;opacity:.5}
 .widget-placeholder .lbl{font-size:12.5px;font-weight:600}
+.widget-placeholder .slot-remove{margin-top:2px;font-size:10.5px;color:var(--muted);text-decoration:underline;cursor:pointer}
+.widget-placeholder .slot-remove:hover{color:#B42318}
+
+.widget-add-tile{
+  border:2px dashed var(--line);border-radius:16px;min-height:170px;background:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);
+  cursor:pointer;transition:.15s;
+}
+.widget-add-tile:hover{border-color:var(--orange);color:var(--orange);background:rgba(255,106,5,.04)}
+.widget-add-tile .plus{font-size:26px;font-weight:300;line-height:1}
+.widget-add-tile .lbl{font-size:12.5px;font-weight:600}
+
+.widget-card{
+  position:relative;border-radius:16px;padding:18px 18px 16px;background:var(--card);
+  box-shadow:var(--shadow);border:1px solid var(--line);min-height:170px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.widget-card .w-head{display:flex;align-items:center;gap:10px}
+.widget-card .w-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.widget-card .w-title{font-size:12.5px;font-weight:700;color:var(--muted)}
+.widget-card .w-metric{font-size:25px;font-weight:800;color:var(--text);line-height:1.2}
+.widget-card .w-sub{font-size:11.5px;color:var(--muted);line-height:1.5}
+.widget-card .w-trend.up{color:#15803D;font-weight:700}
+.widget-card .w-trend.down{color:#B42318;font-weight:700}
+.widget-card .w-remove{
+  position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:0;
+  background:#F4F7FA;color:var(--muted);cursor:pointer;font-size:12px;line-height:1;
+}
+.widget-card .w-remove:hover{background:#FDECEC;color:#B42318}
+.widget-card .w-bar-track{width:100%;height:10px;border-radius:6px;background:#E7E9EE;overflow:hidden}
+.widget-card .w-bar-fill{height:100%;background:var(--orange);border-radius:6px}
+.widget-card .w-chips{display:flex;flex-wrap:wrap;gap:6px}
+.widget-card .w-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:#EAF3FA;color:var(--blue)}
+.widget-card .w-chip.win{background:#EAF7EE;color:#15803D}
+.widget-card .w-chip.lost{background:#FDECEC;color:#B42318}
+
+/* ---------- Widget picker modal ---------- */
+.wp-overlay{position:fixed;inset:0;background:rgba(12,56,67,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.wp-card{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.wp-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line)}
+.wp-head h3{margin:0;font-size:16px;color:var(--blue)}
+.wp-close{border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;padding:0}
+.wp-body{padding:16px 22px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.wp-option{border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:.15s;text-align:left;background:#fff}
+.wp-option:hover{border-color:var(--blue2);background:rgba(139,186,222,.08)}
+.wp-option .wp-ic{font-size:20px;flex-shrink:0}
+.wp-option .wp-name{font-size:13px;font-weight:700;color:var(--text)}
+.wp-option .wp-desc{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+@media(max-width:520px){.wp-body{grid-template-columns:1fr}}
 
 .dash-note{
-  margin-top:22px;padding:12px 16px;border-radius:12px;background:rgba(139,186,222,.18);color:var(--blue);font-size:12.5px;
+  margin-top:26px;padding:12px 16px;border-radius:12px;background:rgba(139,186,222,.18);color:var(--blue);font-size:12.5px;
   line-height:1.6;border:1px solid rgba(139,186,222,.5);
 }
 
@@ -111,9 +162,10 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 }
 @media(max-width:640px){
   .dash-header{padding:14px 16px}
-  .dash-main{padding:22px 16px 60px}
+  .dash-main{padding:24px 16px 60px}
   .dash-title{flex-direction:column;align-items:stretch}
   .fab-btn{padding:10px 16px 10px 10px;font-size:12.5px;justify-content:center}
+  .wp-body{padding:14px 16px 18px}
 }
 </style>
 </head>
@@ -161,13 +213,19 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       </div>
       <a href="presale-configurator-v2.html" class="fab-btn"><span class="plus-ic">+</span>Create Request Auction Quotation</a>
     </div>
-    <div class="widget-grid">
-      <div class="widget-placeholder"><div class="ic">📊</div><div class="lbl">ยังไม่ได้กำหนด Widget</div></div>
-      <div class="widget-placeholder"><div class="ic">📈</div><div class="lbl">ยังไม่ได้กำหนด Widget</div></div>
-      <div class="widget-placeholder"><div class="ic">🎯</div><div class="lbl">ยังไม่ได้กำหนด Widget</div></div>
-    </div>
-    <div class="dash-note"><strong>หมายเหตุ:</strong> Dashboard นี้ออกแบบให้กำหนด Widget (ยอดขาย, Target, Pipeline ฯลฯ) ได้ในภายหลัง — ขณะนี้เป็นเพียง Layout เปล่าสำหรับ Prototype</div>
+    <div class="widget-grid" id="widgetGrid"></div>
+    <div class="dash-note"><strong>หมายเหตุ:</strong> คลิก "+ เลือก Widget" เพื่อกำหนดการ์ดที่ต้องการแสดง (ยอดขาย, Target, Pipeline ฯลฯ) — ข้อมูลในการ์ดเป็นตัวอย่างสำหรับ Prototype เท่านั้น ยังไม่ใช่ข้อมูลจริง</div>
   </main>
+</div>
+
+<div class="wp-overlay hidden" id="widgetPickerOverlay" onclick="if(event.target===this) closeWidgetPicker()">
+  <div class="wp-card">
+    <div class="wp-head">
+      <h3>เลือก Widget / Select Widget</h3>
+      <button class="wp-close" onclick="closeWidgetPicker()">×</button>
+    </div>
+    <div class="wp-body" id="widgetPickerBody"></div>
+  </div>
 </div>
 
 <script>
@@ -191,6 +249,103 @@ function showDashboard(user){
  document.getElementById('dashboardScreen').classList.remove('hidden');
  document.getElementById('dashUserName').textContent = user;
  document.getElementById('dashAvatar').textContent = user.charAt(0).toUpperCase();
+ renderWidgetGrid();
+}
+
+// ---------- Configurable dashboard widgets (Prototype — mock data, no live backend) ----------
+const WIDGET_STORAGE_KEY = 'tmt_dashboard_widgets';
+const DEFAULT_SLOT_COUNT = 3;
+const MAX_SLOTS = 6;
+const WIDGET_CATALOG = [
+ {id:'salesThisMonth', icon:'💰', accent:'orange', title:'ยอดขายเดือนนี้', desc:'Sales this month vs last month'},
+ {id:'targetVsActual', icon:'🎯', accent:'gold', title:'เป้าหมายเทียบยอดขาย', desc:'Target vs actual achievement'},
+ {id:'pipeline', icon:'📋', accent:'sky', title:'Pipeline คำขอใบเสนอราคา', desc:'Quotation request pipeline'},
+ {id:'winRate', icon:'📈', accent:'blue2', title:'อัตราปิดการขาย (Win Rate)', desc:'Quotation win rate this month'},
+ {id:'followUp', icon:'🔔', accent:'orange', title:'ลูกค้าที่ต้องติดตาม', desc:'Customers pending follow-up'},
+ {id:'creditAlert', icon:'⚠️', accent:'review', title:'ลูกค้าใกล้เต็มวงเงินเครดิต', desc:'Customers near credit limit'},
+];
+const WIDGET_ACCENT_STYLE = {
+ orange:'background:rgba(255,106,5,.12);color:var(--orange)',
+ gold:'background:rgba(253,196,64,.28);color:#8a5d00',
+ sky:'background:rgba(139,186,222,.28);color:var(--blue2)',
+ blue2:'background:rgba(21,81,99,.12);color:var(--blue2)',
+ review:'background:#FDECEC;color:#B42318',
+};
+function widgetDef(id){ return WIDGET_CATALOG.find(w=>w.id===id); }
+function loadDashboardWidgets(){
+ try{
+  const raw = localStorage.getItem(WIDGET_STORAGE_KEY);
+  if(raw){ const parsed = JSON.parse(raw); if(Array.isArray(parsed) && parsed.length) return parsed; }
+ }catch(e){}
+ return Array.from({length:DEFAULT_SLOT_COUNT}, ()=>({widgetId:null}));
+}
+let dashboardWidgets = loadDashboardWidgets();
+function saveDashboardWidgets(){
+ try{ localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(dashboardWidgets)); }catch(e){}
+}
+function widgetBodyHTML(id){
+ switch(id){
+  case 'salesThisMonth': return `<div class="w-metric">฿2,480,000</div><div class="w-sub">ยอดขายเดือนนี้ · <span class="w-trend up">▲ +12% จากเดือนก่อน</span></div>`;
+  case 'targetVsActual': return `<div class="w-metric">83%</div><div class="w-sub">เป้า 3,000,000 บาท · ทำได้ 2,480,000 บาท</div><div class="w-bar-track"><div class="w-bar-fill" style="width:83%"></div></div>`;
+  case 'pipeline': return `<div class="w-chips"><span class="w-chip">Draft 4</span><span class="w-chip">Sent 7</span><span class="w-chip win">Won 3</span><span class="w-chip lost">Lost 1</span></div><div class="w-sub">คำขอใบเสนอราคาที่เปิดอยู่เดือนนี้</div>`;
+  case 'winRate': return `<div class="w-metric">42%</div><div class="w-sub">อัตราปิดการขาย · จาก 12 ใบเสนอราคาเดือนนี้</div>`;
+  case 'followUp': return `<div class="w-metric">5 ราย</div><div class="w-sub">ลูกค้าที่ยังไม่ปิดการขายเกิน 7 วัน</div>`;
+  case 'creditAlert': return `<div class="w-metric">2 ราย</div><div class="w-sub">ลูกค้าที่วงเงินเครดิตคงเหลือต่ำกว่า 20%</div>`;
+  default: return '';
+ }
+}
+function renderWidgetGrid(){
+ const grid = document.getElementById('widgetGrid');
+ if(!grid) return;
+ grid.innerHTML = dashboardWidgets.map((slot,i)=>{
+  if(!slot.widgetId){
+   const removable = i>=DEFAULT_SLOT_COUNT;
+   return `<div class="widget-placeholder" onclick="openWidgetPicker(${i})">
+    <div class="ic">➕</div><div class="lbl">เลือก Widget</div>
+    ${removable?`<span class="slot-remove" onclick="event.stopPropagation();removeWidgetSlot(${i})">ลบช่องนี้ ✕</span>`:''}
+   </div>`;
+  }
+  const w = widgetDef(slot.widgetId);
+  if(!w) return '';
+  return `<div class="widget-card">
+   <button class="w-remove" title="ลบ Widget นี้" onclick="removeWidgetSlot(${i})">✕</button>
+   <div class="w-head"><div class="w-ic" style="${WIDGET_ACCENT_STYLE[w.accent]}">${w.icon}</div><div class="w-title">${w.title}</div></div>
+   ${widgetBodyHTML(w.id)}
+  </div>`;
+ }).join('') + (dashboardWidgets.length < MAX_SLOTS ? `<div class="widget-add-tile" onclick="addWidgetSlot()"><div class="plus">+</div><div class="lbl">เพิ่ม Widget การ์ดใหม่</div></div>` : '');
+}
+function openWidgetPicker(slotIndex){
+ const body = document.getElementById('widgetPickerBody');
+ body.innerHTML = WIDGET_CATALOG.map(w=>`<div class="wp-option" onclick="selectWidget(${slotIndex},'${w.id}')">
+  <div class="wp-ic">${w.icon}</div>
+  <div><div class="wp-name">${w.title}</div><div class="wp-desc">${w.desc}</div></div>
+ </div>`).join('');
+ document.getElementById('widgetPickerOverlay').dataset.slot = slotIndex;
+ document.getElementById('widgetPickerOverlay').classList.remove('hidden');
+}
+function closeWidgetPicker(){
+ document.getElementById('widgetPickerOverlay').classList.add('hidden');
+}
+function selectWidget(slotIndex, widgetId){
+ dashboardWidgets[slotIndex] = {widgetId};
+ saveDashboardWidgets();
+ closeWidgetPicker();
+ renderWidgetGrid();
+}
+function removeWidgetSlot(slotIndex){
+ if(slotIndex >= DEFAULT_SLOT_COUNT){
+  dashboardWidgets.splice(slotIndex,1);
+ } else {
+  dashboardWidgets[slotIndex] = {widgetId:null};
+ }
+ saveDashboardWidgets();
+ renderWidgetGrid();
+}
+function addWidgetSlot(){
+ if(dashboardWidgets.length >= MAX_SLOTS) return;
+ dashboardWidgets.push({widgetId:null});
+ saveDashboardWidgets();
+ renderWidgetGrid();
 }
 function logout(){
  sessionStorage.removeItem(SESSION_KEY);

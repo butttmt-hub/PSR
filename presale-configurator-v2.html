@@ -194,6 +194,8 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 @media(max-width:1050px){main{grid-template-columns:1fr}.side{position:static}.progress{grid-template-columns:repeat(4,1fr)}.grid,.grid.three{grid-template-columns:1fr 1fr}.summary-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){header{padding:15px}.header-row{align-items:flex-start}.proto{display:none}.progress{grid-template-columns:repeat(2,1fr)}main{width:94%;margin-top:14px}.grid,.grid.three,.customer-grid,.hero-choice,.summary-grid,.owner-grid{grid-template-columns:1fr}.panel-head,.panel-body,.actions{padding-left:15px;padding-right:15px}.field{min-height:auto}}
 @media print{.progress-wrap,.actions,.side,header .proto,.qn-bar{display:none!important}body{background:#fff}main{display:block;width:100%;margin:0}.panel{box-shadow:none;border:0}.screen{display:none!important}.screen[data-screen="8"]{display:block!important}.panel-head,.section-title{display:none!important}}
+body.view-mode .progress-wrap,body.view-mode .side,body.view-mode .panel-head,body.view-mode .section-title,body.view-mode .actions{display:none!important}
+body.view-mode main{grid-template-columns:1fr}
 </style>
 </head>
 <body>
@@ -1295,11 +1297,39 @@ function renderInternalBreakdown(){
  box.innerHTML=`<h4>🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)</h4>${blocks}<div class="ib-total">หมายเหตุ: Extra ในหมวด Product Spec / Quality / Packing มีผลเฉพาะรายการ (SKU) นั้นๆ เท่านั้น — ราคาที่ลูกค้าเห็นในเอกสารรวม surcharge นี้ไว้แล้ว ไม่แยกบรรทัดให้ลูกค้าเห็น</div>`;
 }
 let savedQuotationNo=null;
+const QUOTATIONS_KEY='tmt_saved_quotations';
 function generateQuotationNo(){
  const d=new Date();
  const ymd=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
  const seq=String(Math.floor(1+Math.random()*9999)).padStart(4,'0');
  return `QT-${ymd}-${seq}`;
+}
+function loadSavedQuotations(){
+ try{ const raw=localStorage.getItem(QUOTATIONS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
+}
+function persistSavedQuotations(list){
+ try{ localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(list)); }catch(e){}
+}
+function snapshotCurrentQuotation(qNo){
+ const discount=+(quoteBaseTotal*(quoteExtra.discountPct||0)/100).toFixed(2);
+ const net=+(quoteBaseTotal-discount).toFixed(2);
+ const vat=+(net*0.07).toFixed(2);
+ const grand=+(net+vat).toFixed(2);
+ return {
+  quotationNo:qNo,
+  savedAt:new Date().toISOString(),
+  savedAtDisplay:new Date().toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}),
+  project:document.getElementById('project').value,
+  refNo:document.getElementById('refNo').value,
+  customer:document.getElementById('customer').value,
+  sales:document.getElementById('sales').value,
+  grandTotal:grand,
+  itemCount:productCart.length,
+  currentProduct:currentProduct,
+  cart:JSON.parse(JSON.stringify(productCart)),
+  fieldState:JSON.parse(JSON.stringify(fieldState)),
+  quoteExtra:JSON.parse(JSON.stringify(quoteExtra)),
+ };
 }
 function renderQuotationNoBar(){
  const bar=document.getElementById('quotationNoBar'); if(!bar) return;
@@ -1314,6 +1344,9 @@ function renderQuotationNoBar(){
 function saveQuotationNumber(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อนบันทึกเลข Quotation'); return; }
  savedQuotationNo=generateQuotationNo();
+ const list=loadSavedQuotations();
+ list.push(snapshotCurrentQuotation(savedQuotationNo));
+ persistSavedQuotations(list);
  renderQuotationNoBar();
 }
 function saveAndShareQuotation(){
@@ -1466,12 +1499,47 @@ function loadExtraDemo(){
  });
  refreshAll();
 }
+function tryLoadViewMode(){
+ const params=new URLSearchParams(window.location.search);
+ const qNo=params.get('viewQuote');
+ if(!qNo) return false;
+ const rec=loadSavedQuotations().find(q=>q.quotationNo===qNo);
+ if(!rec){
+  document.querySelector('.app').innerHTML=`<div style="padding:60px 24px;text-align:center;font-family:inherit;color:var(--review)">ไม่พบ Quotation เลขที่ ${esc(qNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
+  return true;
+ }
+ currentProduct=rec.currentProduct||'Cut Sheet';
+ fieldDefs=productFieldDefs[currentProduct];
+ productCart=rec.cart||[];
+ cartIdSeq=(productCart.reduce((m,i)=>Math.max(m,i.id||0),0))+1;
+ quoteExtra=rec.quoteExtra||quoteExtra;
+ savedQuotationNo=rec.quotationNo;
+ Object.keys(fieldState).forEach(k=>delete fieldState[k]);
+ fieldDefs.forEach(f=>{
+  if(rec.fieldState && rec.fieldState[f.id]) fieldState[f.id]=rec.fieldState[f.id];
+  else fieldState[f.id]=f.multi?{status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}}:{status:f.opts[0][1],value:f.opts[0][0],detail:''};
+ });
+ document.getElementById('project').value=rec.project||'';
+ document.getElementById('refNo').value=rec.refNo||'';
+ document.getElementById('customer').value=rec.customer||'';
+ document.getElementById('sales').value=rec.sales||'';
+ document.body.classList.add('view-mode');
+ showScreen(8);
+ const bar=document.getElementById('quotationNoBar');
+ if(bar){
+  bar.style.display='flex';
+  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — Quotation <strong>${esc(rec.quotationNo)}</strong> (บันทึกเมื่อ ${esc(rec.savedAtDisplay||'')})</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="sales-portal.html" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Dashboard</a></div>`;
+ }
+ return true;
+}
 ['project','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
-populateCustomerDetailOptions();
-selectProduct('Cut Sheet');
-renderProductSpecForCart();
-renderQualityForCart();
-renderPackingForCart();
+if(!tryLoadViewMode()){
+ populateCustomerDetailOptions();
+ selectProduct('Cut Sheet');
+ renderProductSpecForCart();
+ renderQualityForCart();
+ renderPackingForCart();
+}
 </script>
 </body>
 </html>

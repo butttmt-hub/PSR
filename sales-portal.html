@@ -128,6 +128,19 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .widget-card .w-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:#EAF3FA;color:var(--blue)}
 .widget-card .w-chip.win{background:#EAF7EE;color:#15803D}
 .widget-card .w-chip.lost{background:#FDECEC;color:#B42318}
+.widget-card .w-link-btn{align-self:flex-start;border:0;background:none;color:var(--orange);font-weight:700;font-size:11.5px;cursor:pointer;padding:0}
+.widget-card .w-link-btn:hover{text-decoration:underline}
+
+/* ---------- Quotation list popup ---------- */
+.ql-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
+.ql-empty{font-size:12.5px;color:var(--muted);text-align:center;padding:24px 0}
+.ql-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:inherit;transition:.15s}
+.ql-row:hover{border-color:var(--blue2);background:rgba(139,186,222,.08)}
+.ql-no{font-weight:800;font-size:13px;color:var(--blue)}
+.ql-cust{font-size:11.5px;color:var(--muted);margin-top:2px}
+.ql-meta{text-align:right;flex-shrink:0}
+.ql-amt{font-weight:700;font-size:12.5px;color:var(--text)}
+.ql-date{font-size:10.5px;color:var(--muted);margin-top:2px}
 
 /* ---------- Widget picker modal ---------- */
 .wp-overlay{position:fixed;inset:0;background:rgba(12,56,67,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
@@ -228,6 +241,16 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   </div>
 </div>
 
+<div class="wp-overlay hidden" id="quotationListOverlay" onclick="if(event.target===this) closeQuotationList()">
+  <div class="wp-card">
+    <div class="wp-head">
+      <h3>รายการ Quotation ที่บันทึกไว้</h3>
+      <button class="wp-close" onclick="closeQuotationList()">×</button>
+    </div>
+    <div style="padding:16px 22px 22px" id="quotationListBody"></div>
+  </div>
+</div>
+
 <script>
 const CREDENTIALS = { username: 'Sale01', password: 'S123' };
 const SESSION_KEY = 'tmt_sales_portal_user';
@@ -263,7 +286,10 @@ const WIDGET_CATALOG = [
  {id:'winRate', icon:'📈', accent:'blue2', title:'อัตราปิดการขาย (Win Rate)', desc:'Quotation win rate this month'},
  {id:'followUp', icon:'🔔', accent:'orange', title:'ลูกค้าที่ต้องติดตาม', desc:'Customers pending follow-up'},
  {id:'creditAlert', icon:'⚠️', accent:'review', title:'ลูกค้าใกล้เต็มวงเงินเครดิต', desc:'Customers near credit limit'},
+ {id:'quotationCount', icon:'📄', accent:'blue2', title:'Quotation ที่สร้างแล้ว', desc:'Saved quotation count — click to view list'},
 ];
+function esc(x){ return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+function fmtBaht(n){ return (n||0).toLocaleString('en-US',{maximumFractionDigits:0}); }
 const WIDGET_ACCENT_STYLE = {
  orange:'background:rgba(255,106,5,.12);color:var(--orange)',
  gold:'background:rgba(253,196,64,.28);color:#8a5d00',
@@ -291,8 +317,36 @@ function widgetBodyHTML(id){
   case 'winRate': return `<div class="w-metric">42%</div><div class="w-sub">อัตราปิดการขาย · จาก 12 ใบเสนอราคาเดือนนี้</div>`;
   case 'followUp': return `<div class="w-metric">5 ราย</div><div class="w-sub">ลูกค้าที่ยังไม่ปิดการขายเกิน 7 วัน</div>`;
   case 'creditAlert': return `<div class="w-metric">2 ราย</div><div class="w-sub">ลูกค้าที่วงเงินเครดิตคงเหลือต่ำกว่า 20%</div>`;
+  case 'quotationCount': {
+   const list = getSavedQuotations();
+   return `<div class="w-metric">${list.length} ใบ</div><div class="w-sub">Quotation ที่บันทึกไว้ทั้งหมด</div><button class="w-link-btn" onclick="openQuotationList()">ดูรายการ →</button>`;
+  }
   default: return '';
  }
+}
+
+// ---------- Saved quotations (written by presale-configurator-v2.html, shared via localStorage) ----------
+const QUOTATIONS_KEY = 'tmt_saved_quotations';
+function getSavedQuotations(){
+ try{
+  const raw = localStorage.getItem(QUOTATIONS_KEY);
+  const arr = raw ? JSON.parse(raw) : [];
+  return Array.isArray(arr) ? arr : [];
+ }catch(e){ return []; }
+}
+function openQuotationList(){
+ const list = getSavedQuotations().slice().reverse();
+ const body = document.getElementById('quotationListBody');
+ body.innerHTML = list.length ? `<div class="ql-list">${list.map(q=>`
+   <a class="ql-row" href="presale-configurator-v2.html?viewQuote=${encodeURIComponent(q.quotationNo)}">
+    <div><div class="ql-no">${esc(q.quotationNo)}</div><div class="ql-cust">${esc(q.customer||'ยังไม่ระบุลูกค้า')}</div></div>
+    <div class="ql-meta"><div class="ql-amt">${fmtBaht(q.grandTotal)} บาท</div><div class="ql-date">${esc(q.savedAtDisplay||'')}</div></div>
+   </a>`).join('')}</div>`
+  : `<div class="ql-empty">ยังไม่มี Quotation ที่บันทึกไว้ — ไปที่ "Create Request Auction Quotation" แล้วบันทึกเลข Quotation ในหน้าใบเสนอราคา</div>`;
+ document.getElementById('quotationListOverlay').classList.remove('hidden');
+}
+function closeQuotationList(){
+ document.getElementById('quotationListOverlay').classList.add('hidden');
 }
 function renderWidgetGrid(){
  const grid = document.getElementById('widgetGrid');

@@ -385,6 +385,7 @@ body.view-mode main{grid-template-columns:1fr}
       <!-- Screen 9 -->
       <div class="screen" data-screen="9">
         <div class="section-title">Submit to Operation / Structured Handover</div>
+        <div class="qn-bar" id="handoverViewBar" style="display:none"></div>
         <div class="handover">
           <h3 id="handoverTitle">Requirement Handover</h3>
           <div id="handoverMeta" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
@@ -1487,7 +1488,7 @@ function renderSalesOrderDoc(rec){
  } else {
   let sendBtnHtml;
   if(rec.status==='pending_approval') sendBtnHtml=`<button class="btn secondary" disabled>🕒 รออนุมัติ</button>`;
-  else if(rec.status==='approved') sendBtnHtml=`<button class="btn secondary" disabled>✅ อนุมัติแล้ว</button>`;
+  else if(rec.status==='approved') sendBtnHtml=`<button class="btn secondary" disabled>✅ อนุมัติแล้ว</button><button class="btn orange" onclick="viewHandover('${esc(rec.soNo)}')">📤 Handover</button>`;
   else sendBtnHtml=`<button class="btn orange" ${hasPO?'':'disabled'} onclick="sendToApproval('${esc(rec.soNo)}')" title="${hasPO?'':'ต้องแนบไฟล์ PO ก่อนจึงจะส่ง Approval ได้'}">✅ Send to Approval</button>`;
   toolbarHtml=`<div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -1736,8 +1737,38 @@ function tryLoadSOViewMode(){
   app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Sales Order เลขที่ ${esc(soNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
   return true;
  }
+ if(params.get('handover')==='1' && rec.status==='approved'){
+  return loadSOHandoverView(rec);
+ }
  document.body.classList.add('view-mode');
  app.innerHTML=renderSalesOrderDoc(rec);
+ return true;
+}
+function viewHandover(soNo){
+ window.location.href=`presale-configurator-v2.html?viewSO=${encodeURIComponent(soNo)}&handover=1`;
+}
+function loadSOHandoverView(rec){
+ currentProduct=rec.currentProduct||'Cut Sheet';
+ fieldDefs=productFieldDefs[currentProduct];
+ productCart=rec.cart||[];
+ cartIdSeq=(productCart.reduce((m,i)=>Math.max(m,i.id||0),0))+1;
+ quoteExtra=rec.quoteExtra||quoteExtra;
+ Object.keys(fieldState).forEach(k=>delete fieldState[k]);
+ fieldDefs.forEach(f=>{
+  if(rec.fieldState && rec.fieldState[f.id]) fieldState[f.id]=rec.fieldState[f.id];
+  else fieldState[f.id]=f.multi?{status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}}:{status:f.opts[0][1],value:f.opts[0][0],detail:''};
+ });
+ document.getElementById('project').value=rec.project||'';
+ document.getElementById('refNo').value=rec.refNo||'';
+ document.getElementById('customer').value=rec.customer||'';
+ document.getElementById('sales').value=rec.sales||'';
+ document.body.classList.add('view-mode');
+ showScreen(9);
+ const bar=document.getElementById('handoverViewBar');
+ if(bar){
+  bar.style.display='flex';
+  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — Handover สำหรับ S/O <strong>${esc(rec.soNo)}</strong></div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Sales Order</a></div>`;
+ }
  return true;
 }
 function renderQuotation(){

@@ -165,6 +165,17 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .appr-snippet{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .appr-time{font-size:11px;color:var(--muted);flex-shrink:0}
 .appr-empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+.appr-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.appr-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center}
+.appr-stat-num{font-size:22px;font-weight:800;color:var(--blue)}
+.appr-stat-lbl{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+.appr-stat.urgent{border-color:#F3C6C2;background:var(--reviewBg)}
+.appr-stat.urgent .appr-stat-num{color:var(--review)}
+.appr-delivery-row{margin-top:6px}
+.appr-delivery-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:#EAF3FA;color:var(--blue2)}
+.appr-delivery-badge.urgent{background:var(--reviewBg);color:var(--review)}
+.appr-delivery-badge.pending{background:#FFF3E8;color:#9A4C0B}
+@media(max-width:640px){.appr-summary{grid-template-columns:repeat(2,1fr)}}
 .internal-only{margin-top:16px;border:1px dashed var(--extra);background:var(--extraBg);border-radius:10px;padding:14px 16px;font-size:12px;color:#7A3B0E}
 .internal-only h4{margin:0 0 8px;font-size:12.5px;color:var(--extra);display:flex;align-items:center;gap:6px}
 .internal-only ul{margin:0 0 8px;padding-left:18px;line-height:1.7}
@@ -1740,18 +1751,50 @@ function markLinkedQuotationResolved(quotationNo,status,reason){
  if(reason) qRec.soRejectReason=reason;
  persistSavedQuotations(qList);
 }
+function approvalUrgencyDays(rec){
+ if(rec.deliveryDateType!=='scheduled'||!rec.deliveryDate) return null;
+ const today=new Date(); today.setHours(0,0,0,0);
+ const d=new Date(rec.deliveryDate); d.setHours(0,0,0,0);
+ return Math.round((d-today)/86400000);
+}
 function renderApprovalInbox(){
- const pending=loadSalesOrders().filter(s=>s.status==='pending_approval')
-  .sort((a,b)=>new Date(b.sentToApprovalAt||0)-new Date(a.sentToApprovalAt||0));
- const rowsHtml=pending.length?pending.map(rec=>{
+ const pending=loadSalesOrders().filter(s=>s.status==='pending_approval');
+ const sorted=pending.slice().sort((a,b)=>{
+  const da=approvalUrgencyDays(a), db=approvalUrgencyDays(b);
+  if(da!==null&&db!==null) return da-db;
+  if(da!==null&&db===null) return -1;
+  if(da===null&&db!==null) return 1;
+  return new Date(b.sentToApprovalAt||0)-new Date(a.sentToApprovalAt||0);
+ });
+ const totalCount=pending.length;
+ const totalValue=pending.reduce((sum,s)=>sum+(s.grandTotal||0),0);
+ const urgentCount=pending.filter(s=>{const d=approvalUrgencyDays(s); return d!==null&&d<=3;}).length;
+ const noDateCount=pending.filter(s=>s.deliveryDateType==='pending').length;
+ const summaryHtml=`<div class="appr-summary">
+   <div class="appr-stat"><div class="appr-stat-num">${totalCount}</div><div class="appr-stat-lbl">รอดำเนินการทั้งหมด</div></div>
+   <div class="appr-stat"><div class="appr-stat-num">${fmtMoney(totalValue)}</div><div class="appr-stat-lbl">มูลค่ารวม (บาท)</div></div>
+   <div class="appr-stat${urgentCount>0?' urgent':''}"><div class="appr-stat-num">${urgentCount}</div><div class="appr-stat-lbl">ด่วน (ส่งใน 3 วัน / เลยกำหนด)</div></div>
+   <div class="appr-stat"><div class="appr-stat-num">${noDateCount}</div><div class="appr-stat-lbl">ยังไม่ระบุวันที่ส่ง (รอแจ้ง)</div></div>
+  </div>`;
+ const rowsHtml=sorted.length?sorted.map(rec=>{
   const initial=esc((rec.customer||'?').charAt(0));
   const itemCount=rec.cart?rec.cart.length:0;
   const sentDate=esc(new Date(rec.sentToApprovalAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+  const urgencyDays=approvalUrgencyDays(rec);
+  let deliveryHtml;
+  if(urgencyDays!==null){
+   const dLabel=esc(new Date(rec.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+   const diffLabel=urgencyDays<0?`เลยกำหนด ${Math.abs(urgencyDays)} วัน`:urgencyDays===0?'ส่งวันนี้':`อีก ${urgencyDays} วัน`;
+   deliveryHtml=`<span class="appr-delivery-badge${urgencyDays<=3?' urgent':''}">📅 ${dLabel} (${diffLabel})</span>`;
+  } else {
+   deliveryHtml=`<span class="appr-delivery-badge pending">🕒 รอแจ้งวันที่ส่ง</span>`;
+  }
   return `<div class="appr-row" onclick="location.href='presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}&mode=approval'">
    <div class="appr-avatar">${initial}</div>
    <div class="appr-main">
     <div class="appr-subject">คำขออนุมัติ Sales Order <strong>${esc(rec.soNo)}</strong></div>
     <div class="appr-snippet">${esc(rec.customer||'-')} · ${itemCount} รายการ · ${fmtMoney(rec.grandTotal||0)} บาท · แนบ PO: ${esc(rec.poAttachment?.name||'-')}</div>
+    <div class="appr-delivery-row">${deliveryHtml}</div>
    </div>
    <div class="appr-time">${sentDate}</div>
   </div>`;
@@ -1762,6 +1805,7 @@ function renderApprovalInbox(){
     <h2 style="margin:0;color:var(--blue);font-size:19px">📥 กล่องคำขออนุมัติ / Approval Inbox</h2>
     <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
    </div>
+   ${summaryHtml}
    <div class="appr-list">${rowsHtml}</div>
   </div>`;
 }

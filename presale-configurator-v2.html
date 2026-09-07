@@ -165,8 +165,10 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .appr-snippet{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .appr-time{font-size:11px;color:var(--muted);flex-shrink:0}
 .appr-empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
-.appr-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.appr-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center}
+.appr-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.appr-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center;cursor:pointer;transition:.15s}
+.appr-stat:hover{border-color:var(--blue2)}
+.appr-stat.active{box-shadow:0 0 0 2px var(--blue) inset}
 .appr-stat-num{font-size:22px;font-weight:800;color:var(--blue)}
 .appr-stat-lbl{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.4}
 .appr-stat.urgent{border-color:#F3C6C2;background:var(--reviewBg)}
@@ -1757,24 +1759,42 @@ function approvalUrgencyDays(rec){
  const d=new Date(rec.deliveryDate); d.setHours(0,0,0,0);
  return Math.round((d-today)/86400000);
 }
+function classifyApprovalUrgency(rec){
+ const d=approvalUrgencyDays(rec);
+ if(d===null) return 'noDate';
+ if(d===1) return 'shipTomorrow';
+ if(d<=2) return 'approveToday';
+ return 'general';
+}
+let approvalCardFilter=null;
+function setApprovalCardFilter(key){
+ approvalCardFilter=(approvalCardFilter===key)?null:key;
+ document.body.classList.add('view-mode');
+ document.querySelector('.app').innerHTML=renderApprovalInbox();
+}
 function renderApprovalInbox(){
  const pending=loadSalesOrders().filter(s=>s.status==='pending_approval');
- const sorted=pending.slice().sort((a,b)=>{
+ const classified=pending.map(rec=>({rec,cls:classifyApprovalUrgency(rec)}));
+ const totalCount=pending.length;
+ const shipTomorrowCount=classified.filter(x=>x.cls==='shipTomorrow').length;
+ const approveTodayCount=classified.filter(x=>x.cls==='approveToday').length;
+ const generalCount=classified.filter(x=>x.cls==='general').length;
+ const noDateCount=classified.filter(x=>x.cls==='noDate').length;
+ const filteredList=approvalCardFilter?classified.filter(x=>x.cls===approvalCardFilter).map(x=>x.rec):pending;
+ const sorted=filteredList.slice().sort((a,b)=>{
   const da=approvalUrgencyDays(a), db=approvalUrgencyDays(b);
   if(da!==null&&db!==null) return da-db;
   if(da!==null&&db===null) return -1;
   if(da===null&&db!==null) return 1;
   return new Date(b.sentToApprovalAt||0)-new Date(a.sentToApprovalAt||0);
  });
- const totalCount=pending.length;
- const totalValue=pending.reduce((sum,s)=>sum+(s.grandTotal||0),0);
- const urgentCount=pending.filter(s=>{const d=approvalUrgencyDays(s); return d!==null&&d<=3;}).length;
- const noDateCount=pending.filter(s=>s.deliveryDateType==='pending').length;
+ const cardActive=(key)=>approvalCardFilter===key?' active':'';
  const summaryHtml=`<div class="appr-summary">
-   <div class="appr-stat"><div class="appr-stat-num">${totalCount}</div><div class="appr-stat-lbl">รอดำเนินการทั้งหมด</div></div>
-   <div class="appr-stat"><div class="appr-stat-num">${fmtMoney(totalValue)}</div><div class="appr-stat-lbl">มูลค่ารวม (บาท)</div></div>
-   <div class="appr-stat${urgentCount>0?' urgent':''}"><div class="appr-stat-num">${urgentCount}</div><div class="appr-stat-lbl">ด่วน (ส่งใน 3 วัน / เลยกำหนด)</div></div>
-   <div class="appr-stat"><div class="appr-stat-num">${noDateCount}</div><div class="appr-stat-lbl">ยังไม่ระบุวันที่ส่ง (รอแจ้ง)</div></div>
+   <div class="appr-stat${cardActive(null)}" onclick="setApprovalCardFilter(null)"><div class="appr-stat-num">${totalCount}</div><div class="appr-stat-lbl">รอดำเนินการทั้งหมด</div></div>
+   <div class="appr-stat${shipTomorrowCount>0?' urgent':''}${cardActive('shipTomorrow')}" onclick="setApprovalCardFilter('shipTomorrow')"><div class="appr-stat-num">${shipTomorrowCount}</div><div class="appr-stat-lbl">ด่วนส่งพรุ่งนี้</div></div>
+   <div class="appr-stat${approveTodayCount>0?' urgent':''}${cardActive('approveToday')}" onclick="setApprovalCardFilter('approveToday')"><div class="appr-stat-num">${approveTodayCount}</div><div class="appr-stat-lbl">ต้องอนุมัติภายในวันนี้</div></div>
+   <div class="appr-stat${cardActive('general')}" onclick="setApprovalCardFilter('general')"><div class="appr-stat-num">${generalCount}</div><div class="appr-stat-lbl">งานรออนุมัติทั่วไป</div></div>
+   <div class="appr-stat${cardActive('noDate')}" onclick="setApprovalCardFilter('noDate')"><div class="appr-stat-num">${noDateCount}</div><div class="appr-stat-lbl">งานรอกำหนดส่ง</div></div>
   </div>`;
  const rowsHtml=sorted.length?sorted.map(rec=>{
   const initial=esc((rec.customer||'?').charAt(0));
@@ -1798,7 +1818,7 @@ function renderApprovalInbox(){
    </div>
    <div class="appr-time">${sentDate}</div>
   </div>`;
- }).join(''):`<div class="appr-empty">ไม่มีคำขออนุมัติที่รอดำเนินการ</div>`;
+ }).join(''):`<div class="appr-empty">${totalCount?'ไม่มีงานในหมวดนี้':'ไม่มีคำขออนุมัติที่รอดำเนินการ'}</div>`;
  return `
   <div style="max-width:900px;margin:0 auto">
    <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">

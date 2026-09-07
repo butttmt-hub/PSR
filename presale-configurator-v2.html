@@ -1342,21 +1342,46 @@ function handleDiscountEvidenceSelect(e){
  reader.onerror=function(){ alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาลองใหม่'); };
  reader.readAsDataURL(file);
 }
+const DISCOUNT_APPROVALS_KEY='tmt_discount_approvals';
+function loadDiscountApprovals(){
+ try{ const raw=localStorage.getItem(DISCOUNT_APPROVALS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
+}
+function persistDiscountApprovals(list){
+ try{ localStorage.setItem(DISCOUNT_APPROVALS_KEY, JSON.stringify(list)); }catch(e){}
+}
+function getDiscountApprovalStatus(quotationNo){
+ if(!quotationNo) return null;
+ const rec=loadDiscountApprovals().find(r=>r.quotationNo===quotationNo);
+ return rec?rec.status:null;
+}
 function updateDiscountEvidenceGate(){
- const valid=hasValidDiscountEvidence();
- ['qPrintBtn','qSaveShareBtn','qTransferSoBtn'].forEach(id=>{
+ const needsDiscountFlow=quoteExtra.discountPct>0;
+ const validEvidence=hasValidDiscountEvidence();
+ const approvalStatus=needsDiscountFlow?getDiscountApprovalStatus(savedQuotationNo):null;
+ const transferOk=!needsDiscountFlow||approvalStatus==='approved';
+ ['qPrintBtn','qSaveShareBtn'].forEach(id=>{
   const btn=document.getElementById(id);
   if(!btn) return;
-  btn.disabled=!valid;
-  btn.title=valid?'':'มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะใช้งานปุ่มนี้ได้';
+  btn.disabled=!validEvidence;
+  btn.title=validEvidence?'':'มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะใช้งานปุ่มนี้ได้';
  });
+ const transferBtn=document.getElementById('qTransferSoBtn');
+ if(transferBtn){
+  const ok=validEvidence&&transferOk;
+  transferBtn.disabled=!ok;
+  transferBtn.title=ok?'':(!validEvidence?'มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะใช้งานปุ่มนี้ได้':approvalStatus==='pending'?'รอ Mng01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้':approvalStatus==='rejected'?'ส่วนลดถูกปฏิเสธ — กด Save & Share เพื่อขออนุมัติใหม่':'ต้องขออนุมัติส่วนลดจาก Mng01 ก่อน (กด Save & Share)');
+ }
  const bar=document.getElementById('discountEvidenceBar');
  if(!bar) return;
- if(quoteExtra.discountPct>0){
+ if(needsDiscountFlow){
   bar.style.display='flex';
+  let statusHtml='';
+  if(approvalStatus==='pending') statusHtml=`<span style="margin-left:8px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:#FFF3E8;color:#9A4C0B">🕒 รอ Mng01 อนุมัติ</span>`;
+  else if(approvalStatus==='approved') statusHtml=`<span style="margin-left:8px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--stdBg);color:var(--std)">✅ Mng01 อนุมัติแล้ว</span>`;
+  else if(approvalStatus==='rejected') statusHtml=`<span style="margin-left:8px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--reviewBg);color:var(--review)">❌ ถูกปฏิเสธ</span>`;
   bar.innerHTML=discountEvidence
-   ?`<div class="qn-info">📎 หลักฐานส่วนลด: <strong>${esc(discountEvidence.name)}</strong><span class="qn-saved">✓ แนบแล้ว</span></div><label style="border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">🔄 เปลี่ยนไฟล์<input type="file" style="display:none" onchange="handleDiscountEvidenceSelect(event)"></label>`
-   :`<div class="qn-info" style="color:var(--review)">⚠️ มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะ Print / Save &amp; Share / Transfer to S/O Request ได้</div><label style="border:0;background:var(--orange);color:#fff;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">📎 แนบหลักฐานส่วนลด<input type="file" style="display:none" onchange="handleDiscountEvidenceSelect(event)"></label>`;
+   ?`<div class="qn-info">📎 หลักฐานส่วนลด: <strong>${esc(discountEvidence.name)}</strong><span class="qn-saved">✓ แนบแล้ว</span>${statusHtml}</div><label style="border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">🔄 เปลี่ยนไฟล์<input type="file" style="display:none" onchange="handleDiscountEvidenceSelect(event)"></label>`
+   :`<div class="qn-info" style="color:var(--review)">⚠️ มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะ Print / Save &amp; Share ได้</div><label style="border:0;background:var(--orange);color:#fff;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">📎 แนบหลักฐานส่วนลด<input type="file" style="display:none" onchange="handleDiscountEvidenceSelect(event)"></label>`;
  } else {
   bar.style.display='none';
   bar.innerHTML='';
@@ -1487,11 +1512,35 @@ function saveAndShareQuotation(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Save & Share'); return; }
  if(!hasValidDiscountEvidence()){ alert('มีการให้ส่วนลด กรุณาแนบหลักฐานก่อน Save & Share'); return; }
  if(!savedQuotationNo){ saveQuotationNumber(); }
+ if(quoteExtra.discountPct>0){
+  const discountAmt=+(quoteBaseTotal*(quoteExtra.discountPct||0)/100).toFixed(2);
+  const net=+(quoteBaseTotal-discountAmt).toFixed(2);
+  const vat=+(net*0.07).toFixed(2);
+  const grand=+(net+vat).toFixed(2);
+  const list=loadDiscountApprovals();
+  const idx=list.findIndex(r=>r.quotationNo===savedQuotationNo);
+  const rec={
+   quotationNo:savedQuotationNo,
+   customer:document.getElementById('customer').value,
+   sales:document.getElementById('sales').value,
+   project:document.getElementById('project').value,
+   discountPct:quoteExtra.discountPct,
+   grandTotal:grand,
+   evidence:discountEvidence,
+   status:'pending',
+   requestedAt:new Date().toISOString(),
+  };
+  if(idx>=0) list[idx]={...list[idx],...rec}; else list.push(rec);
+  persistDiscountApprovals(list);
+  window.location.href=`presale-configurator-v2.html?viewDiscountApproval=${encodeURIComponent(savedQuotationNo)}`;
+  return;
+ }
  alert(`บันทึกใบเสนอราคาแล้ว — เลข Quotation: ${savedQuotationNo}\n(Prototype: ยังไม่มีระบบส่งลิงก์แชร์จริง)`);
 }
 function transferToSO(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Transfer to S/O Request'); return; }
  if(!hasValidDiscountEvidence()){ alert('มีการให้ส่วนลด กรุณาแนบหลักฐานก่อน Transfer to S/O Request'); return; }
+ if(quoteExtra.discountPct>0 && getDiscountApprovalStatus(savedQuotationNo)!=='approved'){ alert('ต้องรอ Mng01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้'); return; }
  if(!savedQuotationNo){ alert('กรุณาบันทึกเลข Quotation ก่อน Transfer to S/O Request'); return; }
  const qList=loadSavedQuotations();
  const qRec=qList.find(q=>q.quotationNo===savedQuotationNo);
@@ -1882,6 +1931,108 @@ function tryLoadApprovalInboxMode(){
  document.querySelector('.app').innerHTML=renderApprovalInbox();
  return true;
 }
+function renderDiscountApprovalView(rec){
+ const att=rec.evidence;
+ const isImage=att&&att.type&&att.type.startsWith('image/');
+ const isPdf=att&&att.type==='application/pdf';
+ let evidenceHtml;
+ if(!att){ evidenceHtml=`<div style="color:var(--muted);font-size:12px">ไม่มีไฟล์แนบ</div>`; }
+ else if(isImage){ evidenceHtml=`<img src="${att.dataUrl}" style="max-width:100%;border-radius:8px;border:1px solid var(--line)">`; }
+ else if(isPdf){ evidenceHtml=`<iframe src="${att.dataUrl}#toolbar=0&navpanes=0&scrollbar=0" style="width:100%;height:520px;border:1px solid var(--line);border-radius:8px"></iframe><div style="margin-top:10px;text-align:center"><button class="btn secondary" onclick="window.open('${att.dataUrl}','_blank')">🔍 เปิดไฟล์ในแท็บใหม่</button></div>`; }
+ else { evidenceHtml=`<div style="border:1px dashed var(--line);border-radius:10px;padding:30px;text-align:center;color:var(--muted)">ไม่รองรับการแสดงตัวอย่างไฟล์ประเภทนี้<br><button class="btn secondary" style="margin-top:10px" onclick="window.open('${att.dataUrl}','_blank')">🔍 เปิดไฟล์</button></div>`; }
+ const statusBanner=rec.status==='approved'
+  ?`<div class="notice info"><strong>✅ Mng01 อนุมัติส่วนลดแล้ว</strong> เมื่อ ${esc(new Date(rec.decidedAt||Date.now()).toLocaleDateString('th-TH'))}</div>`
+  :rec.status==='rejected'
+  ?`<div class="notice danger"><strong>❌ Mng01 ปฏิเสธส่วนลด</strong> — เหตุผล: ${esc(rec.rejectReason||'-')}</div>`
+  :`<div class="notice warn"><strong>🕒 รอ Mng01 อนุมัติส่วนลด</strong></div>`;
+ const actionButtons=rec.status==='pending'
+  ?`<button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openDiscountRejectModal('${esc(rec.quotationNo)}')">✕ Reject</button><button class="btn orange" onclick="approveDiscount('${esc(rec.quotationNo)}')">✓ Approve (Mng01)</button>`
+  :'';
+ return `
+  <div style="max-width:700px;margin:0 auto">
+   <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
+    <h2 style="margin:0;color:var(--blue);font-size:19px">🧾 ขออนุมัติส่วนลด (Mng01)</h2>
+    <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
+   </div>
+   ${statusBanner}
+   <div class="so-po-panel" style="margin-top:16px">
+    <div class="so-po-head"><h4>รายละเอียดคำขอ</h4></div>
+    <div style="font-size:13px;line-height:1.9">
+     <div>Quotation: <strong>${esc(rec.quotationNo)}</strong></div>
+     <div>ลูกค้า: ${esc(rec.customer||'-')}</div>
+     <div>Sales: ${esc(rec.sales||'-')}</div>
+     <div>ส่วนลดที่ขอ: <strong style="color:var(--extra)">${rec.discountPct}%</strong></div>
+     <div>ยอดรวมหลังส่วนลด: <strong>${fmtMoney(rec.grandTotal||0)} บาท</strong></div>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+     <div class="so-po-head"><h4>หลักฐานส่วนลด</h4><div class="so-po-meta">${esc(att?.name||'-')}${att?' · '+formatFileSize(att.size):''}</div></div>
+     ${evidenceHtml}
+    </div>
+   </div>
+   <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">${actionButtons}</div>
+  </div>
+  <div class="modal-overlay" id="discountRejectModalOverlay" style="display:none">
+   <div class="modal-card" style="max-width:440px">
+    <div class="modal-head"><h2>ระบุเหตุผลการ Reject ส่วนลด</h2><button class="modal-close" onclick="closeDiscountRejectModal()">×</button></div>
+    <div class="modal-body">
+     <textarea id="discountRejectReasonInput" rows="4" style="width:100%;border:1px solid #C9D6E1;border-radius:8px;padding:10px;font:inherit;font-size:13px;resize:vertical" placeholder="กรุณาระบุเหตุผล (บังคับกรอก)"></textarea>
+     <div id="discountRejectReasonError" style="color:#B42318;font-size:11.5px;margin-top:6px;display:none">กรุณาระบุเหตุผลก่อนยืนยัน</div>
+    </div>
+    <div class="modal-foot">
+     <button class="btn primary" style="background:#B42318" onclick="confirmDiscountReject()">✕ ยืนยัน Reject</button>
+     <button class="btn secondary" onclick="closeDiscountRejectModal()">ยกเลิก</button>
+    </div>
+   </div>
+  </div>`;
+}
+function approveDiscount(quotationNo){
+ const list=loadDiscountApprovals();
+ const rec=list.find(r=>r.quotationNo===quotationNo);
+ if(!rec) return;
+ rec.status='approved';
+ rec.decidedAt=new Date().toISOString();
+ persistDiscountApprovals(list);
+ document.body.classList.add('view-mode');
+ document.querySelector('.app').innerHTML=renderDiscountApprovalView(rec);
+}
+let discountRejectTargetQno=null;
+function openDiscountRejectModal(qno){
+ discountRejectTargetQno=qno;
+ document.getElementById('discountRejectReasonInput').value='';
+ document.getElementById('discountRejectReasonError').style.display='none';
+ document.getElementById('discountRejectModalOverlay').style.display='flex';
+}
+function closeDiscountRejectModal(){
+ document.getElementById('discountRejectModalOverlay').style.display='none';
+ discountRejectTargetQno=null;
+}
+function confirmDiscountReject(){
+ const reason=document.getElementById('discountRejectReasonInput').value.trim();
+ if(!reason){ document.getElementById('discountRejectReasonError').style.display='block'; return; }
+ const list=loadDiscountApprovals();
+ const rec=list.find(r=>r.quotationNo===discountRejectTargetQno);
+ if(!rec) return;
+ rec.status='rejected';
+ rec.rejectReason=reason;
+ rec.decidedAt=new Date().toISOString();
+ persistDiscountApprovals(list);
+ document.body.classList.add('view-mode');
+ document.querySelector('.app').innerHTML=renderDiscountApprovalView(rec);
+}
+function tryLoadDiscountApprovalMode(){
+ const params=new URLSearchParams(window.location.search);
+ const qno=params.get('viewDiscountApproval');
+ if(!qno) return false;
+ const rec=loadDiscountApprovals().find(r=>r.quotationNo===qno);
+ const app=document.querySelector('.app');
+ if(!rec){
+  app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบคำขออนุมัติส่วนลดสำหรับ Quotation ${esc(qno)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
+  return true;
+ }
+ document.body.classList.add('view-mode');
+ app.innerHTML=renderDiscountApprovalView(rec);
+ return true;
+}
 function tryLoadSOViewMode(){
  const params=new URLSearchParams(window.location.search);
  const soNo=params.get('viewSO');
@@ -2081,6 +2232,7 @@ function tryLoadViewMode(){
  cartIdSeq=(productCart.reduce((m,i)=>Math.max(m,i.id||0),0))+1;
  quoteExtra=rec.quoteExtra||quoteExtra;
  savedQuotationNo=rec.quotationNo;
+ discountEvidence=rec.discountEvidence||null;
  Object.keys(fieldState).forEach(k=>delete fieldState[k]);
  fieldDefs.forEach(f=>{
   if(rec.fieldState && rec.fieldState[f.id]) fieldState[f.id]=rec.fieldState[f.id];
@@ -2103,7 +2255,7 @@ function tryLoadViewMode(){
  return true;
 }
 ['project','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
-if(!tryLoadApprovalInboxMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
+if(!tryLoadDiscountApprovalMode() && !tryLoadApprovalInboxMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
  populateCustomerDetailOptions();
  selectProduct('Cut Sheet');
  renderProductSpecForCart();

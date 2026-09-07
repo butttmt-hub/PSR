@@ -397,6 +397,7 @@ body.view-mode main{grid-template-columns:1fr}
       <div class="screen" data-screen="8">
         <div class="section-title">Quotation / ใบเสนอราคา</div>
         <div class="qn-bar" id="quotationNoBar"></div>
+        <div class="qn-bar" id="discountEvidenceBar" style="display:none"></div>
         <div class="quote-doc" id="quoteDoc"></div>
         <div class="internal-only" id="internalBreakdown"></div>
       </div>
@@ -420,7 +421,7 @@ body.view-mode main{grid-template-columns:1fr}
       <div style="display:flex;gap:8px">
         <button class="btn secondary" id="demoBtn" onclick="loadExtraDemo()">Load Extra Demo</button>
         <button class="btn primary" id="nextBtn" onclick="go(1)">Next →</button>
-        <button class="btn secondary" id="qPrintBtn" onclick="window.print()" style="display:none">🖨️ Print</button>
+        <button class="btn secondary" id="qPrintBtn" onclick="printQuotationGated()" style="display:none">🖨️ Print</button>
         <button class="btn primary" id="qSaveShareBtn" onclick="saveAndShareQuotation()" style="display:none">💾 Save &amp; Share</button>
         <button class="btn orange" id="qTransferSoBtn" onclick="transferToSO()" style="display:none">Transfer to S/O Request →</button>
       </div>
@@ -1324,6 +1325,47 @@ function renderHandover(){
 }
 let quoteExtra={attention:'',tel:'',paymentTerm:'',deliveryPlace:'',deliveryDate:'',validity:'',discountPct:0};
 let quoteBaseTotal=0;
+let discountEvidence=null;
+function hasValidDiscountEvidence(){
+ return !(quoteExtra.discountPct>0) || !!discountEvidence;
+}
+function handleDiscountEvidenceSelect(e){
+ const file=e.target.files&&e.target.files[0];
+ if(!file) return;
+ const MAX_BYTES=4*1024*1024;
+ if(file.size>MAX_BYTES){ alert('ไฟล์มีขนาดใหญ่เกินไป (จำกัดไม่เกิน 4 MB)'); e.target.value=''; return; }
+ const reader=new FileReader();
+ reader.onload=function(){
+  discountEvidence={name:file.name,type:file.type,size:file.size,dataUrl:reader.result};
+  updateDiscountEvidenceGate();
+ };
+ reader.onerror=function(){ alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาลองใหม่'); };
+ reader.readAsDataURL(file);
+}
+function updateDiscountEvidenceGate(){
+ const valid=hasValidDiscountEvidence();
+ ['qPrintBtn','qSaveShareBtn','qTransferSoBtn'].forEach(id=>{
+  const btn=document.getElementById(id);
+  if(!btn) return;
+  btn.disabled=!valid;
+  btn.title=valid?'':'มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะใช้งานปุ่มนี้ได้';
+ });
+ const bar=document.getElementById('discountEvidenceBar');
+ if(!bar) return;
+ if(quoteExtra.discountPct>0){
+  bar.style.display='flex';
+  bar.innerHTML=discountEvidence
+   ?`<div class="qn-info">📎 หลักฐานส่วนลด: <strong>${esc(discountEvidence.name)}</strong><span class="qn-saved">✓ แนบแล้ว</span></div><label style="border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">🔄 เปลี่ยนไฟล์<input type="file" style="display:none" onchange="handleDiscountEvidenceSelect(event)"></label>`
+   :`<div class="qn-info" style="color:var(--review)">⚠️ มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะ Print / Save &amp; Share / Transfer to S/O Request ได้</div><label style="border:0;background:var(--orange);color:#fff;border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">📎 แนบหลักฐานส่วนลด<input type="file" style="display:none" onchange="handleDiscountEvidenceSelect(event)"></label>`;
+ } else {
+  bar.style.display='none';
+  bar.innerHTML='';
+ }
+}
+function printQuotationGated(){
+ if(!hasValidDiscountEvidence()){ alert('มีการให้ส่วนลด กรุณาแนบหลักฐานก่อน Print'); return; }
+ window.print();
+}
 function recalcQuoteTotals(){
  const discount=+(quoteBaseTotal*(quoteExtra.discountPct||0)/100).toFixed(2);
  const net=+(quoteBaseTotal-discount).toFixed(2);
@@ -1335,6 +1377,7 @@ function recalcQuoteTotals(){
  set('qNet',fmtMoney(net));
  set('qVat',fmtMoney(vat));
  set('qGrand',fmtMoney(grand));
+ updateDiscountEvidenceGate();
 }
 function computeExtraSurchargeForItem(item){
  if(!item.specState) return {count:0,pct:0,entries:[]};
@@ -1419,6 +1462,7 @@ function snapshotCurrentQuotation(qNo){
   cart:JSON.parse(JSON.stringify(productCart)),
   fieldState:JSON.parse(JSON.stringify(fieldState)),
   quoteExtra:JSON.parse(JSON.stringify(quoteExtra)),
+  discountEvidence:discountEvidence?JSON.parse(JSON.stringify(discountEvidence)):null,
  };
 }
 function renderQuotationNoBar(){
@@ -1441,11 +1485,13 @@ function saveQuotationNumber(){
 }
 function saveAndShareQuotation(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Save & Share'); return; }
+ if(!hasValidDiscountEvidence()){ alert('มีการให้ส่วนลด กรุณาแนบหลักฐานก่อน Save & Share'); return; }
  if(!savedQuotationNo){ saveQuotationNumber(); }
  alert(`บันทึกใบเสนอราคาแล้ว — เลข Quotation: ${savedQuotationNo}\n(Prototype: ยังไม่มีระบบส่งลิงก์แชร์จริง)`);
 }
 function transferToSO(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Transfer to S/O Request'); return; }
+ if(!hasValidDiscountEvidence()){ alert('มีการให้ส่วนลด กรุณาแนบหลักฐานก่อน Transfer to S/O Request'); return; }
  if(!savedQuotationNo){ alert('กรุณาบันทึกเลข Quotation ก่อน Transfer to S/O Request'); return; }
  const qList=loadSavedQuotations();
  const qRec=qList.find(q=>q.quotationNo===savedQuotationNo);

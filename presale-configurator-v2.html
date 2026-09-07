@@ -146,12 +146,12 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .so-po-panel{flex:1;min-width:0;background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px}
 .so-po-head h4{margin:0 0 4px;font-size:13.5px;color:var(--blue)}
 .so-po-meta{font-size:11px;color:var(--muted);margin-bottom:12px;word-break:break-all}
-.so-delivery-section{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
-.so-delivery-section h4{margin:0 0 8px;font-size:13.5px;color:var(--blue)}
-.so-delivery-options{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-bottom:8px}
-.so-delivery-options label{display:flex;align-items:center;gap:6px;cursor:pointer}
-.so-delivery-date-input{border:1px solid #C9D6E1;border-radius:8px;padding:8px 10px;font:inherit;font-size:13px}
-.so-delivery-warn{margin-top:8px;font-size:11.5px;color:var(--extra)}
+.so-delivery-inline{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#FAFCFE}
+.so-delivery-label{font-weight:700;color:var(--blue);white-space:nowrap}
+.so-delivery-inline label{display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+.so-delivery-date-input{border:1px solid #C9D6E1;border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px}
+.so-delivery-warn{font-size:11px;color:var(--extra);white-space:nowrap}
+@media(max-width:640px){.so-delivery-warn{white-space:normal}}
 @media(max-width:900px){.so-review-layout{flex-direction:column}.so-po-panel{width:100%}}
 @media print{.so-doc{border:0;padding:0}.so-toolbar{display:none!important}.so-po-panel{display:none!important}.so-review-layout{display:block!important}}
 /* ---------- Approval Inbox ---------- */
@@ -1504,6 +1504,7 @@ function renderSalesOrderDoc(rec){
      <button class="btn secondary" onclick="window.print()">🖨️ Print</button>
      <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
      <label class="btn secondary" style="cursor:pointer;margin:0;display:inline-flex;align-items:center">📎 ${hasPO?'เปลี่ยนไฟล์ PO':'Add PO'}<input type="file" style="display:none" onchange="handlePOFileSelect(event,'${esc(rec.soNo)}')"></label>
+     ${hasPO?renderDeliveryDateSection(rec):''}
      ${sendBtnHtml}
     </div>
     <div style="font-size:11.5px;color:var(--muted)">อ้างอิงจาก Quotation: <strong>${esc(rec.quotationNo||'-')}</strong></div>
@@ -1521,7 +1522,7 @@ function renderSalesOrderDoc(rec){
    ${toolbarHtml}
    ${statusBannerHtml}
    <div class="so-review-layout">
-    ${hasPO?`<div class="so-po-panel">${renderPOPanel(rec.poAttachment)}${renderDeliveryDateSection(rec)}</div>`:''}
+    ${hasPO?`<div class="so-po-panel">${renderPOPanel(rec.poAttachment)}</div>`:''}
    <div class="so-doc">
     <div class="so-head">
      <div class="quote-logo"><img class="mark" src="tmt-logo.png" alt="TMT logo"><div class="co">TMT STEEL PUBLIC COMPANY LIMITED<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div></div>
@@ -1631,15 +1632,14 @@ function hasDeliveryDateInfo(rec){
 function renderDeliveryDateSection(rec){
  const type=rec.deliveryDateType||'';
  const soNo=esc(rec.soNo);
- return `<div class="so-delivery-section">
-  <h4>วันที่กำหนดส่ง</h4>
-  <div class="so-delivery-options">
+ const warn=!hasDeliveryDateInfo(rec)?`<span class="so-delivery-warn">⚠️ กรุณาเลือก "รอแจ้ง" หรือระบุวันที่ส่ง ก่อนจึงจะส่ง Approval ได้</span>`:'';
+ return `<div class="so-delivery-inline">
+   <span class="so-delivery-label">วันที่กำหนดส่ง:</span>
    <label><input type="radio" name="deliveryDateType_${soNo}" ${type==='pending'?'checked':''} onchange="setDeliveryDateType('${soNo}','pending')"> รอแจ้ง</label>
    <label><input type="radio" name="deliveryDateType_${soNo}" ${type==='scheduled'?'checked':''} onchange="setDeliveryDateType('${soNo}','scheduled')"> เลือกวันที่ส่ง</label>
-  </div>
-  <input type="date" class="so-delivery-date-input" value="${esc(rec.deliveryDate||'')}" style="${type==='scheduled'?'':'display:none'}" onchange="setDeliveryDate('${soNo}',this.value)">
-  ${!hasDeliveryDateInfo(rec)?`<div class="so-delivery-warn">⚠️ กรุณาเลือก "รอแจ้ง" หรือระบุวันที่ส่ง ก่อนจึงจะส่ง Approval ได้</div>`:''}
- </div>`;
+   <input type="date" class="so-delivery-date-input" value="${esc(rec.deliveryDate||'')}" style="${type==='scheduled'?'':'display:none'}" onchange="setDeliveryDate('${soNo}',this.value)">
+   ${warn}
+  </div>`;
 }
 function setDeliveryDateType(soNo,type){
  const list=loadSalesOrders();

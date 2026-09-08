@@ -2001,7 +2001,10 @@ function renderDiscountApprovalView(rec){
   <div style="max-width:2000px;margin:0 auto">
    <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
     <h2 style="margin:0;color:var(--blue);font-size:19px">🧾 ขออนุมัติส่วนลด (Mng01)</h2>
-    <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+     <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
+     ${actionButtons}
+    </div>
    </div>
    ${statusBanner}
    <div style="font-size:13px;line-height:1.9;margin-bottom:16px">
@@ -2018,7 +2021,6 @@ function renderDiscountApprovalView(rec){
      <iframe src="presale-configurator-v2.html?viewQuote=${encodeURIComponent(rec.quotationNo)}${rec.status==='pending'?'&embedded=1':''}" style="width:100%;height:700px;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe>
     </div>
    </div>
-   <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">${actionButtons}</div>
   </div>
   <div class="modal-overlay" id="discountRejectModalOverlay" style="display:none">
    <div class="modal-card" style="max-width:440px">

@@ -17,8 +17,20 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 
 /* ---------- Login screen ---------- */
 .login-screen{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  min-height:100vh;display:flex;
+}
+.login-panel{
+  flex:1 1 480px;min-width:320px;display:flex;align-items:center;justify-content:flex-start;padding:24px 48px;
   background:linear-gradient(135deg,var(--blue) 0%,var(--blue2) 55%,var(--blue) 100%);
+}
+.login-visual{
+  flex:1 1 60%;position:relative;overflow:hidden;background:#0a0a0a;
+}
+.login-visual img{width:100%;height:100%;object-fit:cover;display:block}
+@media(max-width:900px){
+  .login-screen{flex-direction:column}
+  .login-visual{display:none}
+  .login-panel{justify-content:center;padding:24px}
 }
 .login-card{
   width:100%;max-width:380px;background:var(--card);border-radius:18px;box-shadow:0 20px 50px rgba(0,20,40,.25);
@@ -200,24 +212,29 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 <body>
 
 <div id="loginScreen" class="login-screen">
-  <div class="login-card">
-    <div class="login-brand">
-      <img class="mark" src="tmt-logo.png" alt="TMT logo">
-      <div class="name">TMT Sales Portal<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div>
+  <div class="login-panel">
+    <div class="login-card">
+      <div class="login-brand">
+        <img class="mark" src="tmt-logo.png" alt="TMT logo">
+        <div class="name">TMT Sales Portal<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div>
+      </div>
+      <h2>เข้าสู่ระบบ / Login</h2>
+      <p class="sub">สำหรับฝ่ายขาย — เข้าถึง Dashboard ผลงานและระบบขอใบเสนอราคา</p>
+      <div class="login-field">
+        <label>Username</label>
+        <input id="loginUser" type="text" placeholder="เช่น Sale01" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password">
+      </div>
+      <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
+      <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>User: <b>Sale01</b> · Password: <b>S123</b></div>
     </div>
-    <h2>เข้าสู่ระบบ / Login</h2>
-    <p class="sub">สำหรับฝ่ายขาย — เข้าถึง Dashboard ผลงานและระบบขอใบเสนอราคา</p>
-    <div class="login-field">
-      <label>Username</label>
-      <input id="loginUser" type="text" placeholder="เช่น Sale01" autocomplete="username">
-    </div>
-    <div class="login-field">
-      <label>Password</label>
-      <input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password">
-    </div>
-    <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
-    <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-    <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>User: <b>Sale01</b> · Password: <b>S123</b></div>
+  </div>
+  <div class="login-visual">
+    <img src="Login.jpg" alt="TMT — From Scrap to Sustainability">
   </div>
 </div>
 
@@ -313,6 +330,7 @@ const WIDGET_CATALOG = [
  {id:'creditAlert', icon:'⚠️', accent:'review', title:'ลูกค้าใกล้เต็มวงเงินเครดิต', desc:'Customers near credit limit'},
  {id:'quotationCount', icon:'📄', accent:'blue2', title:'Quotation ที่สร้างแล้ว', desc:'Saved quotation count — click to view list'},
  {id:'soStatus', icon:'🧾', accent:'sky', title:'สถานะ Sales Order', desc:'S/O by approval status — click to view list'},
+ {id:'discountApprovalStatus', icon:'💸', accent:'gold', title:'คำขออนุมัติส่วนลด (Mng01)', desc:'Discount approval requests — click to view inbox'},
 ];
 function esc(x){ return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 function fmtBaht(n){ return (n||0).toLocaleString('en-US',{maximumFractionDigits:0}); }
@@ -354,6 +372,10 @@ function widgetBodyHTML(id){
     <button class="w-chip w-chip-btn win" onclick="openSOList('approved')">Approve ${c.approved}</button>
     <button class="w-chip w-chip-btn lost" onclick="openSOList('rejected')">Reject ${c.rejected}</button>
    </div><div class="w-sub">สถานะ Sales Order ทั้งหมด — คลิกแต่ละสถานะเพื่อดูรายการ</div>`;
+  }
+  case 'discountApprovalStatus': {
+   const c = getDiscountApprovalCounts();
+   return `<div class="w-metric">${c.pending} รายการ</div><div class="w-sub">รออนุมัติส่วนลด (Mng01) · อนุมัติแล้ว ${c.approved} · ปฏิเสธ ${c.rejected}</div><button class="w-link-btn" onclick="location.href='presale-configurator-v2.html?discountApprovalInbox'">ดูรายการ →</button>`;
   }
   default: return '';
  }
@@ -397,6 +419,15 @@ const SO_STATUS_LABELS = {pending_approval:'Waiting Approve', approved:'Approve'
 function getSOCountsByStatus(){
  const counts = {pending_approval:0, approved:0, rejected:0};
  loadSalesOrders().forEach(s=>{ if(counts.hasOwnProperty(s.status)) counts[s.status]++; });
+ return counts;
+}
+const DISCOUNT_APPROVALS_KEY = 'tmt_discount_approvals';
+function loadDiscountApprovals(){
+ try{ const raw=localStorage.getItem(DISCOUNT_APPROVALS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
+}
+function getDiscountApprovalCounts(){
+ const counts = {pending:0, approved:0, rejected:0};
+ loadDiscountApprovals().forEach(r=>{ if(counts.hasOwnProperty(r.status)) counts[r.status]++; });
  return counts;
 }
 function openSOList(statusFilter){

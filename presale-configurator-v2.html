@@ -1931,23 +1931,34 @@ function tryLoadApprovalInboxMode(){
  document.querySelector('.app').innerHTML=renderApprovalInbox();
  return true;
 }
+const DISCOUNT_INBOX_EMPTY={pending:'ไม่มีคำขออนุมัติส่วนลดที่รอดำเนินการ',approved:'ไม่มีคำขอที่อนุมัติแล้ว',rejected:'ไม่มีคำขอที่ถูกปฏิเสธ'};
+let discountInboxCardFilter='pending';
+function setDiscountInboxCardFilter(status){
+ discountInboxCardFilter=status;
+ document.body.classList.add('view-mode');
+ document.querySelector('.app').innerHTML=renderDiscountApprovalInbox();
+}
 function renderDiscountApprovalInbox(){
  const all=loadDiscountApprovals();
- const pending=all.filter(r=>r.status==='pending').sort((a,b)=>new Date(a.requestedAt||0)-new Date(b.requestedAt||0));
- const approvedCount=all.filter(r=>r.status==='approved').length;
- const rejectedCount=all.filter(r=>r.status==='rejected').length;
- const rowsHtml=pending.length?pending.map(rec=>{
+ const byStatus={
+  pending:all.filter(r=>r.status==='pending'),
+  approved:all.filter(r=>r.status==='approved'),
+  rejected:all.filter(r=>r.status==='rejected'),
+ };
+ const list=byStatus[discountInboxCardFilter].slice().sort((a,b)=>new Date(b.decidedAt||b.requestedAt||0)-new Date(a.decidedAt||a.requestedAt||0));
+ const cardActive=(key)=>discountInboxCardFilter===key?' active':'';
+ const rowsHtml=list.length?list.map(rec=>{
   const initial=esc((rec.customer||'?').charAt(0));
-  const reqDate=esc(new Date(rec.requestedAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+  const dateLabel=esc(new Date(rec.decidedAt||rec.requestedAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
   return `<div class="appr-row" onclick="location.href='presale-configurator-v2.html?viewDiscountApproval=${encodeURIComponent(rec.quotationNo)}'">
    <div class="appr-avatar">${initial}</div>
    <div class="appr-main">
     <div class="appr-subject">คำขออนุมัติส่วนลด Quotation <strong>${esc(rec.quotationNo)}</strong></div>
     <div class="appr-snippet">${esc(rec.customer||'-')} · Sales: ${esc(rec.sales||'-')} · ส่วนลด ${rec.discountPct}% · ${fmtMoney(rec.grandTotal||0)} บาท</div>
    </div>
-   <div class="appr-time">${reqDate}</div>
+   <div class="appr-time">${dateLabel}</div>
   </div>`;
- }).join(''):`<div class="appr-empty">ไม่มีคำขออนุมัติส่วนลดที่รอดำเนินการ</div>`;
+ }).join(''):`<div class="appr-empty">${DISCOUNT_INBOX_EMPTY[discountInboxCardFilter]}</div>`;
  return `
   <div style="max-width:900px;margin:0 auto">
    <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
@@ -1955,9 +1966,9 @@ function renderDiscountApprovalInbox(){
     <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
    </div>
    <div class="appr-summary" style="grid-template-columns:repeat(3,1fr)">
-    <div class="appr-stat urgent"><div class="appr-stat-num">${pending.length}</div><div class="appr-stat-lbl">รออนุมัติ</div></div>
-    <div class="appr-stat"><div class="appr-stat-num">${approvedCount}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
-    <div class="appr-stat"><div class="appr-stat-num">${rejectedCount}</div><div class="appr-stat-lbl">ปฏิเสธแล้ว</div></div>
+    <div class="appr-stat${byStatus.pending.length>0?' urgent':''}${cardActive('pending')}" onclick="setDiscountInboxCardFilter('pending')"><div class="appr-stat-num">${byStatus.pending.length}</div><div class="appr-stat-lbl">รออนุมัติ</div></div>
+    <div class="appr-stat${cardActive('approved')}" onclick="setDiscountInboxCardFilter('approved')"><div class="appr-stat-num">${byStatus.approved.length}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
+    <div class="appr-stat${cardActive('rejected')}" onclick="setDiscountInboxCardFilter('rejected')"><div class="appr-stat-num">${byStatus.rejected.length}</div><div class="appr-stat-lbl">ปฏิเสธแล้ว</div></div>
    </div>
    <div class="appr-list">${rowsHtml}</div>
   </div>`;
@@ -2004,7 +2015,7 @@ function renderDiscountApprovalView(rec){
     </div>
     <div class="so-po-panel">
      <div class="so-po-head"><h4>Quotation ${esc(rec.quotationNo)}</h4><div class="so-po-meta">มุมมองอ่านอย่างเดียว</div></div>
-     <iframe src="presale-configurator-v2.html?viewQuote=${encodeURIComponent(rec.quotationNo)}&embedded=1" style="width:100%;height:700px;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe>
+     <iframe src="presale-configurator-v2.html?viewQuote=${encodeURIComponent(rec.quotationNo)}${rec.status==='pending'?'&embedded=1':''}" style="width:100%;height:700px;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe>
     </div>
    </div>
    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">${actionButtons}</div>

@@ -1592,12 +1592,13 @@ function renderSalesOrderDoc(rec){
  const approvalMode=params.get('mode')==='approval'&&rec.status==='pending_approval';
  let toolbarHtml;
  if(approvalMode){
+  const isApprovalSession=sessionStorage.getItem('tmt_sales_portal_role')==='approval';
+  const approveRejectBtns=isApprovalSession
+   ?`<button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openRejectModal('${esc(rec.soNo)}')">✕ Reject</button><button class="btn orange" onclick="approveSO('${esc(rec.soNo)}')">✓ Approve</button>`
+   :'';
   toolbarHtml=`<div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
     <a href="presale-configurator-v2.html?approvalInbox=1" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Approval Inbox</a>
-    <div style="display:flex;gap:10px">
-     <button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openRejectModal('${esc(rec.soNo)}')">✕ Reject</button>
-     <button class="btn orange" onclick="approveSO('${esc(rec.soNo)}')">✓ Approve</button>
-    </div>
+    <div style="display:flex;gap:10px">${approveRejectBtns}</div>
    </div>`;
  } else {
   let sendBtnHtml;
@@ -1994,7 +1995,8 @@ function renderDiscountApprovalView(rec){
   :rec.status==='rejected'
   ?`<div class="notice danger"><strong>❌ Mng01 ปฏิเสธส่วนลด</strong> — เหตุผล: ${esc(rec.rejectReason||'-')}</div>`
   :`<div class="notice warn"><strong>🕒 รอ Mng01 อนุมัติส่วนลด</strong></div>`;
- const actionButtons=rec.status==='pending'
+ const isMng01Session=sessionStorage.getItem('tmt_sales_portal_role')==='mng01';
+ const actionButtons=(rec.status==='pending'&&isMng01Session)
   ?`<button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openDiscountRejectModal('${esc(rec.quotationNo)}')">✕ Reject</button><button class="btn orange" onclick="approveDiscount('${esc(rec.quotationNo)}')">✓ Approve (Mng01)</button>`
   :'';
  return `

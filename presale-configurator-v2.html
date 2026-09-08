@@ -682,9 +682,9 @@ const productFieldDefs = {
  {step:3,cat:'Product Quality',id:'appearance',label:'Appearance / ลักษณะผิว',owner:'Production / QA',std:'TMT Std: รอยกัด/สนิม/Scale ระดับ 1.5',extra:'เรียบสวยเป็นพิเศษ เช่น Level 1',type:'select',opts:[['TMT Std appearance','STD'],['Special appearance / Level 1','EXTRA']],detail:true,attach:true,rule:'Special appearance = Extra'},
  {step:3,cat:'Product Quality',id:'marking',label:'Marking Format / รูปแบบ Marking',owner:'Production / Warehouse',std:'TMT No. (<3 mm HR1/SPHC) / Heat No. (≥3 mm)',extra:'ไม่พ่น / Heat+Coil / TMT no. no size / Other',type:'select',opts:[['Standard marking per matrix','STD'],['No marking','EXTRA'],['Heat + Coil','EXTRA'],['TMT no. no size','EXTRA'],['Other marking','EXTRA']],detail:true,rule:'Special marking = Extra'},
  // Step 4 Packing
- {step:4,cat:'Packing',id:'packing',label:'Packing / การแพ็ก',owner:'Warehouse',std:'ไม่รัดสายรัด',extra:'Strapping / ขาไม้ / ขาไม้+กระดาษ / Pallet / Pallet+paper',type:'select',opts:[['No strapping','STD'],['Strapping','EXTRA'],['ขาไม้ / Wood support','EXTRA'],['ขาไม้ + กระดาษ','EXTRA'],['Pallet','EXTRA'],['Pallet + paper','EXTRA']],detail:true,rule:'Anything beyond no-strapping = Extra'},
- {step:4,cat:'Packing',id:'sticker',label:'Tag / Sticker',owner:'Warehouse',std:'ไม่ติด Sticker แต่มี Barcode',extra:'Hang sticker / pallet sticker / product sticker',type:'select',opts:[['Barcode only / no sticker','STD'],['Hang sticker','EXTRA'],['Pallet sticker','EXTRA'],['Product sticker','EXTRA']],detail:true,rule:'Special sticker = Extra'},
- {step:4,cat:'Packing',id:'bundle',label:'Pcs/Bundle',owner:'Warehouse / Transport',std:'ตาม STD การผลิต',extra:'กำหนด pcs/ton per bundle ตามอุปกรณ์ลูกค้า',type:'select',opts:[['Standard production bundle','STD'],['Customer specified pcs/ton per bundle','REVIEW']],detail:true,rule:'Specific bundle requirement = Extra/Review'},
+ {step:4,cat:'Packing',id:'packing',label:'Packing / การแพ็ก',owner:'Warehouse',std:'ไม่รัดสายรัด',extra:'Strapping / ขาไม้ / ขาไม้+กระดาษ / Pallet / Pallet+paper',type:'select',opts:[['No strapping','STD','ไม่รัดสายรัด'],['Strapping','EXTRA','รัดสายรัด'],['ขาไม้ / Wood support','EXTRA','มีขาไม้รองรับ'],['ขาไม้ + กระดาษ','EXTRA','มีขาไม้ + กระดาษรอง'],['Pallet','EXTRA','แพ็คด้วยพาเลท'],['Pallet + paper','EXTRA','แพ็คด้วยพาเลท + กระดาษ']],detail:true,rule:'Anything beyond no-strapping = Extra'},
+ {step:4,cat:'Packing',id:'sticker',label:'Tag / Sticker',owner:'Warehouse',std:'ไม่ติด Sticker แต่มี Barcode',extra:'Hang sticker / pallet sticker / product sticker',type:'select',opts:[['Barcode only / no sticker','STD','มีบาร์โค้ดอย่างเดียว ไม่ติดสติกเกอร์'],['Hang sticker','EXTRA','ติดสติกเกอร์แบบห้อย'],['Pallet sticker','EXTRA','ติดสติกเกอร์ที่พาเลท'],['Product sticker','EXTRA','ติดสติกเกอร์ที่ตัวสินค้า']],detail:true,rule:'Special sticker = Extra'},
+ {step:4,cat:'Packing',id:'bundle',label:'Pcs/Bundle',owner:'Warehouse / Transport',std:'ตาม STD การผลิต',extra:'กำหนด pcs/ton per bundle ตามอุปกรณ์ลูกค้า',type:'select',opts:[['Standard production bundle','STD','มัดตามมาตรฐานโรงงาน'],['Customer specified pcs/ton per bundle','REVIEW','ลูกค้ากำหนดจำนวน/น้ำหนักต่อมัดเอง']],detail:true,rule:'Specific bundle requirement = Extra/Review'},
  // Step 5 Service
  {step:5,cat:'Service',id:'loading',label:'Loading / การจัดเรียง',owner:'Warehouse',std:'วางแนวตั้งตรงกัน; แยกตาม width; standard wood separator between sizes',extra:'สลับฟันปลา / รองขาไม้ระหว่าง Pack / special arrangement',type:'select',opts:[['Standard straight stacking','STD'],['สลับฟันปลา','EXTRA'],['Wood between packs','EXTRA'],['Special arrangement','EXTRA']],detail:true,rule:'Special loading = Extra'},
  {step:5,cat:'Service',id:'unloading',label:'Unloading Equipment / อุปกรณ์การลงของลูกค้า',owner:'Transport / Warehouse',std:'ไม่กำหนดพิเศษ / Crane / Forklift / Hoist / Hiab / Manual + capacity',extra:'อุปกรณ์อื่นๆ (ระบุ)',type:'select',opts:[['No special constraint','STD'],['Crane','STD'],['Forklift','STD'],['Hoist','STD'],['Hiab','STD'],['Manual + capacity','STD'],['อุปกรณ์อื่นๆ (Other equipment)','EXTRA']],detail:true,rule:'อุปกรณ์อื่นๆ ที่ไม่อยู่ในรายการ = Extra',multi:true,multiDetailIdx:[6]},
@@ -711,11 +711,11 @@ const productFieldDefs = {
  {step:3,cat:'Product Quality',id:'tubeGI',label:'GI Coating / มวลเคลือบ GI',owner:'Planning / Production / QA',std:'Z060',extra:'K08 / Z__ / K__',type:'select',opts:[['Z060','STD'],['K08','EXTRA'],['Specific Z__ coating','EXTRA'],['Specific K__ coating','EXTRA']],detail:true,rule:'Z060 = STD; Other coating = Extra'},
  {step:3,cat:'Product Quality',id:'tubeMarking',label:'Marking Format / รูปแบบ Marking',owner:'Production / Warehouse',std:'TIS/JIS',extra:'TIS/ASTM / TIS/BS EN / other',type:'select',opts:[['TIS/JIS','STD'],['TIS/ASTM','EXTRA'],['TIS/BS EN','EXTRA'],['Other marking format','EXTRA']],detail:true,rule:'Other marking format = Extra'},
  // Step 4 Packing — Tube
- {step:4,cat:'Packing',id:'tubePackingType',label:'Packing Type / รูปแบบแพ็ก',owner:'Warehouse',std:'Square / Hexagonal ตาม STD',extra:'N/A unless product-specific',type:'select',opts:[['Square / Hexagonal per STD','STD']],detail:false,rule:'System-derived standard packing type'},
- {step:4,cat:'Packing',id:'tubeStrap',label:'Strapping Pattern / รูปแบบสายรัด',owner:'Warehouse',std:'3 straps (square/rect.) / 4 straps (round)',extra:'Custom no. straps / wire',type:'select',opts:[['Standard strap pattern','STD'],['Custom number of straps','EXTRA'],['Wire / other strapping','EXTRA']],detail:true,rule:'Custom strapping = Extra'},
- {step:4,cat:'Packing',id:'tubeSticker',label:'Sticker',owner:'Warehouse',std:'1 Sticker / Bundle',extra:'N/A unless special',type:'select',opts:[['1 Sticker / Bundle','STD'],['Special sticker requirement','EXTRA']],detail:true,rule:'Standard sticker = STD; Special sticker = Extra'},
- {step:4,cat:'Packing',id:'tubePcsPack',label:'Pcs/Pack',owner:'Warehouse',std:'STD pack TM',extra:'Customer specified pcs/rows',type:'select',opts:[['STD pack TM','STD'],['Customer specified pcs/rows','REVIEW']],detail:true,rule:'Specific pack = Extra/Review'},
- {step:4,cat:'Packing',id:'tubePcsPackExtra',label:'Pcs/Pack Extra / จำนวนและการเรียงพิเศษ',owner:'Warehouse',std:'—',extra:'___ pcs, vertical rows ___, horizontal rows ___',type:'select',opts:[['No extra pcs/rows requirement','STD'],['Specify pcs / vertical rows / horizontal rows','EXTRA']],detail:true,rule:'Any specified extra value = Extra'},
+ {step:4,cat:'Packing',id:'tubePackingType',label:'Packing Type / รูปแบบแพ็ก',owner:'Warehouse',std:'Square / Hexagonal ตาม STD',extra:'N/A unless product-specific',type:'select',opts:[['Square / Hexagonal per STD','STD','แพ็คแบบเหลี่ยม/หกเหลี่ยมตามมาตรฐาน']],detail:false,rule:'System-derived standard packing type'},
+ {step:4,cat:'Packing',id:'tubeStrap',label:'Strapping Pattern / รูปแบบสายรัด',owner:'Warehouse',std:'3 straps (square/rect.) / 4 straps (round)',extra:'Custom no. straps / wire',type:'select',opts:[['Standard strap pattern','STD','รัดสายรัดตามมาตรฐาน'],['Custom number of straps','EXTRA','กำหนดจำนวนสายรัดเอง'],['Wire / other strapping','EXTRA','รัดด้วยลวด/แบบอื่น']],detail:true,rule:'Custom strapping = Extra'},
+ {step:4,cat:'Packing',id:'tubeSticker',label:'Sticker',owner:'Warehouse',std:'1 Sticker / Bundle',extra:'N/A unless special',type:'select',opts:[['1 Sticker / Bundle','STD','ติดสติกเกอร์ 1 ดวงต่อมัด'],['Special sticker requirement','EXTRA','ต้องการสติกเกอร์แบบพิเศษ']],detail:true,rule:'Standard sticker = STD; Special sticker = Extra'},
+ {step:4,cat:'Packing',id:'tubePcsPack',label:'Pcs/Pack',owner:'Warehouse',std:'STD pack TM',extra:'Customer specified pcs/rows',type:'select',opts:[['STD pack TM','STD','แพ็คตามมาตรฐาน TMT'],['Customer specified pcs/rows','REVIEW','ลูกค้ากำหนดจำนวน/แถวเอง']],detail:true,rule:'Specific pack = Extra/Review'},
+ {step:4,cat:'Packing',id:'tubePcsPackExtra',label:'Pcs/Pack Extra / จำนวนและการเรียงพิเศษ',owner:'Warehouse',std:'—',extra:'___ pcs, vertical rows ___, horizontal rows ___',type:'select',opts:[['No extra pcs/rows requirement','STD','ไม่มีข้อกำหนดพิเศษ'],['Specify pcs / vertical rows / horizontal rows','EXTRA','ระบุจำนวน/แถวตั้ง/แถวนอนเอง']],detail:true,rule:'Any specified extra value = Extra'},
  // Step 5 Service — Tube
  {step:5,cat:'Service',id:'tubeLoading',label:'Loading / การจัดเรียง',owner:'Warehouse',std:'วางไม้รองแนวนอนทุกชั้น 2–3 pieces',extra:'วางไม้รองแนวตั้ง / special arrangement',type:'select',opts:[['Standard horizontal wood support','STD'],['Vertical wood support','EXTRA'],['Special arrangement','EXTRA']],detail:true,rule:'Special loading = Extra'},
  {step:5,cat:'Service',id:'tubeUnloading',label:'Unloading Equipment / อุปกรณ์การลงของลูกค้า',owner:'Transport / Warehouse',std:'ไม่กำหนดพิเศษ / Crane / Forklift / Hoist / Hiab / Manual + capacity',extra:'อุปกรณ์อื่นๆ (ระบุ)',type:'select',opts:[['No special constraint','STD'],['Crane','STD'],['Forklift','STD'],['Hoist','STD'],['Hiab','STD'],['Manual + capacity','STD'],['อุปกรณ์อื่นๆ (Other equipment)','EXTRA']],detail:true,rule:'อุปกรณ์อื่นๆ ที่ไม่อยู่ในรายการ = Extra',multi:true,multiDetailIdx:[6]},
@@ -986,7 +986,7 @@ function renderItemFieldsForCart(containerId,cat){
    const uid=`${f.id}__${item.id}`;
    const st=item.specState[f.id];
    const el=document.createElement('div');el.className='field';el.id='field_'+uid;
-   let opts=f.opts.map((o,i)=>`<option value="${i}" ${st.value===o[0]?'selected':''}>${esc(o[0])}</option>`).join('');
+   let opts=f.opts.map((o,i)=>`<option value="${i}" ${st.value===o[0]?'selected':''}>${esc(o[2]||o[0])}</option>`).join('');
    el.innerHTML=`<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge ${statusClass(st.status)}" id="badge_${uid}">${statusText(st.status)}</span></div>
    <select id="${uid}">${opts}</select>
    <div class="detail ${st.status!=='STD'?'show':''}" id="detail_${uid}"><input type="text" id="detailInput_${uid}" placeholder="ระบุ Customer Requirement / Exact requirement" value="${esc(st.detail)}"></div>
@@ -1931,6 +1931,44 @@ function tryLoadApprovalInboxMode(){
  document.querySelector('.app').innerHTML=renderApprovalInbox();
  return true;
 }
+function renderDiscountApprovalInbox(){
+ const all=loadDiscountApprovals();
+ const pending=all.filter(r=>r.status==='pending').sort((a,b)=>new Date(a.requestedAt||0)-new Date(b.requestedAt||0));
+ const approvedCount=all.filter(r=>r.status==='approved').length;
+ const rejectedCount=all.filter(r=>r.status==='rejected').length;
+ const rowsHtml=pending.length?pending.map(rec=>{
+  const initial=esc((rec.customer||'?').charAt(0));
+  const reqDate=esc(new Date(rec.requestedAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+  return `<div class="appr-row" onclick="location.href='presale-configurator-v2.html?viewDiscountApproval=${encodeURIComponent(rec.quotationNo)}'">
+   <div class="appr-avatar">${initial}</div>
+   <div class="appr-main">
+    <div class="appr-subject">คำขออนุมัติส่วนลด Quotation <strong>${esc(rec.quotationNo)}</strong></div>
+    <div class="appr-snippet">${esc(rec.customer||'-')} · Sales: ${esc(rec.sales||'-')} · ส่วนลด ${rec.discountPct}% · ${fmtMoney(rec.grandTotal||0)} บาท</div>
+   </div>
+   <div class="appr-time">${reqDate}</div>
+  </div>`;
+ }).join(''):`<div class="appr-empty">ไม่มีคำขออนุมัติส่วนลดที่รอดำเนินการ</div>`;
+ return `
+  <div style="max-width:900px;margin:0 auto">
+   <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
+    <h2 style="margin:0;color:var(--blue);font-size:19px">💸 กล่องคำขออนุมัติส่วนลด / Discount Approval Inbox</h2>
+    <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
+   </div>
+   <div class="appr-summary" style="grid-template-columns:repeat(3,1fr)">
+    <div class="appr-stat urgent"><div class="appr-stat-num">${pending.length}</div><div class="appr-stat-lbl">รออนุมัติ</div></div>
+    <div class="appr-stat"><div class="appr-stat-num">${approvedCount}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
+    <div class="appr-stat"><div class="appr-stat-num">${rejectedCount}</div><div class="appr-stat-lbl">ปฏิเสธแล้ว</div></div>
+   </div>
+   <div class="appr-list">${rowsHtml}</div>
+  </div>`;
+}
+function tryLoadDiscountApprovalInboxMode(){
+ const params=new URLSearchParams(window.location.search);
+ if(!params.has('discountApprovalInbox')) return false;
+ document.body.classList.add('view-mode');
+ document.querySelector('.app').innerHTML=renderDiscountApprovalInbox();
+ return true;
+}
 function renderDiscountApprovalView(rec){
  const att=rec.evidence;
  const isImage=att&&att.type&&att.type.startsWith('image/');
@@ -1949,24 +1987,24 @@ function renderDiscountApprovalView(rec){
   ?`<button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openDiscountRejectModal('${esc(rec.quotationNo)}')">✕ Reject</button><button class="btn orange" onclick="approveDiscount('${esc(rec.quotationNo)}')">✓ Approve (Mng01)</button>`
   :'';
  return `
-  <div style="max-width:700px;margin:0 auto">
+  <div style="max-width:2000px;margin:0 auto">
    <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
     <h2 style="margin:0;color:var(--blue);font-size:19px">🧾 ขออนุมัติส่วนลด (Mng01)</h2>
     <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
    </div>
    ${statusBanner}
-   <div class="so-po-panel" style="margin-top:16px">
-    <div class="so-po-head"><h4>รายละเอียดคำขอ</h4></div>
-    <div style="font-size:13px;line-height:1.9">
-     <div>Quotation: <strong>${esc(rec.quotationNo)}</strong></div>
-     <div>ลูกค้า: ${esc(rec.customer||'-')}</div>
-     <div>Sales: ${esc(rec.sales||'-')}</div>
-     <div>ส่วนลดที่ขอ: <strong style="color:var(--extra)">${rec.discountPct}%</strong></div>
-     <div>ยอดรวมหลังส่วนลด: <strong>${fmtMoney(rec.grandTotal||0)} บาท</strong></div>
-    </div>
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
-     <div class="so-po-head"><h4>หลักฐานส่วนลด</h4><div class="so-po-meta">${esc(att?.name||'-')}${att?' · '+formatFileSize(att.size):''}</div></div>
+   <div style="font-size:13px;line-height:1.9;margin-bottom:16px">
+    <div>Quotation: <strong>${esc(rec.quotationNo)}</strong> &nbsp;·&nbsp; ลูกค้า: ${esc(rec.customer||'-')} &nbsp;·&nbsp; Sales: ${esc(rec.sales||'-')}</div>
+    <div>ส่วนลดที่ขอ: <strong style="color:var(--extra)">${rec.discountPct}%</strong> &nbsp;·&nbsp; ยอดรวมหลังส่วนลด: <strong>${fmtMoney(rec.grandTotal||0)} บาท</strong></div>
+   </div>
+   <div class="so-review-layout">
+    <div class="so-po-panel">
+     <div class="so-po-head"><h4>หลักฐานส่วนลดที่แนบ</h4><div class="so-po-meta">${esc(att?.name||'-')}${att?' · '+formatFileSize(att.size):''}</div></div>
      ${evidenceHtml}
+    </div>
+    <div class="so-po-panel">
+     <div class="so-po-head"><h4>Quotation ${esc(rec.quotationNo)}</h4><div class="so-po-meta">มุมมองอ่านอย่างเดียว</div></div>
+     <iframe src="presale-configurator-v2.html?viewQuote=${encodeURIComponent(rec.quotationNo)}" style="width:100%;height:700px;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe>
     </div>
    </div>
    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">${actionButtons}</div>
@@ -2255,7 +2293,7 @@ function tryLoadViewMode(){
  return true;
 }
 ['project','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
-if(!tryLoadDiscountApprovalMode() && !tryLoadApprovalInboxMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
+if(!tryLoadDiscountApprovalInboxMode() && !tryLoadDiscountApprovalMode() && !tryLoadApprovalInboxMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
  populateCustomerDetailOptions();
  selectProduct('Cut Sheet');
  renderProductSpecForCart();

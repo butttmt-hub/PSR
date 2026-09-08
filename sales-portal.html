@@ -8,7 +8,7 @@
 :root{
   --blue:#0c3843; --blue2:#155163; --orange:#ff6a05; --gold:#fdc440; --sky:#8bbade;
   --bg:#F4F7FA; --card:#FFFFFF;
-  --text:#17324D; --muted:#6B7F91; --line:#DCE5ED;
+  --text:#17324D; --muted:#6B7F91; --line:#DCE5ED; --review:#B42318; --reviewBg:#FDECEC;
   --shadow:0 8px 24px rgba(12,56,67,.10);
 }
 *{box-sizing:border-box}
@@ -188,6 +188,31 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   line-height:1.6;border:1px solid rgba(139,186,222,.5);
 }
 
+/* ---------- Mng01 Approval Dashboard ---------- */
+.appr-list{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.appr-row{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
+.appr-row:last-child{border-bottom:0}
+.appr-row:hover{background:#F4F7FA}
+.appr-avatar{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.appr-main{flex:1;min-width:0}
+.appr-subject{font-size:13.5px;font-weight:700;color:var(--text)}
+.appr-snippet{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appr-time{font-size:11px;color:var(--muted);flex-shrink:0}
+.appr-empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+.appr-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.appr-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center;cursor:pointer;transition:.15s}
+.appr-stat:hover{border-color:var(--blue2)}
+.appr-stat.active{box-shadow:0 0 0 2px var(--blue) inset}
+.appr-stat-num{font-size:22px;font-weight:800;color:var(--blue)}
+.appr-stat-lbl{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+.appr-stat.urgent{border-color:#F3C6C2;background:var(--reviewBg)}
+.appr-stat.urgent .appr-stat-num{color:var(--review)}
+.appr-delivery-row{margin-top:6px}
+.appr-delivery-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:#EAF3FA;color:var(--blue2)}
+.appr-delivery-badge.urgent{background:var(--reviewBg);color:var(--review)}
+.appr-delivery-badge.pending{background:#FFF3E8;color:#9A4C0B}
+@media(max-width:640px){.appr-summary{grid-template-columns:repeat(2,1fr)}}
+
 /* ---------- Create Request Auction Quotation button ---------- */
 .fab-btn{
   display:inline-flex;align-items:center;gap:9px;flex-shrink:0;
@@ -219,7 +244,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
         <div class="name">TMT Sales Portal<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div>
       </div>
       <h2>เข้าสู่ระบบ / Login</h2>
-      <p class="sub">สำหรับฝ่ายขาย — เข้าถึง Dashboard ผลงานและระบบขอใบเสนอราคา</p>
+      <p class="sub">สำหรับฝ่ายขายและผู้อนุมัติ — เข้าถึง Dashboard ผลงาน ระบบขอใบเสนอราคา และคำขออนุมัติ</p>
       <div class="login-field">
         <label>Username</label>
         <input id="loginUser" type="text" placeholder="เช่น Sale01" autocomplete="username">
@@ -230,7 +255,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       </div>
       <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
       <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>User: <b>Sale01</b> · Password: <b>S123</b></div>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mng01: <b>Mng01</b> / <b>M123</b></div>
     </div>
   </div>
   <div class="login-visual">
@@ -242,7 +267,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   <header class="dash-header">
     <div class="brand">
       <img class="mark" src="tmt-logo.png" alt="TMT logo">
-      <div class="name">Sales Performance Dashboard<small>Phase C · Prototype · Not a production system</small></div>
+      <div class="name" id="dashBrandName">Sales Performance Dashboard<small>Phase C · Prototype · Not a production system</small></div>
     </div>
     <div class="who">
       <div class="avatar" id="dashAvatar">S</div>
@@ -251,15 +276,18 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
     </div>
   </header>
   <main class="dash-main">
-    <div class="dash-title">
-      <div>
-        <h1>Sales Performance Dashboard</h1>
-        <p>ภาพรวมผลงานฝ่ายขาย — เลือกกำหนด Widget ที่ต้องการแสดงได้ในอนาคต</p>
+    <div id="salesDashboardView">
+      <div class="dash-title">
+        <div>
+          <h1>Sales Performance Dashboard</h1>
+          <p>ภาพรวมผลงานฝ่ายขาย — เลือกกำหนด Widget ที่ต้องการแสดงได้ในอนาคต</p>
+        </div>
+        <a href="presale-configurator-v2.html" class="fab-btn"><span class="plus-ic">+</span>Create Request Auction Quotation</a>
       </div>
-      <a href="presale-configurator-v2.html" class="fab-btn"><span class="plus-ic">+</span>Create Request Auction Quotation</a>
+      <div class="widget-grid" id="widgetGrid"></div>
+      <div class="dash-note"><strong>หมายเหตุ:</strong> คลิก "+ เลือก Widget" เพื่อกำหนดการ์ดที่ต้องการแสดง (ยอดขาย, Target, Pipeline ฯลฯ) — ข้อมูลในการ์ดเป็นตัวอย่างสำหรับ Prototype เท่านั้น ยังไม่ใช่ข้อมูลจริง</div>
     </div>
-    <div class="widget-grid" id="widgetGrid"></div>
-    <div class="dash-note"><strong>หมายเหตุ:</strong> คลิก "+ เลือก Widget" เพื่อกำหนดการ์ดที่ต้องการแสดง (ยอดขาย, Target, Pipeline ฯลฯ) — ข้อมูลในการ์ดเป็นตัวอย่างสำหรับ Prototype เท่านั้น ยังไม่ใช่ข้อมูลจริง</div>
+    <div id="mng01DashboardView" class="hidden"></div>
   </main>
 </div>
 
@@ -294,27 +322,39 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 </div>
 
 <script>
-const CREDENTIALS = { username: 'Sale01', password: 'S123' };
+const CREDENTIALS_LIST = [
+ { username: 'Sale01', password: 'S123', role: 'sales' },
+ { username: 'Mng01', password: 'M123', role: 'mng01' },
+];
 const SESSION_KEY = 'tmt_sales_portal_user';
+const SESSION_ROLE_KEY = 'tmt_sales_portal_role';
 
 function attemptLogin(){
  const u = document.getElementById('loginUser').value.trim();
  const p = document.getElementById('loginPass').value;
  const errEl = document.getElementById('loginError');
- if(u === CREDENTIALS.username && p === CREDENTIALS.password){
+ const match = CREDENTIALS_LIST.find(c=>c.username===u && c.password===p);
+ if(match){
   errEl.classList.add('hidden');
   sessionStorage.setItem(SESSION_KEY, u);
-  showDashboard(u);
+  sessionStorage.setItem(SESSION_ROLE_KEY, match.role);
+  showDashboard(u, match.role);
  } else {
   errEl.classList.remove('hidden');
  }
 }
-function showDashboard(user){
+function showDashboard(user, role){
  document.getElementById('loginScreen').classList.add('hidden');
  document.getElementById('dashboardScreen').classList.remove('hidden');
  document.getElementById('dashUserName').textContent = user;
  document.getElementById('dashAvatar').textContent = user.charAt(0).toUpperCase();
- renderWidgetGrid();
+ const isMng = role==='mng01';
+ document.getElementById('dashBrandName').innerHTML = isMng
+  ? 'Approval Dashboard (Mng01)<small>Phase C · Prototype · Not a production system</small>'
+  : 'Sales Performance Dashboard<small>Phase C · Prototype · Not a production system</small>';
+ document.getElementById('salesDashboardView').classList.toggle('hidden', isMng);
+ document.getElementById('mng01DashboardView').classList.toggle('hidden', !isMng);
+ if(isMng){ renderMng01Dashboard(); } else { renderWidgetGrid(); }
 }
 
 // ---------- Configurable dashboard widgets (Prototype — mock data, no live backend) ----------
@@ -429,6 +469,109 @@ function getDiscountApprovalCounts(){
  const counts = {pending:0, approved:0, rejected:0};
  loadDiscountApprovals().forEach(r=>{ if(counts.hasOwnProperty(r.status)) counts[r.status]++; });
  return counts;
+}
+
+// ---------- Mng01 Approval Dashboard ----------
+function approvalUrgencyDays(rec){
+ if(rec.deliveryDateType!=='scheduled'||!rec.deliveryDate) return null;
+ const today=new Date(); today.setHours(0,0,0,0);
+ const d=new Date(rec.deliveryDate); d.setHours(0,0,0,0);
+ return Math.round((d-today)/86400000);
+}
+function classifyApprovalUrgency(rec){
+ const d=approvalUrgencyDays(rec);
+ if(d===null) return 'noDate';
+ if(d===1) return 'shipTomorrow';
+ if(d<=2) return 'approveToday';
+ return 'general';
+}
+let mngApprovalCardFilter=null;
+function setMngApprovalCardFilter(key){
+ mngApprovalCardFilter=(mngApprovalCardFilter===key)?null:key;
+ renderMng01Dashboard();
+}
+function renderSOApprovalSectionHTML(){
+ const pending=loadSalesOrders().filter(s=>s.status==='pending_approval');
+ const classified=pending.map(rec=>({rec,cls:classifyApprovalUrgency(rec)}));
+ const totalCount=pending.length;
+ const shipTomorrowCount=classified.filter(x=>x.cls==='shipTomorrow').length;
+ const approveTodayCount=classified.filter(x=>x.cls==='approveToday').length;
+ const generalCount=classified.filter(x=>x.cls==='general').length;
+ const noDateCount=classified.filter(x=>x.cls==='noDate').length;
+ const filteredList=mngApprovalCardFilter?classified.filter(x=>x.cls===mngApprovalCardFilter).map(x=>x.rec):pending;
+ const sorted=filteredList.slice().sort((a,b)=>{
+  const da=approvalUrgencyDays(a), db=approvalUrgencyDays(b);
+  if(da!==null&&db!==null) return da-db;
+  if(da!==null&&db===null) return -1;
+  if(da===null&&db!==null) return 1;
+  return new Date(b.sentToApprovalAt||0)-new Date(a.sentToApprovalAt||0);
+ });
+ const cardActive=(key)=>mngApprovalCardFilter===key?' active':'';
+ const summaryHtml=`<div class="appr-summary">
+   <div class="appr-stat${cardActive(null)}" onclick="setMngApprovalCardFilter(null)"><div class="appr-stat-num">${totalCount}</div><div class="appr-stat-lbl">รอดำเนินการทั้งหมด</div></div>
+   <div class="appr-stat${shipTomorrowCount>0?' urgent':''}${cardActive('shipTomorrow')}" onclick="setMngApprovalCardFilter('shipTomorrow')"><div class="appr-stat-num">${shipTomorrowCount}</div><div class="appr-stat-lbl">ด่วนงานขึ้นวันนี้</div></div>
+   <div class="appr-stat${approveTodayCount>0?' urgent':''}${cardActive('approveToday')}" onclick="setMngApprovalCardFilter('approveToday')"><div class="appr-stat-num">${approveTodayCount}</div><div class="appr-stat-lbl">ด่วนงานขึ้นพรุ่งนี้</div></div>
+   <div class="appr-stat${cardActive('general')}" onclick="setMngApprovalCardFilter('general')"><div class="appr-stat-num">${generalCount}</div><div class="appr-stat-lbl">งานรออนุมัติทั่วไป</div></div>
+   <div class="appr-stat${cardActive('noDate')}" onclick="setMngApprovalCardFilter('noDate')"><div class="appr-stat-num">${noDateCount}</div><div class="appr-stat-lbl">งานรอกำหนดส่ง</div></div>
+  </div>`;
+ const rowsHtml=sorted.length?sorted.map(rec=>{
+  const initial=esc((rec.customer||'?').charAt(0));
+  const itemCount=rec.cart?rec.cart.length:0;
+  const sentDate=esc(new Date(rec.sentToApprovalAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+  const urgencyDays=approvalUrgencyDays(rec);
+  let deliveryHtml;
+  if(urgencyDays!==null){
+   const dLabel=esc(new Date(rec.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+   const diffLabel=urgencyDays<0?`เลยกำหนด ${Math.abs(urgencyDays)} วัน`:urgencyDays===0?'ส่งวันนี้':`อีก ${urgencyDays} วัน`;
+   deliveryHtml=`<span class="appr-delivery-badge${urgencyDays<=3?' urgent':''}">📅 ${dLabel} (${diffLabel})</span>`;
+  } else {
+   deliveryHtml=`<span class="appr-delivery-badge pending">🕒 รอแจ้งวันที่ส่ง</span>`;
+  }
+  return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}&mode=approval">
+   <div class="appr-avatar">${initial}</div>
+   <div class="appr-main">
+    <div class="appr-subject">คำขออนุมัติ Sales Order <strong>${esc(rec.soNo)}</strong></div>
+    <div class="appr-snippet">${esc(rec.customer||'-')} · ${itemCount} รายการ · ${fmtBaht(rec.grandTotal||0)} บาท · แนบ PO: ${esc(rec.poAttachment?.name||'-')}</div>
+    <div class="appr-delivery-row">${deliveryHtml}</div>
+   </div>
+   <div class="appr-time">${sentDate}</div>
+  </a>`;
+ }).join(''):`<div class="appr-empty">${totalCount?'ไม่มีงานในหมวดนี้':'ไม่มีคำขออนุมัติที่รอดำเนินการ'}</div>`;
+ return `<section style="margin-bottom:36px">
+  <h2 style="margin:0 0 14px;color:var(--blue);font-size:18px">📥 คำขออนุมัติ Sales Order</h2>
+  ${summaryHtml}
+  <div class="appr-list">${rowsHtml}</div>
+ </section>`;
+}
+function renderDiscountApprovalSectionHTML(){
+ const all=loadDiscountApprovals();
+ const pending=all.filter(r=>r.status==='pending').sort((a,b)=>new Date(a.requestedAt||0)-new Date(b.requestedAt||0));
+ const approvedCount=all.filter(r=>r.status==='approved').length;
+ const rejectedCount=all.filter(r=>r.status==='rejected').length;
+ const rowsHtml=pending.length?pending.map(rec=>{
+  const initial=esc((rec.customer||'?').charAt(0));
+  const reqDate=esc(new Date(rec.requestedAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+  return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewDiscountApproval=${encodeURIComponent(rec.quotationNo)}">
+   <div class="appr-avatar">${initial}</div>
+   <div class="appr-main">
+    <div class="appr-subject">คำขออนุมัติส่วนลด Quotation <strong>${esc(rec.quotationNo)}</strong></div>
+    <div class="appr-snippet">${esc(rec.customer||'-')} · Sales: ${esc(rec.sales||'-')} · ส่วนลด ${rec.discountPct}% · ${fmtBaht(rec.grandTotal||0)} บาท</div>
+   </div>
+   <div class="appr-time">${reqDate}</div>
+  </a>`;
+ }).join(''):`<div class="appr-empty">ไม่มีคำขออนุมัติส่วนลดที่รอดำเนินการ</div>`;
+ return `<section>
+  <h2 style="margin:0 0 14px;color:var(--blue);font-size:18px">💸 คำขออนุมัติส่วนลด (Mng01)</h2>
+  <div class="appr-summary" style="grid-template-columns:repeat(3,1fr)">
+   <div class="appr-stat urgent"><div class="appr-stat-num">${pending.length}</div><div class="appr-stat-lbl">รออนุมัติ</div></div>
+   <div class="appr-stat"><div class="appr-stat-num">${approvedCount}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
+   <div class="appr-stat"><div class="appr-stat-num">${rejectedCount}</div><div class="appr-stat-lbl">ปฏิเสธแล้ว</div></div>
+  </div>
+  <div class="appr-list">${rowsHtml}</div>
+ </section>`;
+}
+function renderMng01Dashboard(){
+ document.getElementById('mng01DashboardView').innerHTML = renderSOApprovalSectionHTML() + renderDiscountApprovalSectionHTML();
 }
 function openSOList(statusFilter){
  const list = loadSalesOrders()
@@ -545,6 +688,7 @@ function addWidgetSlot(){
 }
 function logout(){
  sessionStorage.removeItem(SESSION_KEY);
+ sessionStorage.removeItem(SESSION_ROLE_KEY);
  document.getElementById('dashboardScreen').classList.add('hidden');
  document.getElementById('loginScreen').classList.remove('hidden');
  document.getElementById('loginUser').value='';
@@ -556,7 +700,8 @@ document.getElementById('loginUser').addEventListener('keydown', e=>{ if(e.key==
 
 (function initSession(){
  const saved = sessionStorage.getItem(SESSION_KEY);
- if(saved) showDashboard(saved);
+ const role = sessionStorage.getItem(SESSION_ROLE_KEY) || 'sales';
+ if(saved) showDashboard(saved, role);
 })();
 </script>
 </body>

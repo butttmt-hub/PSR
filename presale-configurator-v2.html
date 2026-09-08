@@ -2004,7 +2004,7 @@ function renderDiscountApprovalView(rec){
     </div>
     <div class="so-po-panel">
      <div class="so-po-head"><h4>Quotation ${esc(rec.quotationNo)}</h4><div class="so-po-meta">มุมมองอ่านอย่างเดียว</div></div>
-     <iframe src="presale-configurator-v2.html?viewQuote=${encodeURIComponent(rec.quotationNo)}" style="width:100%;height:700px;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe>
+     <iframe src="presale-configurator-v2.html?viewQuote=${encodeURIComponent(rec.quotationNo)}&embedded=1" style="width:100%;height:700px;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe>
     </div>
    </div>
    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">${actionButtons}</div>
@@ -2283,7 +2283,9 @@ function tryLoadViewMode(){
  document.body.classList.add('view-mode');
  showScreen(8);
  const bar=document.getElementById('quotationNoBar');
- if(bar){
+ if(bar && params.get('embedded')==='1'){
+  bar.style.display='none';
+ } else if(bar){
   bar.style.display='flex';
   const soActionHtml=(rec.status==='transferred'&&rec.soNo)
    ?`<a href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}" style="display:inline-flex;align-items:center;padding:7px 14px;border:0;border-radius:8px;background:var(--orange);color:#fff;font-size:12.5px;font-weight:700;text-decoration:none">📄 Transfer to S/O Request</a>`

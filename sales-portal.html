@@ -17,12 +17,21 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 
 /* ---------- Login screen ---------- */
 .login-screen{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
-  background:#0a0a0a url('Login.jpg') center/cover no-repeat;
+  min-height:100vh;display:flex;
+  background:#0a0a0a url('Login2.jpg') center/cover no-repeat;
   position:relative;
 }
 .login-screen::before{
   content:'';position:absolute;inset:0;background:rgba(5,15,25,.35);
+}
+.login-halfpanel{
+  position:relative;z-index:1;
+  width:50%;min-width:320px;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+@media(max-width:900px){
+  .login-halfpanel{width:100%}
 }
 @keyframes loginPopIn{
   0%{opacity:0;transform:scale(.86) translateY(14px)}
@@ -236,24 +245,26 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 <body>
 
 <div id="loginScreen" class="login-screen">
-  <div class="login-card">
-    <div class="login-brand">
-      <img class="mark" src="tmt-logo.png" alt="TMT logo">
-      <div class="name">TMT Sales Portal<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div>
+  <div class="login-halfpanel">
+    <div class="login-card">
+      <div class="login-brand">
+        <img class="mark" src="tmt-logo.png" alt="TMT logo">
+        <div class="name">TMT Sales Portal<span>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</span></div>
+      </div>
+      <h2>เข้าสู่ระบบ / Login</h2>
+      <p class="sub">สำหรับฝ่ายขายและผู้อนุมัติ — เข้าถึง Dashboard ผลงาน ระบบขอใบเสนอราคา และคำขออนุมัติ</p>
+      <div class="login-field">
+        <label>Username</label>
+        <input id="loginUser" type="text" placeholder="เช่น Sale01" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password">
+      </div>
+      <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
+      <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mng01: <b>Mng01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Approval01</b> / <b>A123</b></div>
     </div>
-    <h2>เข้าสู่ระบบ / Login</h2>
-    <p class="sub">สำหรับฝ่ายขายและผู้อนุมัติ — เข้าถึง Dashboard ผลงาน ระบบขอใบเสนอราคา และคำขออนุมัติ</p>
-    <div class="login-field">
-      <label>Username</label>
-      <input id="loginUser" type="text" placeholder="เช่น Sale01" autocomplete="username">
-    </div>
-    <div class="login-field">
-      <label>Password</label>
-      <input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password">
-    </div>
-    <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
-    <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-    <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mng01: <b>Mng01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Approval01</b> / <b>A123</b></div>
   </div>
 </div>
 

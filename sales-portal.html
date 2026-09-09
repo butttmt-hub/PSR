@@ -148,6 +148,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .widget-card,.widget-placeholder{cursor:grab;touch-action:none}
 .widget-card:active,.widget-placeholder:active{cursor:grabbing}
 .widget-card.free-dragging,.widget-placeholder.free-dragging{cursor:grabbing;box-shadow:0 22px 44px rgba(12,56,67,.3)}
+.widget-card.drop-target,.widget-placeholder.drop-target{outline:2px dashed var(--orange);outline-offset:-2px}
 .widget-card .w-head{display:flex;align-items:center;gap:10px}
 .widget-card .w-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .widget-card .w-title{font-size:12.5px;font-weight:700;color:var(--muted)}
@@ -837,14 +838,14 @@ function renderWidgetGrid(){
   const spanCls = BENTO_PATTERN[i % BENTO_PATTERN.length];
   if(!slot.widgetId){
    const removable = i>=DEFAULT_SLOT_COUNT;
-   return `<div class="widget-placeholder ${spanCls}" data-wuid="${uid}" onmousedown="startCardDrag(event,${i})" onclick="openWidgetPicker(${i})">
+   return `<div class="widget-placeholder ${spanCls}" data-wuid="${uid}" data-slot-index="${i}" onmousedown="startCardDrag(event,${i})" onclick="openWidgetPicker(${i})">
     <div class="ic">➕</div><div class="lbl">เลือก Widget</div>
     ${removable?`<span class="slot-remove" onclick="event.stopPropagation();removeWidgetSlot(${i})">ลบช่องนี้ ✕</span>`:''}
    </div>`;
   }
   const w = widgetDef(slot.widgetId);
   if(!w) return '';
-  return `<div class="widget-card ${spanCls}" data-wuid="${uid}" onmousedown="startCardDrag(event,${i})">
+  return `<div class="widget-card ${spanCls}" data-wuid="${uid}" data-slot-index="${i}" onmousedown="startCardDrag(event,${i})">
    <div class="w-accent-bar" style="background:${WIDGET_ACCENT_HEX[w.accent]||'var(--blue)'}"></div>
    <button class="w-remove" title="ลบ Widget นี้" onclick="removeWidgetSlot(${i})">✕</button>
    <button class="w-expand" title="ดูขยาย" onclick="openWidgetExpand('${w.id}')">⤢</button>
@@ -870,15 +871,15 @@ function renderWidgetGrid(){
  });
 }
 const CARD_DRAG_ELASTIC = 0.35;
-const CARD_DRAG_THRESHOLD = 60;
 let cardDrag = null;
 function startCardDrag(e, index){
  if(e.button!==0) return;
  if(e.target.closest('button,a,input,select,textarea')) return;
  const card = e.currentTarget;
- cardDrag = { index, card, startX:e.clientX, startY:e.clientY, offset:0, moved:false };
+ cardDrag = { index, card, startX:e.clientX, startY:e.clientY, moved:false, hoverIndex:null };
  card.style.transition = 'none';
  card.style.zIndex = 50;
+ card.style.pointerEvents = 'none';
  card.classList.add('free-dragging');
  document.addEventListener('mousemove', onCardDragMove);
  document.addEventListener('mouseup', onCardDragEnd);
@@ -887,28 +888,36 @@ function onCardDragMove(e){
  if(!cardDrag) return;
  const dx = e.clientX - cardDrag.startX;
  const dy = e.clientY - cardDrag.startY;
- cardDrag.offset = dx + dy;
  cardDrag.moved = true;
  cardDrag.card.style.transform = `translate(${dx*CARD_DRAG_ELASTIC}px, ${dy*CARD_DRAG_ELASTIC}px) scale(1.03)`;
+ const grid = document.getElementById('widgetGrid');
+ const el = document.elementFromPoint(e.clientX, e.clientY);
+ const target = el && el.closest ? el.closest('.widget-card,.widget-placeholder') : null;
+ grid.querySelectorAll('.drop-target').forEach(x=>x.classList.remove('drop-target'));
+ if(target && grid.contains(target)){
+  cardDrag.hoverIndex = Number(target.dataset.slotIndex);
+  target.classList.add('drop-target');
+ } else {
+  cardDrag.hoverIndex = null;
+ }
 }
 function onCardDragEnd(){
  if(!cardDrag) return;
  document.removeEventListener('mousemove', onCardDragMove);
  document.removeEventListener('mouseup', onCardDragEnd);
- const { card, index, offset, moved } = cardDrag;
+ document.querySelectorAll('.drop-target').forEach(x=>x.classList.remove('drop-target'));
+ const { card, index, hoverIndex, moved } = cardDrag;
  card.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1)';
  card.style.transform = '';
+ card.style.pointerEvents = '';
  card.addEventListener('transitionend', function clear(){ card.style.zIndex=''; card.classList.remove('free-dragging'); card.removeEventListener('transitionend', clear); });
- if(moved && Math.abs(offset) > CARD_DRAG_THRESHOLD){
-  const target = offset>0 ? Math.min(index+1, dashboardWidgets.length-1) : Math.max(index-1, 0);
-  if(target !== index){
-   const next = dashboardWidgets.slice();
-   const [item] = next.splice(index,1);
-   next.splice(target,0,item);
-   dashboardWidgets = next;
-   saveDashboardWidgets();
-   renderWidgetGrid();
-  }
+ if(moved && hoverIndex!==null && hoverIndex!==index){
+  const next = dashboardWidgets.slice();
+  const [item] = next.splice(index,1);
+  next.splice(hoverIndex,0,item);
+  dashboardWidgets = next;
+  saveDashboardWidgets();
+  renderWidgetGrid();
  }
  cardDrag = null;
 }

@@ -145,10 +145,9 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   display:flex;flex-direction:column;gap:12px;transition:.2s transform,.2s box-shadow;
 }
 .widget-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(12,56,67,.2)}
-.widget-card,.widget-placeholder{cursor:grab}
+.widget-card,.widget-placeholder{cursor:grab;touch-action:none}
 .widget-card:active,.widget-placeholder:active{cursor:grabbing}
-.widget-card.dragging,.widget-placeholder.dragging{opacity:.35}
-.widget-card.drag-over,.widget-placeholder.drag-over{outline:2px dashed var(--orange);outline-offset:-2px}
+.widget-card.free-dragging,.widget-placeholder.free-dragging{cursor:grabbing;box-shadow:0 22px 44px rgba(12,56,67,.3)}
 .widget-card .w-head{display:flex;align-items:center;gap:10px}
 .widget-card .w-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .widget-card .w-title{font-size:12.5px;font-weight:700;color:var(--muted)}
@@ -824,7 +823,6 @@ function closeQuotationList(){
  document.getElementById('quotationListOverlay').classList.add('hidden');
 }
 const BENTO_PATTERN = ['bento-a','bento-b','bento-b','bento-c'];
-const DRAG_EVENTS = i => `draggable="true" ondragstart="handleWidgetDragStart(event,${i})" ondragover="handleWidgetDragOver(event)" ondragleave="handleWidgetDragLeave(event)" ondrop="handleWidgetDrop(event,${i})" ondragend="handleWidgetDragEnd(event)"`;
 function renderWidgetGrid(){
  const grid = document.getElementById('widgetGrid');
  if(!grid) return;
@@ -832,14 +830,14 @@ function renderWidgetGrid(){
   const spanCls = BENTO_PATTERN[i % BENTO_PATTERN.length];
   if(!slot.widgetId){
    const removable = i>=DEFAULT_SLOT_COUNT;
-   return `<div class="widget-placeholder ${spanCls}" ${DRAG_EVENTS(i)} onclick="openWidgetPicker(${i})">
+   return `<div class="widget-placeholder ${spanCls}" onmousedown="startCardDrag(event,${i})" onclick="openWidgetPicker(${i})">
     <div class="ic">➕</div><div class="lbl">เลือก Widget</div>
     ${removable?`<span class="slot-remove" onclick="event.stopPropagation();removeWidgetSlot(${i})">ลบช่องนี้ ✕</span>`:''}
    </div>`;
   }
   const w = widgetDef(slot.widgetId);
   if(!w) return '';
-  return `<div class="widget-card ${spanCls}" ${DRAG_EVENTS(i)}>
+  return `<div class="widget-card ${spanCls}" onmousedown="startCardDrag(event,${i})">
    <div class="w-accent-bar" style="background:${WIDGET_ACCENT_HEX[w.accent]||'var(--blue)'}"></div>
    <button class="w-remove" title="ลบ Widget นี้" onclick="removeWidgetSlot(${i})">✕</button>
    <button class="w-expand" title="ดูขยาย" onclick="openWidgetExpand('${w.id}')">⤢</button>
@@ -848,36 +846,48 @@ function renderWidgetGrid(){
   </div>`;
  }).join('') + (dashboardWidgets.length < MAX_SLOTS ? `<div class="widget-add-tile ${BENTO_PATTERN[dashboardWidgets.length % BENTO_PATTERN.length]}" onclick="addWidgetSlot()"><div class="plus">+</div><div class="lbl">เพิ่ม Widget การ์ดใหม่</div></div>` : '');
 }
-let dragSrcIndex = null;
-function handleWidgetDragStart(e, index){
- dragSrcIndex = index;
- e.dataTransfer.effectAllowed = 'move';
- try{ e.dataTransfer.setData('text/plain', String(index)); }catch(err){}
- e.currentTarget.classList.add('dragging');
+const CARD_DRAG_ELASTIC = 0.35;
+const CARD_DRAG_THRESHOLD = 60;
+let cardDrag = null;
+function startCardDrag(e, index){
+ if(e.button!==0) return;
+ if(e.target.closest('button,a,input,select,textarea')) return;
+ const card = e.currentTarget;
+ cardDrag = { index, card, startX:e.clientX, startY:e.clientY, offset:0, moved:false };
+ card.style.transition = 'none';
+ card.style.zIndex = 50;
+ card.classList.add('free-dragging');
+ document.addEventListener('mousemove', onCardDragMove);
+ document.addEventListener('mouseup', onCardDragEnd);
 }
-function handleWidgetDragOver(e){
- e.preventDefault();
- e.dataTransfer.dropEffect = 'move';
- e.currentTarget.classList.add('drag-over');
+function onCardDragMove(e){
+ if(!cardDrag) return;
+ const dx = e.clientX - cardDrag.startX;
+ const dy = e.clientY - cardDrag.startY;
+ cardDrag.offset = dx + dy;
+ cardDrag.moved = true;
+ cardDrag.card.style.transform = `translate(${dx*CARD_DRAG_ELASTIC}px, ${dy*CARD_DRAG_ELASTIC}px) scale(1.03)`;
 }
-function handleWidgetDragLeave(e){
- e.currentTarget.classList.remove('drag-over');
-}
-function handleWidgetDrop(e, index){
- e.preventDefault();
- e.currentTarget.classList.remove('drag-over');
- if(dragSrcIndex === null || dragSrcIndex === index) return;
- const tmp = dashboardWidgets[index];
- dashboardWidgets[index] = dashboardWidgets[dragSrcIndex];
- dashboardWidgets[dragSrcIndex] = tmp;
- dragSrcIndex = null;
- saveDashboardWidgets();
- renderWidgetGrid();
-}
-function handleWidgetDragEnd(e){
- e.currentTarget.classList.remove('dragging');
- document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
- dragSrcIndex = null;
+function onCardDragEnd(){
+ if(!cardDrag) return;
+ document.removeEventListener('mousemove', onCardDragMove);
+ document.removeEventListener('mouseup', onCardDragEnd);
+ const { card, index, offset, moved } = cardDrag;
+ card.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1)';
+ card.style.transform = '';
+ card.addEventListener('transitionend', function clear(){ card.style.zIndex=''; card.classList.remove('free-dragging'); card.removeEventListener('transitionend', clear); });
+ if(moved && Math.abs(offset) > CARD_DRAG_THRESHOLD){
+  const target = offset>0 ? Math.min(index+1, dashboardWidgets.length-1) : Math.max(index-1, 0);
+  if(target !== index){
+   const next = dashboardWidgets.slice();
+   const [item] = next.splice(index,1);
+   next.splice(target,0,item);
+   dashboardWidgets = next;
+   saveDashboardWidgets();
+   renderWidgetGrid();
+  }
+ }
+ cardDrag = null;
 }
 let expandedWidgetId = null;
 function openWidgetExpand(widgetId){

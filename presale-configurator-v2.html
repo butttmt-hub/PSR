@@ -1347,7 +1347,7 @@ function loadDiscountApprovals(){
  try{ const raw=localStorage.getItem(DISCOUNT_APPROVALS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
 }
 function persistDiscountApprovals(list){
- try{ localStorage.setItem(DISCOUNT_APPROVALS_KEY, JSON.stringify(list)); }catch(e){}
+ try{ localStorage.setItem(DISCOUNT_APPROVALS_KEY, JSON.stringify(list)); return true; }catch(e){ return false; }
 }
 function getDiscountApprovalStatus(quotationNo){
  if(!quotationNo) return null;
@@ -1443,14 +1443,14 @@ function loadSavedQuotations(){
  try{ const raw=localStorage.getItem(QUOTATIONS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
 }
 function persistSavedQuotations(list){
- try{ localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(list)); }catch(e){}
+ try{ localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(list)); return true; }catch(e){ return false; }
 }
 const SALES_ORDERS_KEY='tmt_sales_orders';
 function loadSalesOrders(){
  try{ const raw=localStorage.getItem(SALES_ORDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
 }
 function persistSalesOrders(list){
- try{ localStorage.setItem(SALES_ORDERS_KEY, JSON.stringify(list)); }catch(e){}
+ try{ localStorage.setItem(SALES_ORDERS_KEY, JSON.stringify(list)); return true; }catch(e){ return false; }
 }
 function generateSONo(){
  return '1300'+String(Math.floor(100000+Math.random()*900000));
@@ -1500,18 +1500,21 @@ function renderQuotationNoBar(){
   bar.innerHTML=`<div class="qn-info">ยังไม่ได้บันทึกเลข Quotation — บันทึกไว้ก่อนเพื่อใช้อ้างอิงต่อใน S/O</div><button onclick="saveQuotationNumber()">💾 บันทึกเลข Quotation</button>`;
  }
 }
+const STORAGE_FULL_MSG='บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลในเบราว์เซอร์เต็ม กรุณาลบ Quotation หรือ S/O เก่าที่ไม่ใช้แล้วออก หรือใช้ไฟล์แนบขนาดเล็กลง แล้วลองใหม่';
 function saveQuotationNumber(){
- if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อนบันทึกเลข Quotation'); return; }
- savedQuotationNo=generateQuotationNo();
+ if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อนบันทึกเลข Quotation'); return false; }
+ const qNo=generateQuotationNo();
  const list=loadSavedQuotations();
- list.push(snapshotCurrentQuotation(savedQuotationNo));
- persistSavedQuotations(list);
+ list.push(snapshotCurrentQuotation(qNo));
+ if(!persistSavedQuotations(list)){ alert(STORAGE_FULL_MSG); return false; }
+ savedQuotationNo=qNo;
  renderQuotationNoBar();
+ return true;
 }
 function saveAndShareQuotation(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Save & Share'); return; }
  if(!hasValidDiscountEvidence()){ alert('มีการให้ส่วนลด กรุณาแนบหลักฐานก่อน Save & Share'); return; }
- if(!savedQuotationNo){ saveQuotationNumber(); }
+ if(!savedQuotationNo){ if(!saveQuotationNumber()) return; }
  if(quoteExtra.discountPct>0){
   const discountAmt=+(quoteBaseTotal*(quoteExtra.discountPct||0)/100).toFixed(2);
   const net=+(quoteBaseTotal-discountAmt).toFixed(2);
@@ -1531,7 +1534,7 @@ function saveAndShareQuotation(){
    requestedAt:new Date().toISOString(),
   };
   if(idx>=0) list[idx]={...list[idx],...rec}; else list.push(rec);
-  persistDiscountApprovals(list);
+  if(!persistDiscountApprovals(list)){ alert(STORAGE_FULL_MSG); return; }
   window.location.href=`presale-configurator-v2.html?viewDiscountApproval=${encodeURIComponent(savedQuotationNo)}`;
   return;
  }
@@ -1548,7 +1551,7 @@ function transferToSO(){
  const soNo=generateSONo();
  const soList=loadSalesOrders();
  soList.push(buildSalesOrderRecord(qRec,soNo));
- persistSalesOrders(soList);
+ if(!persistSalesOrders(soList)){ alert(STORAGE_FULL_MSG); return; }
  qRec.status='transferred'; qRec.soNo=soNo;
  persistSavedQuotations(qList);
  window.location.href=`presale-configurator-v2.html?viewSO=${encodeURIComponent(soNo)}`;
@@ -1818,7 +1821,7 @@ function sendToApproval(soNo){
  if(!hasDeliveryDateInfo(rec)){ alert('กรุณาระบุวันที่กำหนดส่ง (รอแจ้ง หรือ เลือกวันที่) ก่อนส่ง Approval'); return; }
  rec.status='pending_approval';
  rec.sentToApprovalAt=new Date().toISOString();
- persistSalesOrders(list);
+ if(!persistSalesOrders(list)){ alert(STORAGE_FULL_MSG); return; }
  document.querySelector('.app').innerHTML=renderSalesOrderDoc(rec);
  showInfoModal('✅ ส่งคำขออนุมัติเรียบร้อยแล้ว',
   `Sales Order <strong>${esc(soNo)}</strong> ถูกส่งไปรออนุมัติแล้ว<br>ระบบจะแจ้งผลเมื่อได้รับการอนุมัติ`,

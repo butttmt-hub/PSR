@@ -267,7 +267,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   line-height:1.6;border:1px solid rgba(139,186,222,.5);
 }
 
-/* ---------- Mng01 Approval Dashboard ---------- */
+/* ---------- Mgr01 Approval Dashboard ---------- */
 .appr-list{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .appr-row{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
 .appr-row:last-child{border-bottom:0}
@@ -334,7 +334,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       </div>
       <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
       <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mng01: <b>Mng01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Approval01</b> / <b>A123</b></div>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Approval01</b> / <b>A123</b></div>
     </div>
   </div>
 </div>
@@ -364,7 +364,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       <div class="widget-grid" id="widgetGrid"></div>
       <div class="dash-note"><strong>หมายเหตุ:</strong> คลิก "+ เลือก Widget" เพื่อกำหนดการ์ดที่ต้องการแสดง (ยอดขาย, Target, Pipeline ฯลฯ) — ข้อมูลในการ์ดเป็นตัวอย่างสำหรับ Prototype เท่านั้น ยังไม่ใช่ข้อมูลจริง</div>
     </div>
-    <div id="mng01DashboardView" class="hidden"></div>
+    <div id="mgr01DashboardView" class="hidden"></div>
     <div id="approvalDashboardView" class="hidden"></div>
   </main>
 </div>
@@ -425,7 +425,7 @@ function toggleTheme(){
 })();
 const CREDENTIALS_LIST = [
  { username: 'Sale01', password: 'S123', role: 'sales' },
- { username: 'Mng01', password: 'M123', role: 'mng01' },
+ { username: 'Mgr01', password: 'M123', role: 'mgr01' },
  { username: 'Approval01', password: 'A123', role: 'approval' },
 ];
 const SESSION_KEY = 'tmt_sales_portal_user';
@@ -447,7 +447,7 @@ function attemptLogin(){
 }
 const DASHBOARD_BRAND_BY_ROLE = {
  sales: 'Sales Performance Dashboard',
- mng01: 'Approval Dashboard (Mng01)',
+ mgr01: 'Approval Dashboard (Mgr01)',
  approval: 'S/O Approval Dashboard',
 };
 function showDashboard(user, role){
@@ -457,9 +457,9 @@ function showDashboard(user, role){
  document.getElementById('dashAvatar').textContent = user.charAt(0).toUpperCase();
  document.getElementById('dashBrandName').innerHTML = `${DASHBOARD_BRAND_BY_ROLE[role]||DASHBOARD_BRAND_BY_ROLE.sales}<small>Phase C · Prototype · Not a production system</small>`;
  document.getElementById('salesDashboardView').classList.toggle('hidden', role!=='sales');
- document.getElementById('mng01DashboardView').classList.toggle('hidden', role!=='mng01');
+ document.getElementById('mgr01DashboardView').classList.toggle('hidden', role!=='mgr01');
  document.getElementById('approvalDashboardView').classList.toggle('hidden', role!=='approval');
- if(role==='mng01') renderMng01Dashboard();
+ if(role==='mgr01') renderMgr01Dashboard();
  else if(role==='approval') renderApprovalDashboard();
  else renderWidgetGrid();
 }
@@ -477,7 +477,7 @@ const WIDGET_CATALOG = [
  {id:'creditAlert', icon:'⚠️', accent:'orange', title:'ลูกค้าใกล้เต็มวงเงินเครดิต', desc:'Customers near credit limit'},
  {id:'quotationCount', icon:'📄', accent:'sky', title:'Quotation ที่สร้างแล้ว', desc:'Saved quotation count — click to view list'},
  {id:'soStatus', icon:'🧾', accent:'sky', title:'สถานะ Sales Order', desc:'S/O by approval status — click to view list'},
- {id:'discountApprovalStatus', icon:'💸', accent:'gold', title:'คำขออนุมัติส่วนลด (Mng01)', desc:'Discount approval requests — click to view inbox'},
+ {id:'discountApprovalStatus', icon:'💸', accent:'gold', title:'คำขออนุมัติส่วนลด (Mgr01)', desc:'Discount approval requests — click to view inbox'},
 ];
 function esc(x){ return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 function fmtBaht(n){ return (n||0).toLocaleString('en-US',{maximumFractionDigits:0}); }
@@ -646,12 +646,12 @@ function getDiscountApprovalStatus(quotationNo){
  return rec ? rec.status : null;
 }
 
-// ---------- Mng01 Approval Dashboard ----------
+// ---------- Mgr01 Approval Dashboard ----------
 const DISCOUNT_STATUS_EMPTY={pending:'ไม่มีคำขออนุมัติส่วนลดที่รอดำเนินการ',approved:'ไม่มีคำขอที่อนุมัติแล้ว',rejected:'ไม่มีคำขอที่ถูกปฏิเสธ'};
 let mngDiscountCardFilter='pending';
 function setMngDiscountCardFilter(status){
  mngDiscountCardFilter=status;
- renderMng01Dashboard();
+ renderMgr01Dashboard();
 }
 function renderDiscountApprovalSectionHTML(){
  const all=loadDiscountApprovals();
@@ -675,7 +675,7 @@ function renderDiscountApprovalSectionHTML(){
   </a>`;
  }).join(''):`<div class="appr-empty">${DISCOUNT_STATUS_EMPTY[mngDiscountCardFilter]}</div>`;
  return `<section>
-  <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">💸 คำขออนุมัติส่วนลด (Mng01)</h2>
+  <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">💸 คำขออนุมัติส่วนลด (Mgr01)</h2>
   <div class="appr-summary" style="grid-template-columns:repeat(3,1fr)">
    <div class="appr-stat${byStatus.pending.length>0?' urgent':''}${cardActive('pending')}" onclick="setMngDiscountCardFilter('pending')"><div class="appr-stat-num">${byStatus.pending.length}</div><div class="appr-stat-lbl">รออนุมัติ</div></div>
    <div class="appr-stat${cardActive('approved')}" onclick="setMngDiscountCardFilter('approved')"><div class="appr-stat-num">${byStatus.approved.length}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
@@ -684,8 +684,8 @@ function renderDiscountApprovalSectionHTML(){
   <div class="appr-list">${rowsHtml}</div>
  </section>`;
 }
-function renderMng01Dashboard(){
- document.getElementById('mng01DashboardView').innerHTML = renderDiscountApprovalSectionHTML();
+function renderMgr01Dashboard(){
+ document.getElementById('mgr01DashboardView').innerHTML = renderDiscountApprovalSectionHTML();
 }
 
 // ---------- S/O Approval Dashboard ----------
@@ -787,7 +787,7 @@ function transferQuotationToSO(qNo){
  const qList = getSavedQuotations();
  const qRec = qList.find(q=>q.quotationNo===qNo);
  if(!qRec){ alert('ไม่พบข้อมูล Quotation ที่บันทึกไว้'); return; }
- if(qRec.quoteExtra?.discountPct>0 && getDiscountApprovalStatus(qNo)!=='approved'){ alert('ต้องรอ Mng01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้'); return; }
+ if(qRec.quoteExtra?.discountPct>0 && getDiscountApprovalStatus(qNo)!=='approved'){ alert('ต้องรอ Mgr01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้'); return; }
  const soNo = generateSONo();
  const now = new Date();
  const soList = loadSalesOrders();
@@ -810,7 +810,7 @@ function openQuotationList(){
  body.innerHTML = list.length ? `<div class="ql-list">${list.map(q=>{
    const approvalStatus = q.quoteExtra?.discountPct>0 ? getDiscountApprovalStatus(q.quotationNo) : null;
    const blocked = q.quoteExtra?.discountPct>0 && approvalStatus!=='approved';
-   const blockReason = approvalStatus==='pending' ? 'รอ Mng01 อนุมัติส่วนลด' : approvalStatus==='rejected' ? 'ส่วนลดถูกปฏิเสธ' : 'ต้องขออนุมัติส่วนลดจาก Mng01 ก่อน';
+   const blockReason = approvalStatus==='pending' ? 'รอ Mgr01 อนุมัติส่วนลด' : approvalStatus==='rejected' ? 'ส่วนลดถูกปฏิเสธ' : 'ต้องขออนุมัติส่วนลดจาก Mgr01 ก่อน';
    const transferBtn = blocked
     ? `<button class="ql-btn transfer" disabled title="${blockReason}">🕒 ${blockReason}</button>`
     : `<button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O Request →</button>`;

@@ -1369,15 +1369,15 @@ function updateDiscountEvidenceGate(){
  if(transferBtn){
   const ok=validEvidence&&transferOk;
   transferBtn.disabled=!ok;
-  transferBtn.title=ok?'':(!validEvidence?'มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะใช้งานปุ่มนี้ได้':approvalStatus==='pending'?'รอ Mng01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้':approvalStatus==='rejected'?'ส่วนลดถูกปฏิเสธ — กด Save & Share เพื่อขออนุมัติใหม่':'ต้องขออนุมัติส่วนลดจาก Mng01 ก่อน (กด Save & Share)');
+  transferBtn.title=ok?'':(!validEvidence?'มีการให้ส่วนลด กรุณาแนบหลักฐานก่อนจึงจะใช้งานปุ่มนี้ได้':approvalStatus==='pending'?'รอ Mgr01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้':approvalStatus==='rejected'?'ส่วนลดถูกปฏิเสธ — กด Save & Share เพื่อขออนุมัติใหม่':'ต้องขออนุมัติส่วนลดจาก Mgr01 ก่อน (กด Save & Share)');
  }
  const bar=document.getElementById('discountEvidenceBar');
  if(!bar) return;
  if(needsDiscountFlow){
   bar.style.display='flex';
   let statusHtml='';
-  if(approvalStatus==='pending') statusHtml=`<span style="margin-left:8px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:#FFF3E8;color:#9A4C0B">🕒 รอ Mng01 อนุมัติ</span>`;
-  else if(approvalStatus==='approved') statusHtml=`<span style="margin-left:8px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--stdBg);color:var(--std)">✅ Mng01 อนุมัติแล้ว</span>`;
+  if(approvalStatus==='pending') statusHtml=`<span style="margin-left:8px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:#FFF3E8;color:#9A4C0B">🕒 รอ Mgr01 อนุมัติ</span>`;
+  else if(approvalStatus==='approved') statusHtml=`<span style="margin-left:8px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--stdBg);color:var(--std)">✅ Mgr01 อนุมัติแล้ว</span>`;
   else if(approvalStatus==='rejected') statusHtml=`<span style="margin-left:8px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--reviewBg);color:var(--review)">❌ ถูกปฏิเสธ</span>`;
   bar.innerHTML=discountEvidence
    ?`<div class="qn-info">📎 หลักฐานส่วนลด: <strong>${esc(discountEvidence.name)}</strong><span class="qn-saved">✓ แนบแล้ว</span>${statusHtml}</div><label style="border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer">🔄 เปลี่ยนไฟล์<input type="file" style="display:none" onchange="handleDiscountEvidenceSelect(event)"></label>`
@@ -1543,7 +1543,7 @@ function saveAndShareQuotation(){
 function transferToSO(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อน Transfer to S/O Request'); return; }
  if(!hasValidDiscountEvidence()){ alert('มีการให้ส่วนลด กรุณาแนบหลักฐานก่อน Transfer to S/O Request'); return; }
- if(quoteExtra.discountPct>0 && getDiscountApprovalStatus(savedQuotationNo)!=='approved'){ alert('ต้องรอ Mng01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้'); return; }
+ if(quoteExtra.discountPct>0 && getDiscountApprovalStatus(savedQuotationNo)!=='approved'){ alert('ต้องรอ Mgr01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้'); return; }
  if(!savedQuotationNo){ alert('กรุณาบันทึกเลข Quotation ก่อน Transfer to S/O Request'); return; }
  const qList=loadSavedQuotations();
  const qRec=qList.find(q=>q.quotationNo===savedQuotationNo);
@@ -2013,18 +2013,18 @@ function renderDiscountApprovalView(rec){
  else if(isPdf){ evidenceHtml=`<iframe src="${att.dataUrl}#toolbar=0&navpanes=0&scrollbar=0" style="width:100%;height:520px;border:1px solid var(--line);border-radius:8px"></iframe><div style="margin-top:10px;text-align:center"><button class="btn secondary" onclick="window.open('${att.dataUrl}','_blank')">🔍 เปิดไฟล์ในแท็บใหม่</button></div>`; }
  else { evidenceHtml=`<div style="border:1px dashed var(--line);border-radius:10px;padding:30px;text-align:center;color:var(--muted)">ไม่รองรับการแสดงตัวอย่างไฟล์ประเภทนี้<br><button class="btn secondary" style="margin-top:10px" onclick="window.open('${att.dataUrl}','_blank')">🔍 เปิดไฟล์</button></div>`; }
  const statusBanner=rec.status==='approved'
-  ?`<div class="notice info"><strong>✅ Mng01 อนุมัติส่วนลดแล้ว</strong> เมื่อ ${esc(new Date(rec.decidedAt||Date.now()).toLocaleDateString('th-TH'))}</div>`
+  ?`<div class="notice info"><strong>✅ Mgr01 อนุมัติส่วนลดแล้ว</strong> เมื่อ ${esc(new Date(rec.decidedAt||Date.now()).toLocaleDateString('th-TH'))}</div>`
   :rec.status==='rejected'
-  ?`<div class="notice danger"><strong>❌ Mng01 ปฏิเสธส่วนลด</strong> — เหตุผล: ${esc(rec.rejectReason||'-')}</div>`
-  :`<div class="notice warn"><strong>🕒 รอ Mng01 อนุมัติส่วนลด</strong></div>`;
- const isMng01Session=sessionStorage.getItem('tmt_sales_portal_role')==='mng01';
- const actionButtons=(rec.status==='pending'&&isMng01Session)
-  ?`<button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openDiscountRejectModal('${esc(rec.quotationNo)}')">✕ Reject</button><button class="btn orange" onclick="approveDiscount('${esc(rec.quotationNo)}')">✓ Approve (Mng01)</button>`
+  ?`<div class="notice danger"><strong>❌ Mgr01 ปฏิเสธส่วนลด</strong> — เหตุผล: ${esc(rec.rejectReason||'-')}</div>`
+  :`<div class="notice warn"><strong>🕒 รอ Mgr01 อนุมัติส่วนลด</strong></div>`;
+ const isMgr01Session=sessionStorage.getItem('tmt_sales_portal_role')==='mgr01';
+ const actionButtons=(rec.status==='pending'&&isMgr01Session)
+  ?`<button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openDiscountRejectModal('${esc(rec.quotationNo)}')">✕ Reject</button><button class="btn orange" onclick="approveDiscount('${esc(rec.quotationNo)}')">✓ Approve (Mgr01)</button>`
   :'';
  return `
   <div style="max-width:2000px;margin:0 auto">
    <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
-    <h2 style="margin:0;color:var(--blue);font-size:19px">🧾 ขออนุมัติส่วนลด (Mng01)</h2>
+    <h2 style="margin:0;color:var(--blue);font-size:19px">🧾 ขออนุมัติส่วนลด (Mgr01)</h2>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
      <a href="sales-portal.html" class="btn secondary" style="text-decoration:none;display:inline-flex;align-items:center">← กลับไป Dashboard</a>
      ${actionButtons}

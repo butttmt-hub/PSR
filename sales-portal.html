@@ -7,12 +7,16 @@
 <style>
 :root{
   --blue:#0c3843; --blue2:#155163; --orange:#ff6a05; --gold:#fdc440; --sky:#8bbade;
-  --bg:#F4F7FA; --card:#FFFFFF;
+  --bg:#F4F7FA; --card:#FFFFFF; --heading:var(--blue);
   --text:#17324D; --muted:#6B7F91; --line:#DCE5ED; --review:#B42318; --reviewBg:#FDECEC;
   --shadow:0 8px 24px rgba(12,56,67,.10);
 }
+:root[data-theme="dark"]{
+  --bg:#081a29; --card:#0f2536; --text:#e8f1f8; --muted:rgba(232,241,248,.62);
+  --line:rgba(139,186,222,.16); --heading:#7ec0ea; --shadow:0 8px 24px rgba(0,0,0,.35);
+}
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var(--bg);color:var(--text)}
+body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var(--bg);color:var(--text);transition:background .2s,color .2s}
 .hidden{display:none!important}
 
 /* ---------- Login screen ---------- */
@@ -48,7 +52,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .login-brand .mark{
   height:44px;width:auto;object-fit:contain;flex-shrink:0;
 }
-.login-brand .name{font-weight:800;font-size:16px;color:var(--blue);line-height:1.3}
+.login-brand .name{font-weight:800;font-size:16px;color:var(--heading);line-height:1.3}
 .login-brand .name span{display:block;font-weight:500;font-size:11px;color:var(--muted)}
 .login-card h2{margin:0 0 4px;font-size:19px;color:var(--text)}
 .login-card .sub{margin:0 0 22px;font-size:12.5px;color:var(--muted)}
@@ -69,7 +73,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 }
 .login-btn:hover{background:var(--blue2)}
 .login-hint{
-  margin-top:18px;padding:10px 12px;border-radius:10px;background:#F4F7FA;border:1px dashed var(--line);
+  margin-top:18px;padding:10px 12px;border-radius:10px;background:var(--line);border:1px dashed var(--line);
   font-size:11px;color:var(--muted);text-align:center;line-height:1.6;
 }
 .login-hint b{color:var(--text)}
@@ -96,6 +100,11 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer;
 }
 .dash-header .logout:hover{background:rgba(255,255,255,.18)}
+.dash-header .theme-toggle{
+  border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;
+  padding:7px 10px;font-size:13px;cursor:pointer;line-height:1;
+}
+.dash-header .theme-toggle:hover{background:rgba(255,255,255,.18)}
 
 .dash-main{max-width:1240px;margin:0 auto;padding:36px 32px 72px}
 .dash-title{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
@@ -115,7 +124,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);
   cursor:pointer;transition:.15s;padding:16px;text-align:center;
 }
-.widget-placeholder:hover{background:rgba(139,186,222,.12);border-color:var(--blue2);color:var(--blue)}
+.widget-placeholder:hover{background:rgba(139,186,222,.12);border-color:var(--blue2);color:var(--heading)}
 .widget-placeholder .ic{font-size:22px;opacity:.5}
 .widget-placeholder .lbl{font-size:12.5px;font-weight:600}
 .widget-placeholder .slot-remove{margin-top:2px;font-size:10.5px;color:var(--muted);text-decoration:underline;cursor:pointer}
@@ -149,7 +158,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .widget-card .w-trend.down{color:#B42318;font-weight:700}
 .widget-card .w-remove,.widget-card .w-expand{
   position:absolute;top:10px;width:22px;height:22px;border-radius:50%;border:0;
-  background:#F4F7FA;color:var(--muted);cursor:pointer;font-size:12px;line-height:1;
+  background:var(--line);color:var(--muted);cursor:pointer;font-size:12px;line-height:1;
   display:flex;align-items:center;justify-content:center;
 }
 .widget-card .w-remove{right:10px}
@@ -161,29 +170,54 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .widget-card .w-expand:hover{background:var(--blue);color:#fff}
 .widget-card .w-bar-track{width:100%;height:10px;border-radius:6px;background:#E7E9EE;overflow:hidden}
 .widget-card .w-bar-fill{height:100%;background:var(--orange);border-radius:6px}
-.widget-card .w-chips{display:flex;flex-wrap:wrap;gap:6px}
-.widget-card .w-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:#EAF3FA;color:var(--blue)}
-.widget-card .w-chip.win{background:#EAF7EE;color:#15803D}
-.widget-card .w-chip.lost{background:#FDECEC;color:#B42318}
-.widget-card .w-chip-btn{border:0;cursor:pointer;font:inherit;transition:.15s}
-.widget-card .w-chip-btn:hover{filter:brightness(.95);transform:translateY(-1px)}
 .widget-card .w-link-btn{align-self:flex-start;border:0;background:none;color:var(--orange);font-weight:700;font-size:11.5px;cursor:pointer;padding:0}
 .widget-card .w-link-btn:hover{text-decoration:underline}
+.w-accent-bar{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:16px 0 0 16px}
+.w-spark{margin-top:12px;display:flex;align-items:flex-end;gap:4px;height:40px}
+.w-spark span{flex:1;border-radius:3px 3px 0 0;min-height:2px}
+.w-row2{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);gap:8px}
+.w-row2-lead{align-items:baseline;font-size:11.5px}
+.w-row2-lead .w-metric{color:var(--text)}
+.w-rows2{margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:12.5px}
+.w-rows2 .w-row2{color:var(--muted)}
+.w-rows2 .w-row2 span:last-child{color:var(--text);font-weight:600}
+.w-stage-list{margin-top:10px;display:flex;flex-direction:column;gap:9px}
+.w-stage .w-row2{margin-bottom:4px}
+.w-list2{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.w-list2 li{display:flex;align-items:flex-start;gap:8px;font-size:12.5px}
+.w-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.w-list2-name{display:block;color:var(--text)}
+.w-list2-note{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.w-list2-empty{font-size:12px;color:var(--muted)}
+.w-credit-list{display:flex;flex-direction:column;gap:12px}
+.w-credit-amt{font-size:11px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.w-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.w-grid3-item{border:0;border-radius:10px;padding:10px 6px;cursor:pointer;font:inherit;text-align:center}
+.w-grid3-item:hover{filter:brightness(.96)}
+.w-grid3-num{font-size:19px;font-weight:800}
+.w-grid3-lbl{font-size:10px;margin-top:2px;opacity:.85}
+.w-discount-row{align-items:center!important}
+.w-badge-pct{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 6px;background:var(--gold);color:var(--blue);flex-shrink:0}
+.w-detail-rows{display:flex;flex-direction:column;gap:2px}
+.w-detail-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.w-detail-row span:first-child{color:var(--muted)}
+.w-detail-row span:last-child{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.w-detail-note{font-size:11.5px;color:var(--muted);margin:8px 0 0}
 
 /* ---------- Bento widget expand modal ---------- */
 .bento-modal-overlay{
   position:fixed;inset:0;background:rgba(8,20,30,.55);backdrop-filter:blur(6px);
-  display:flex;align-items:center;justify-content:center;z-index:90;padding:24px 24px 110px;
+  display:flex;align-items:center;justify-content:center;z-index:90;padding:24px;
 }
 .bento-modal-card{
-  background:#fff;border-radius:20px;max-width:640px;width:100%;max-height:80vh;overflow:auto;
+  background:var(--card);color:var(--text);border-radius:20px;max-width:520px;width:100%;max-height:80vh;overflow:auto;
   box-shadow:0 30px 80px rgba(0,0,0,.4);padding:26px 26px 22px;position:relative;
   animation:bentoPopIn .25s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes bentoPopIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .bento-modal-close{
   position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:0;
-  background:#F4F7FA;color:var(--muted);cursor:pointer;font-size:15px;
+  background:var(--line);color:var(--muted);cursor:pointer;font-size:15px;
 }
 .bento-modal-close:hover{background:#FDECEC;color:#B42318}
 .bento-modal-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
@@ -192,19 +226,6 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .bento-modal-head p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
 .bento-modal-body .w-metric{font-size:36px}
 .bento-modal-body .w-sub{font-size:13px}
-.bento-dock{
-  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:91;
-  display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:18px;
-  background:rgba(12,56,67,.85);backdrop-filter:blur(8px);box-shadow:0 14px 34px rgba(0,0,0,.35);
-  max-width:92vw;overflow-x:auto;
-}
-.bento-dock-item{
-  width:38px;height:38px;border-radius:11px;flex-shrink:0;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:16px;
-  transition:.15s;opacity:.65;
-}
-.bento-dock-item:hover{opacity:1;transform:translateY(-3px)}
-.bento-dock-item.active{opacity:1;transform:translateY(-4px) scale(1.08);box-shadow:0 0 0 2px rgba(255,255,255,.8)}
 
 /* ---------- Quotation list popup ---------- */
 .ql-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
@@ -212,7 +233,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .ql-row{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .ql-row-main{display:flex;justify-content:space-between;align-items:center;gap:12px;text-decoration:none;color:inherit;cursor:pointer;transition:.15s;border-radius:8px}
 .ql-row-main:hover{color:var(--blue2)}
-.ql-no{font-weight:800;font-size:13px;color:var(--blue)}
+.ql-no{font-weight:800;font-size:13px;color:var(--heading)}
 .ql-cust{font-size:11.5px;color:var(--muted);margin-top:2px}
 .ql-meta{text-align:right;flex-shrink:0}
 .ql-amt{font-weight:700;font-size:12.5px;color:var(--text)}
@@ -234,9 +255,9 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 
 /* ---------- Widget picker modal ---------- */
 .wp-overlay{position:fixed;inset:0;background:rgba(12,56,67,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
-.wp-card{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.wp-card{background:var(--card);color:var(--text);border-radius:16px;max-width:560px;width:100%;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .wp-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line)}
-.wp-head h3{margin:0;font-size:16px;color:var(--blue)}
+.wp-head h3{margin:0;font-size:16px;color:var(--heading)}
 .wp-close{border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;padding:0}
 .wp-body{padding:16px 22px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .wp-option{border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:.15s;text-align:left;background:#fff}
@@ -252,10 +273,10 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 }
 
 /* ---------- Mng01 Approval Dashboard ---------- */
-.appr-list{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.appr-list{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .appr-row{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
 .appr-row:last-child{border-bottom:0}
-.appr-row:hover{background:#F4F7FA}
+.appr-row:hover{background:var(--line)}
 .appr-avatar{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
 .appr-main{flex:1;min-width:0}
 .appr-subject{font-size:13.5px;font-weight:700;color:var(--text)}
@@ -263,10 +284,10 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .appr-time{font-size:11px;color:var(--muted);flex-shrink:0}
 .appr-empty{padding:40px;text-align:center;color:var(--muted);font-size:13px}
 .appr-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-.appr-stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center;cursor:pointer;transition:.15s}
+.appr-stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center;cursor:pointer;transition:.15s}
 .appr-stat:hover{border-color:var(--blue2)}
 .appr-stat.active{box-shadow:0 0 0 2px var(--blue) inset}
-.appr-stat-num{font-size:22px;font-weight:800;color:var(--blue)}
+.appr-stat-num{font-size:22px;font-weight:800;color:var(--heading)}
 .appr-stat-lbl{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.4}
 .appr-stat.urgent{border-color:#F3C6C2;background:var(--reviewBg)}
 .appr-stat.urgent .appr-stat-num{color:var(--review)}
@@ -330,6 +351,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       <div class="name" id="dashBrandName">Sales Performance Dashboard<small>Phase C · Prototype · Not a production system</small></div>
     </div>
     <div class="who">
+      <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="สลับธีมสว่าง/มืด">🌙</button>
       <div class="avatar" id="dashAvatar">S</div>
       <span>สวัสดี, <strong id="dashUserName">Sale01</strong></span>
       <button class="logout" onclick="logout()">ออกจากระบบ</button>
@@ -387,10 +409,25 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
     <button class="bento-modal-close" onclick="closeWidgetExpand()">×</button>
     <div id="bentoModalContent"></div>
   </div>
-  <div class="bento-dock" id="bentoDock"></div>
 </div>
 
 <script>
+const THEME_KEY = 'tmt_theme';
+function applyTheme(theme){
+ document.documentElement.setAttribute('data-theme', theme);
+ const btn = document.getElementById('themeToggleBtn');
+ if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
+ try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+}
+function toggleTheme(){
+ const current = document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
+ applyTheme(current==='dark' ? 'light' : 'dark');
+}
+(function initTheme(){
+ let theme = 'light';
+ try{ theme = localStorage.getItem(THEME_KEY) || 'light'; }catch(e){}
+ applyTheme(theme);
+})();
 const CREDENTIALS_LIST = [
  { username: 'Sale01', password: 'S123', role: 'sales' },
  { username: 'Mng01', password: 'M123', role: 'mng01' },
@@ -437,25 +474,27 @@ const WIDGET_STORAGE_KEY = 'tmt_dashboard_widgets';
 const DEFAULT_SLOT_COUNT = 3;
 const MAX_SLOTS = 12;
 const WIDGET_CATALOG = [
- {id:'salesThisMonth', icon:'💰', accent:'orange', title:'ยอดขายเดือนนี้', desc:'Sales this month vs last month'},
+ {id:'salesThisMonth', icon:'💰', accent:'navy', title:'ยอดขายเดือนนี้', desc:'Sales this month vs last month'},
  {id:'targetVsActual', icon:'🎯', accent:'gold', title:'เป้าหมายเทียบยอดขาย', desc:'Target vs actual achievement'},
- {id:'pipeline', icon:'📋', accent:'sky', title:'Pipeline คำขอใบเสนอราคา', desc:'Quotation request pipeline'},
+ {id:'pipeline', icon:'📋', accent:'navy', title:'Pipeline คำขอใบเสนอราคา', desc:'Quotation request pipeline'},
  {id:'winRate', icon:'📈', accent:'blue2', title:'อัตราปิดการขาย (Win Rate)', desc:'Quotation win rate this month'},
  {id:'followUp', icon:'🔔', accent:'orange', title:'ลูกค้าที่ต้องติดตาม', desc:'Customers pending follow-up'},
- {id:'creditAlert', icon:'⚠️', accent:'review', title:'ลูกค้าใกล้เต็มวงเงินเครดิต', desc:'Customers near credit limit'},
- {id:'quotationCount', icon:'📄', accent:'blue2', title:'Quotation ที่สร้างแล้ว', desc:'Saved quotation count — click to view list'},
+ {id:'creditAlert', icon:'⚠️', accent:'orange', title:'ลูกค้าใกล้เต็มวงเงินเครดิต', desc:'Customers near credit limit'},
+ {id:'quotationCount', icon:'📄', accent:'sky', title:'Quotation ที่สร้างแล้ว', desc:'Saved quotation count — click to view list'},
  {id:'soStatus', icon:'🧾', accent:'sky', title:'สถานะ Sales Order', desc:'S/O by approval status — click to view list'},
  {id:'discountApprovalStatus', icon:'💸', accent:'gold', title:'คำขออนุมัติส่วนลด (Mng01)', desc:'Discount approval requests — click to view inbox'},
 ];
 function esc(x){ return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 function fmtBaht(n){ return (n||0).toLocaleString('en-US',{maximumFractionDigits:0}); }
 const WIDGET_ACCENT_STYLE = {
+ navy:'background:rgba(12,56,67,.12);color:var(--heading)',
  orange:'background:rgba(255,106,5,.12);color:var(--orange)',
  gold:'background:rgba(253,196,64,.28);color:#8a5d00',
  sky:'background:rgba(139,186,222,.28);color:var(--blue2)',
  blue2:'background:rgba(21,81,99,.12);color:var(--blue2)',
  review:'background:#FDECEC;color:#B42318',
 };
+const WIDGET_ACCENT_HEX = { navy:'#0c3843', orange:'#ff6a05', gold:'#fdc440', sky:'#8bbade', blue2:'#155163', review:'#B42318' };
 function widgetDef(id){ return WIDGET_CATALOG.find(w=>w.id===id); }
 function loadDashboardWidgets(){
  try{
@@ -468,32 +507,93 @@ let dashboardWidgets = loadDashboardWidgets();
 function saveDashboardWidgets(){
  try{ localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(dashboardWidgets)); }catch(e){}
 }
+function widgetBar(pct, color){
+ return `<div class="w-bar-track"><div class="w-bar-fill" style="width:${pct}%;background:${color}"></div></div>`;
+}
 function widgetBodyHTML(id){
  switch(id){
-  case 'salesThisMonth': return `<div class="w-metric">฿2,480,000</div><div class="w-sub">ยอดขายเดือนนี้ · <span class="w-trend up">▲ +12% จากเดือนก่อน</span></div>`;
-  case 'targetVsActual': return `<div class="w-metric">83%</div><div class="w-sub">เป้า 3,000,000 บาท · ทำได้ 2,480,000 บาท</div><div class="w-bar-track"><div class="w-bar-fill" style="width:83%"></div></div>`;
-  case 'pipeline': return `<div class="w-chips"><span class="w-chip">Draft 4</span><span class="w-chip">Sent 7</span><span class="w-chip win">Won 3</span><span class="w-chip lost">Lost 1</span></div><div class="w-sub">คำขอใบเสนอราคาที่เปิดอยู่เดือนนี้</div>`;
+  case 'salesThisMonth': {
+   const spark = [40,55,48,70,62,88];
+   return `<div class="w-metric">฿2,480,000</div><div class="w-sub">ยอดขายเดือนนี้ · <span class="w-trend up">▲ +12% จากเดือนก่อน</span></div>
+    <div class="w-spark">${spark.map((h,i)=>`<span style="height:${h}%;background:${i===spark.length-1?'var(--heading)':'rgba(139,186,222,.55)'}"></span>`).join('')}</div>`;
+  }
+  case 'targetVsActual': {
+   return `<div class="w-row2 w-row2-lead"><span class="w-metric" style="font-size:22px">83%</span><span class="w-sub">ของเป้า 3,000,000 บาท</span></div>
+    ${widgetBar(83,'var(--gold)')}
+    <div class="w-row2"><span>ขาดอีก ฿652,500</span><span>เหลือ 21 วัน</span></div>`;
+  }
+  case 'pipeline': {
+   const stages = [
+    ['เปิดโอกาส / สอบถาม',14,2600000,100],
+    ['เสนอราคาแล้ว',11,2200000,78],
+    ['กำลังต่อรอง',6,1400000,46],
+    ['รอเซ็นสัญญา',3,700000,22],
+   ];
+   return `<div class="w-metric" style="font-size:22px">฿6,900,000</div><div class="w-sub">34 ดีล กำลังดำเนินการ</div>
+    <div class="w-stage-list">${stages.map(([s,d,a,w],i)=>`
+     <div class="w-stage"><div class="w-row2"><span>${s} · ${d}</span><span>${fmtBaht(a)}</span></div>${widgetBar(w, i<2?'var(--heading)':'var(--sky)')}</div>`).join('')}</div>`;
+  }
   case 'winRate': return `<div class="w-metric">42%</div><div class="w-sub">อัตราปิดการขาย · จาก 12 ใบเสนอราคาเดือนนี้</div>`;
-  case 'followUp': return `<div class="w-metric">5 ราย</div><div class="w-sub">ลูกค้าที่ยังไม่ปิดการขายเกิน 7 วัน</div>`;
-  case 'creditAlert': return `<div class="w-metric">2 ราย</div><div class="w-sub">ลูกค้าที่วงเงินเครดิตคงเหลือต่ำกว่า 20%</div>`;
+  case 'followUp': {
+   const items = [
+    ['บจก. ไทยเมทัลเวิร์ค','เสนอราคาแล้ว 9 วัน ยังไม่ตอบ',true],
+    ['บจก. สยามพลาสติก','นัดโทรตามวันนี้',false],
+    ['หจก. รุ่งเรืองการช่าง','ขอใบเสนอราคาใหม่ ค้าง 3 วัน',true],
+    ['บจก. เอเชียแพคเกจจิ้ง','ติดตามหลังส่งตัวอย่าง',false],
+   ];
+   return `<div class="w-sub" style="margin-bottom:6px">5 ราย ที่ยังไม่ปิดการขายเกิน 7 วัน</div>
+    <ul class="w-list2">${items.map(([n,note,hot])=>`
+     <li><span class="w-dot" style="background:${hot?'var(--orange)':'var(--sky)'}"></span><span><span class="w-list2-name">${n}</span><span class="w-list2-note">${note}</span></span></li>`).join('')}</ul>`;
+  }
+  case 'creditAlert': {
+   const items = [['บจก. ไทยเมทัลเวิร์ค',1900000,2000000],['บจก. โฮมโปรดักส์',880000,1000000]];
+   return `<div class="w-sub" style="margin-bottom:8px">2 ราย ที่วงเงินเครดิตคงเหลือต่ำกว่า 20%</div>
+    <div class="w-credit-list">${items.map(([n,u,l])=>{
+     const p = Math.round(u/l*100);
+     const color = p>=90?'var(--orange)':p>=75?'var(--gold)':'var(--heading)';
+     return `<div class="w-credit-row"><div class="w-row2"><span>${n}</span><span>${p}%</span></div>${widgetBar(p,color)}<div class="w-credit-amt">${fmtBaht(u)} / ${fmtBaht(l)}</div></div>`;
+    }).join('')}</div>`;
+  }
   case 'quotationCount': {
    const list = getActiveQuotations();
-   return `<div class="w-metric">${list.length} ใบ</div><div class="w-sub">Quotation ที่บันทึกไว้ทั้งหมด</div><button class="w-link-btn" onclick="openQuotationList()">ดูรายการ →</button>`;
+   const transferred = list.filter(q=>q.status==='transferred').length;
+   const pending = list.length - transferred;
+   return `<div class="w-metric">${list.length} ใบ</div><div class="w-sub">Quotation ที่บันทึกไว้ทั้งหมด</div>
+    <div class="w-rows2"><div class="w-row2"><span>ยังไม่ Transfer</span><span>${pending}</span></div><div class="w-row2"><span>แปลงเป็น S/O แล้ว</span><span>${transferred}</span></div></div>
+    <button class="w-link-btn" onclick="openQuotationList()">ดูรายการ →</button>`;
   }
   case 'soStatus': {
    const c = getSOCountsByStatus();
-   return `<div class="w-chips">
-    <button class="w-chip w-chip-btn" style="background:#FFF3E8;color:#9A4C0B" onclick="openSOList('pending_approval')">Waiting Approve ${c.pending_approval}</button>
-    <button class="w-chip w-chip-btn win" onclick="openSOList('approved')">Approve ${c.approved}</button>
-    <button class="w-chip w-chip-btn lost" onclick="openSOList('rejected')">Reject ${c.rejected}</button>
-   </div><div class="w-sub">สถานะ Sales Order ทั้งหมด — คลิกแต่ละสถานะเพื่อดูรายการ</div>`;
+   return `<div class="w-grid3">
+    <button class="w-grid3-item" style="background:rgba(253,196,64,.18);color:#8a5d00" onclick="openSOList('pending_approval')"><div class="w-grid3-num">${c.pending_approval}</div><div class="w-grid3-lbl">Waiting Approve</div></button>
+    <button class="w-grid3-item" style="background:rgba(21,128,61,.14);color:#15803D" onclick="openSOList('approved')"><div class="w-grid3-num">${c.approved}</div><div class="w-grid3-lbl">Approve</div></button>
+    <button class="w-grid3-item" style="background:rgba(180,35,24,.12);color:#B42318" onclick="openSOList('rejected')"><div class="w-grid3-num">${c.rejected}</div><div class="w-grid3-lbl">Reject</div></button>
+   </div><div class="w-sub" style="margin-top:8px">สถานะ Sales Order ทั้งหมด — คลิกแต่ละสถานะเพื่อดูรายการ</div>`;
   }
   case 'discountApprovalStatus': {
    const c = getDiscountApprovalCounts();
-   return `<div class="w-metric">${c.pending} รายการ</div><div class="w-sub">รออนุมัติส่วนลด (Mng01) · อนุมัติแล้ว ${c.approved} · ปฏิเสธ ${c.rejected}</div><button class="w-link-btn" onclick="location.href='presale-configurator-v2.html?discountApprovalInbox'">ดูรายการ →</button>`;
+   const pendingList = loadDiscountApprovals().filter(r=>r.status==='pending').slice(0,4);
+   const rows = pendingList.length ? pendingList.map(r=>`
+    <li class="w-discount-row"><span class="w-badge-pct">-${r.discountPct}%</span>
+     <span class="w-list2-name">${esc(r.customer||'-')}<span class="w-list2-note">${fmtBaht(r.grandTotal||0)} บาท · ขอโดย ${esc(r.sales||'-')}</span></span></li>`).join('')
+    : `<li class="w-list2-empty">ไม่มีคำขอที่รออนุมัติ</li>`;
+   return `<div class="w-sub" style="margin-bottom:6px">รออนุมัติ ${c.pending} · อนุมัติแล้ว ${c.approved} · ปฏิเสธ ${c.rejected}</div>
+    <ul class="w-list2">${rows}</ul>
+    <button class="w-link-btn" onclick="location.href='presale-configurator-v2.html?discountApprovalInbox'">ดูรายการ →</button>`;
   }
   default: return '';
  }
+}
+function widgetDetailHTML(id){
+ const rowsHtml = rows => `<div class="w-detail-rows">${rows.map(([k,v])=>`<div class="w-detail-row"><span>${k}</span><span>${v}</span></div>`).join('')}</div>`;
+ if(id==='salesThisMonth'){
+  return rowsHtml([['สัปดาห์ที่ 1','฿612,000'],['สัปดาห์ที่ 2','฿734,500'],['สัปดาห์ที่ 3','฿690,000'],['สัปดาห์ที่ 4 (ปัจจุบัน)','฿811,000']])
+   + `<p class="w-detail-note">ยอดรับรู้จากใบสั่งขายที่ส่งมอบแล้วเท่านั้น</p>`;
+ }
+ if(id==='targetVsActual'){
+  return rowsHtml([['เป้าหมายเดือน','฿3,000,000'],['ทำได้แล้ว','฿2,480,000'],['ขาดอีก','฿652,500'],['วันคงเหลือ','21 วัน'],['ต้องปิดเฉลี่ย/วัน','฿31,071']]);
+ }
+ return null;
 }
 
 // ---------- Saved quotations (written by presale-configurator-v2.html, shared via localStorage) ----------
@@ -575,7 +675,7 @@ function renderDiscountApprovalSectionHTML(){
   </a>`;
  }).join(''):`<div class="appr-empty">${DISCOUNT_STATUS_EMPTY[mngDiscountCardFilter]}</div>`;
  return `<section>
-  <h2 style="margin:0 0 14px;color:var(--blue);font-size:18px">💸 คำขออนุมัติส่วนลด (Mng01)</h2>
+  <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">💸 คำขออนุมัติส่วนลด (Mng01)</h2>
   <div class="appr-summary" style="grid-template-columns:repeat(3,1fr)">
    <div class="appr-stat${byStatus.pending.length>0?' urgent':''}${cardActive('pending')}" onclick="setMngDiscountCardFilter('pending')"><div class="appr-stat-num">${byStatus.pending.length}</div><div class="appr-stat-lbl">รออนุมัติ</div></div>
    <div class="appr-stat${cardActive('approved')}" onclick="setMngDiscountCardFilter('approved')"><div class="appr-stat-num">${byStatus.approved.length}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
@@ -658,7 +758,7 @@ function renderSOApprovalSectionHTML(){
   </a>`;
  }).join(''):`<div class="appr-empty">${totalCount?'ไม่มีงานในหมวดนี้':'ไม่มีคำขออนุมัติที่รอดำเนินการ'}</div>`;
  return `<section>
-  <h2 style="margin:0 0 14px;color:var(--blue);font-size:18px">📥 คำขออนุมัติ Sales Order</h2>
+  <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">📥 คำขออนุมัติ Sales Order</h2>
   ${summaryHtml}
   <div class="appr-list">${rowsHtml}</div>
  </section>`;
@@ -740,6 +840,7 @@ function renderWidgetGrid(){
   const w = widgetDef(slot.widgetId);
   if(!w) return '';
   return `<div class="widget-card ${spanCls}" ${DRAG_EVENTS(i)}>
+   <div class="w-accent-bar" style="background:${WIDGET_ACCENT_HEX[w.accent]||'var(--blue)'}"></div>
    <button class="w-remove" title="ลบ Widget นี้" onclick="removeWidgetSlot(${i})">✕</button>
    <button class="w-expand" title="ดูขยาย" onclick="openWidgetExpand('${w.id}')">⤢</button>
    <div class="w-head"><div class="w-ic" style="${WIDGET_ACCENT_STYLE[w.accent]}">${w.icon}</div><div class="w-title">${w.title}</div></div>
@@ -791,17 +892,13 @@ function closeWidgetExpand(){
 function renderWidgetExpand(){
  const w = widgetDef(expandedWidgetId);
  if(!w) return;
+ const detail = widgetDetailHTML(w.id);
  document.getElementById('bentoModalContent').innerHTML = `
   <div class="bento-modal-head">
    <div class="w-ic" style="${WIDGET_ACCENT_STYLE[w.accent]}">${w.icon}</div>
    <div><h2>${w.title}</h2><p>${w.desc}</p></div>
   </div>
-  <div class="bento-modal-body">${widgetBodyHTML(w.id)}</div>`;
- const placedIds = [...new Set(dashboardWidgets.filter(s=>s.widgetId).map(s=>s.widgetId))];
- document.getElementById('bentoDock').innerHTML = placedIds.map(id=>{
-  const d = widgetDef(id);
-  return `<div class="bento-dock-item${id===expandedWidgetId?' active':''}" style="${WIDGET_ACCENT_STYLE[d.accent]}" title="${d.title}" onclick="openWidgetExpand('${id}')">${d.icon}</div>`;
- }).join('');
+  <div class="bento-modal-body">${detail || widgetBodyHTML(w.id)}</div>`;
 }
 function openWidgetPicker(slotIndex){
  const body = document.getElementById('widgetPickerBody');

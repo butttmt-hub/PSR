@@ -102,9 +102,16 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .dash-title h1{margin:0 0 4px;font-size:22px;color:var(--text)}
 .dash-title p{margin:0;font-size:13px;color:var(--muted)}
 
-.widget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-top:26px}
+.widget-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:64px;gap:16px;margin-top:26px}
+@media(max-width:900px){.widget-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.widget-grid{grid-template-columns:1fr}}
+.bento-a{grid-row:span 4;grid-column:span 2}
+.bento-b{grid-row:span 3;grid-column:span 1}
+.bento-c{grid-row:span 3;grid-column:span 2}
+@media(max-width:900px){.bento-a,.bento-b,.bento-c{grid-column:span 2;grid-row:span 3}}
+@media(max-width:560px){.bento-a,.bento-b,.bento-c{grid-column:span 1}}
 .widget-placeholder{
-  border:2px dashed var(--sky);border-radius:16px;min-height:170px;background:var(--card);
+  border:2px dashed var(--sky);border-radius:16px;background:var(--card);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);
   cursor:pointer;transition:.15s;padding:16px;text-align:center;
 }
@@ -115,7 +122,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .widget-placeholder .slot-remove:hover{color:#B42318}
 
 .widget-add-tile{
-  border:2px dashed var(--line);border-radius:16px;min-height:170px;background:transparent;
+  border:2px dashed var(--line);border-radius:16px;background:transparent;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);
   cursor:pointer;transition:.15s;
 }
@@ -125,9 +132,14 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 
 .widget-card{
   position:relative;border-radius:16px;padding:18px 18px 16px;background:var(--card);
-  box-shadow:var(--shadow);border:1px solid var(--line);min-height:170px;
-  display:flex;flex-direction:column;gap:12px;
+  box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;
+  display:flex;flex-direction:column;gap:12px;transition:.2s transform,.2s box-shadow;
 }
+.widget-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(12,56,67,.2)}
+.widget-card,.widget-placeholder{cursor:grab}
+.widget-card:active,.widget-placeholder:active{cursor:grabbing}
+.widget-card.dragging,.widget-placeholder.dragging{opacity:.35}
+.widget-card.drag-over,.widget-placeholder.drag-over{outline:2px dashed var(--orange);outline-offset:-2px}
 .widget-card .w-head{display:flex;align-items:center;gap:10px}
 .widget-card .w-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .widget-card .w-title{font-size:12.5px;font-weight:700;color:var(--muted)}
@@ -135,11 +147,18 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .widget-card .w-sub{font-size:11.5px;color:var(--muted);line-height:1.5}
 .widget-card .w-trend.up{color:#15803D;font-weight:700}
 .widget-card .w-trend.down{color:#B42318;font-weight:700}
-.widget-card .w-remove{
-  position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:0;
+.widget-card .w-remove,.widget-card .w-expand{
+  position:absolute;top:10px;width:22px;height:22px;border-radius:50%;border:0;
   background:#F4F7FA;color:var(--muted);cursor:pointer;font-size:12px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
 }
+.widget-card .w-remove{right:10px}
 .widget-card .w-remove:hover{background:#FDECEC;color:#B42318}
+.widget-card .w-expand{
+  right:38px;opacity:0;transform:translateY(-3px);transition:.15s;
+}
+.widget-card:hover .w-expand{opacity:1;transform:translateY(0)}
+.widget-card .w-expand:hover{background:var(--blue);color:#fff}
 .widget-card .w-bar-track{width:100%;height:10px;border-radius:6px;background:#E7E9EE;overflow:hidden}
 .widget-card .w-bar-fill{height:100%;background:var(--orange);border-radius:6px}
 .widget-card .w-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -150,6 +169,42 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .widget-card .w-chip-btn:hover{filter:brightness(.95);transform:translateY(-1px)}
 .widget-card .w-link-btn{align-self:flex-start;border:0;background:none;color:var(--orange);font-weight:700;font-size:11.5px;cursor:pointer;padding:0}
 .widget-card .w-link-btn:hover{text-decoration:underline}
+
+/* ---------- Bento widget expand modal ---------- */
+.bento-modal-overlay{
+  position:fixed;inset:0;background:rgba(8,20,30,.55);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;z-index:90;padding:24px 24px 110px;
+}
+.bento-modal-card{
+  background:#fff;border-radius:20px;max-width:640px;width:100%;max-height:80vh;overflow:auto;
+  box-shadow:0 30px 80px rgba(0,0,0,.4);padding:26px 26px 22px;position:relative;
+  animation:bentoPopIn .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes bentoPopIn{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.bento-modal-close{
+  position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:0;
+  background:#F4F7FA;color:var(--muted);cursor:pointer;font-size:15px;
+}
+.bento-modal-close:hover{background:#FDECEC;color:#B42318}
+.bento-modal-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.bento-modal-head .w-ic{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.bento-modal-head h2{margin:0;font-size:18px;color:var(--text)}
+.bento-modal-head p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.bento-modal-body .w-metric{font-size:36px}
+.bento-modal-body .w-sub{font-size:13px}
+.bento-dock{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:91;
+  display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:18px;
+  background:rgba(12,56,67,.85);backdrop-filter:blur(8px);box-shadow:0 14px 34px rgba(0,0,0,.35);
+  max-width:92vw;overflow-x:auto;
+}
+.bento-dock-item{
+  width:38px;height:38px;border-radius:11px;flex-shrink:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  transition:.15s;opacity:.65;
+}
+.bento-dock-item:hover{opacity:1;transform:translateY(-3px)}
+.bento-dock-item.active{opacity:1;transform:translateY(-4px) scale(1.08);box-shadow:0 0 0 2px rgba(255,255,255,.8)}
 
 /* ---------- Quotation list popup ---------- */
 .ql-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto}
@@ -325,6 +380,14 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
     </div>
     <div style="padding:16px 22px 22px" id="soListBody"></div>
   </div>
+</div>
+
+<div class="bento-modal-overlay hidden" id="widgetExpandOverlay" onclick="if(event.target===this) closeWidgetExpand()">
+  <div class="bento-modal-card">
+    <button class="bento-modal-close" onclick="closeWidgetExpand()">×</button>
+    <div id="bentoModalContent"></div>
+  </div>
+  <div class="bento-dock" id="bentoDock"></div>
 </div>
 
 <script>
@@ -660,25 +723,85 @@ function openQuotationList(){
 function closeQuotationList(){
  document.getElementById('quotationListOverlay').classList.add('hidden');
 }
+const BENTO_PATTERN = ['bento-a','bento-b','bento-b','bento-c'];
+const DRAG_EVENTS = i => `draggable="true" ondragstart="handleWidgetDragStart(event,${i})" ondragover="handleWidgetDragOver(event)" ondragleave="handleWidgetDragLeave(event)" ondrop="handleWidgetDrop(event,${i})" ondragend="handleWidgetDragEnd(event)"`;
 function renderWidgetGrid(){
  const grid = document.getElementById('widgetGrid');
  if(!grid) return;
  grid.innerHTML = dashboardWidgets.map((slot,i)=>{
+  const spanCls = BENTO_PATTERN[i % BENTO_PATTERN.length];
   if(!slot.widgetId){
    const removable = i>=DEFAULT_SLOT_COUNT;
-   return `<div class="widget-placeholder" onclick="openWidgetPicker(${i})">
+   return `<div class="widget-placeholder ${spanCls}" ${DRAG_EVENTS(i)} onclick="openWidgetPicker(${i})">
     <div class="ic">➕</div><div class="lbl">เลือก Widget</div>
     ${removable?`<span class="slot-remove" onclick="event.stopPropagation();removeWidgetSlot(${i})">ลบช่องนี้ ✕</span>`:''}
    </div>`;
   }
   const w = widgetDef(slot.widgetId);
   if(!w) return '';
-  return `<div class="widget-card">
+  return `<div class="widget-card ${spanCls}" ${DRAG_EVENTS(i)}>
    <button class="w-remove" title="ลบ Widget นี้" onclick="removeWidgetSlot(${i})">✕</button>
+   <button class="w-expand" title="ดูขยาย" onclick="openWidgetExpand('${w.id}')">⤢</button>
    <div class="w-head"><div class="w-ic" style="${WIDGET_ACCENT_STYLE[w.accent]}">${w.icon}</div><div class="w-title">${w.title}</div></div>
    ${widgetBodyHTML(w.id)}
   </div>`;
- }).join('') + (dashboardWidgets.length < MAX_SLOTS ? `<div class="widget-add-tile" onclick="addWidgetSlot()"><div class="plus">+</div><div class="lbl">เพิ่ม Widget การ์ดใหม่</div></div>` : '');
+ }).join('') + (dashboardWidgets.length < MAX_SLOTS ? `<div class="widget-add-tile ${BENTO_PATTERN[dashboardWidgets.length % BENTO_PATTERN.length]}" onclick="addWidgetSlot()"><div class="plus">+</div><div class="lbl">เพิ่ม Widget การ์ดใหม่</div></div>` : '');
+}
+let dragSrcIndex = null;
+function handleWidgetDragStart(e, index){
+ dragSrcIndex = index;
+ e.dataTransfer.effectAllowed = 'move';
+ try{ e.dataTransfer.setData('text/plain', String(index)); }catch(err){}
+ e.currentTarget.classList.add('dragging');
+}
+function handleWidgetDragOver(e){
+ e.preventDefault();
+ e.dataTransfer.dropEffect = 'move';
+ e.currentTarget.classList.add('drag-over');
+}
+function handleWidgetDragLeave(e){
+ e.currentTarget.classList.remove('drag-over');
+}
+function handleWidgetDrop(e, index){
+ e.preventDefault();
+ e.currentTarget.classList.remove('drag-over');
+ if(dragSrcIndex === null || dragSrcIndex === index) return;
+ const tmp = dashboardWidgets[index];
+ dashboardWidgets[index] = dashboardWidgets[dragSrcIndex];
+ dashboardWidgets[dragSrcIndex] = tmp;
+ dragSrcIndex = null;
+ saveDashboardWidgets();
+ renderWidgetGrid();
+}
+function handleWidgetDragEnd(e){
+ e.currentTarget.classList.remove('dragging');
+ document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+ dragSrcIndex = null;
+}
+let expandedWidgetId = null;
+function openWidgetExpand(widgetId){
+ expandedWidgetId = widgetId;
+ renderWidgetExpand();
+ document.getElementById('widgetExpandOverlay').classList.remove('hidden');
+}
+function closeWidgetExpand(){
+ document.getElementById('widgetExpandOverlay').classList.add('hidden');
+ expandedWidgetId = null;
+}
+function renderWidgetExpand(){
+ const w = widgetDef(expandedWidgetId);
+ if(!w) return;
+ document.getElementById('bentoModalContent').innerHTML = `
+  <div class="bento-modal-head">
+   <div class="w-ic" style="${WIDGET_ACCENT_STYLE[w.accent]}">${w.icon}</div>
+   <div><h2>${w.title}</h2><p>${w.desc}</p></div>
+  </div>
+  <div class="bento-modal-body">${widgetBodyHTML(w.id)}</div>`;
+ const placedIds = [...new Set(dashboardWidgets.filter(s=>s.widgetId).map(s=>s.widgetId))];
+ document.getElementById('bentoDock').innerHTML = placedIds.map(id=>{
+  const d = widgetDef(id);
+  return `<div class="bento-dock-item${id===expandedWidgetId?' active':''}" style="${WIDGET_ACCENT_STYLE[d.accent]}" title="${d.title}" onclick="openWidgetExpand('${id}')">${d.icon}</div>`;
+ }).join('');
 }
 function openWidgetPicker(slotIndex){
  const body = document.getElementById('widgetPickerBody');

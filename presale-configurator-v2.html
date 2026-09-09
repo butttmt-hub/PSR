@@ -264,6 +264,8 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 @media print{.progress-wrap,.actions,.side,header .proto,.qn-bar{display:none!important}body{background:#fff}main{display:block;width:100%;margin:0}.panel{box-shadow:none;border:0}.screen{display:none!important}.screen[data-screen="8"]{display:block!important}.panel-head,.section-title{display:none!important}}
 body.view-mode .progress-wrap,body.view-mode .side,body.view-mode .panel-head,body.view-mode .section-title,body.view-mode .actions{display:none!important}
 body.view-mode main{grid-template-columns:1fr}
+body.embedded-mode header{display:none!important}
+body.embedded-mode main{width:100%;margin:0 auto;padding:16px}
 </style>
 </head>
 <body>
@@ -2318,6 +2320,7 @@ function tryLoadViewMode(){
  document.getElementById('customer').value=rec.customer||'';
  document.getElementById('sales').value=rec.sales||'';
  document.body.classList.add('view-mode');
+ if(params.get('embedded')==='1'){ document.body.classList.add('embedded-mode'); }
  showScreen(8);
  const bar=document.getElementById('quotationNoBar');
  if(bar && params.get('embedded')==='1'){

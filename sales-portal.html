@@ -823,21 +823,28 @@ function closeQuotationList(){
  document.getElementById('quotationListOverlay').classList.add('hidden');
 }
 const BENTO_PATTERN = ['bento-a','bento-b','bento-b','bento-c'];
+function ensureSlotUid(slot){
+ if(!slot.uid) slot.uid = 'w'+Math.random().toString(36).slice(2,9);
+ return slot.uid;
+}
 function renderWidgetGrid(){
  const grid = document.getElementById('widgetGrid');
  if(!grid) return;
+ const firstRects = {};
+ grid.querySelectorAll('[data-wuid]').forEach(el=>{ firstRects[el.dataset.wuid] = el.getBoundingClientRect(); });
  grid.innerHTML = dashboardWidgets.map((slot,i)=>{
+  const uid = ensureSlotUid(slot);
   const spanCls = BENTO_PATTERN[i % BENTO_PATTERN.length];
   if(!slot.widgetId){
    const removable = i>=DEFAULT_SLOT_COUNT;
-   return `<div class="widget-placeholder ${spanCls}" onmousedown="startCardDrag(event,${i})" onclick="openWidgetPicker(${i})">
+   return `<div class="widget-placeholder ${spanCls}" data-wuid="${uid}" onmousedown="startCardDrag(event,${i})" onclick="openWidgetPicker(${i})">
     <div class="ic">➕</div><div class="lbl">เลือก Widget</div>
     ${removable?`<span class="slot-remove" onclick="event.stopPropagation();removeWidgetSlot(${i})">ลบช่องนี้ ✕</span>`:''}
    </div>`;
   }
   const w = widgetDef(slot.widgetId);
   if(!w) return '';
-  return `<div class="widget-card ${spanCls}" onmousedown="startCardDrag(event,${i})">
+  return `<div class="widget-card ${spanCls}" data-wuid="${uid}" onmousedown="startCardDrag(event,${i})">
    <div class="w-accent-bar" style="background:${WIDGET_ACCENT_HEX[w.accent]||'var(--blue)'}"></div>
    <button class="w-remove" title="ลบ Widget นี้" onclick="removeWidgetSlot(${i})">✕</button>
    <button class="w-expand" title="ดูขยาย" onclick="openWidgetExpand('${w.id}')">⤢</button>
@@ -845,6 +852,22 @@ function renderWidgetGrid(){
    ${widgetBodyHTML(w.id)}
   </div>`;
  }).join('') + (dashboardWidgets.length < MAX_SLOTS ? `<div class="widget-add-tile ${BENTO_PATTERN[dashboardWidgets.length % BENTO_PATTERN.length]}" onclick="addWidgetSlot()"><div class="plus">+</div><div class="lbl">เพิ่ม Widget การ์ดใหม่</div></div>` : '');
+ requestAnimationFrame(()=>{
+  grid.querySelectorAll('[data-wuid]').forEach(el=>{
+   const first = firstRects[el.dataset.wuid];
+   if(!first) return;
+   const last = el.getBoundingClientRect();
+   const dx = first.left-last.left, dy = first.top-last.top;
+   if(Math.abs(dx)<1 && Math.abs(dy)<1) return;
+   el.style.transition = 'none';
+   el.style.transform = `translate(${dx}px,${dy}px)`;
+   requestAnimationFrame(()=>{
+    el.style.transition = 'transform .38s cubic-bezier(.34,1.56,.64,1)';
+    el.style.transform = '';
+    el.addEventListener('transitionend', function done(){ el.style.transition=''; el.removeEventListener('transitionend',done); });
+   });
+  });
+ });
 }
 const CARD_DRAG_ELASTIC = 0.35;
 const CARD_DRAG_THRESHOLD = 60;

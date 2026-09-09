@@ -238,6 +238,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .ql-btn.reject:hover{background:#FBDADA}
 .ql-btn.transfer{border:0;background:var(--orange);color:#fff}
 .ql-btn.transfer:hover{opacity:.88}
+.ql-btn.transfer:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;opacity:1}
 
 /* ---------- Sales Order list popup ---------- */
 .so-list-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:inherit;transition:.15s}
@@ -639,6 +640,11 @@ function getDiscountApprovalCounts(){
  loadDiscountApprovals().forEach(r=>{ if(counts.hasOwnProperty(r.status)) counts[r.status]++; });
  return counts;
 }
+function getDiscountApprovalStatus(quotationNo){
+ if(!quotationNo) return null;
+ const rec = loadDiscountApprovals().find(r=>r.quotationNo===quotationNo);
+ return rec ? rec.status : null;
+}
 
 // ---------- Mng01 Approval Dashboard ----------
 const DISCOUNT_STATUS_EMPTY={pending:'ไม่มีคำขออนุมัติส่วนลดที่รอดำเนินการ',approved:'ไม่มีคำขอที่อนุมัติแล้ว',rejected:'ไม่มีคำขอที่ถูกปฏิเสธ'};
@@ -781,6 +787,7 @@ function transferQuotationToSO(qNo){
  const qList = getSavedQuotations();
  const qRec = qList.find(q=>q.quotationNo===qNo);
  if(!qRec){ alert('ไม่พบข้อมูล Quotation ที่บันทึกไว้'); return; }
+ if(qRec.quoteExtra?.discountPct>0 && getDiscountApprovalStatus(qNo)!=='approved'){ alert('ต้องรอ Mng01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้'); return; }
  const soNo = generateSONo();
  const now = new Date();
  const soList = loadSalesOrders();
@@ -800,17 +807,24 @@ function transferQuotationToSO(qNo){
 function openQuotationList(){
  const list = getActiveQuotations().slice().reverse();
  const body = document.getElementById('quotationListBody');
- body.innerHTML = list.length ? `<div class="ql-list">${list.map(q=>`
-   <div class="ql-row">
+ body.innerHTML = list.length ? `<div class="ql-list">${list.map(q=>{
+   const approvalStatus = q.quoteExtra?.discountPct>0 ? getDiscountApprovalStatus(q.quotationNo) : null;
+   const blocked = q.quoteExtra?.discountPct>0 && approvalStatus!=='approved';
+   const blockReason = approvalStatus==='pending' ? 'รอ Mng01 อนุมัติส่วนลด' : approvalStatus==='rejected' ? 'ส่วนลดถูกปฏิเสธ' : 'ต้องขออนุมัติส่วนลดจาก Mng01 ก่อน';
+   const transferBtn = blocked
+    ? `<button class="ql-btn transfer" disabled title="${blockReason}">🕒 ${blockReason}</button>`
+    : `<button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O Request →</button>`;
+   return `<div class="ql-row">
     <div class="ql-row-main" onclick="location.href='presale-configurator-v2.html?viewQuote=${encodeURIComponent(q.quotationNo)}'">
      <div><div class="ql-no">${esc(q.quotationNo)}</div><div class="ql-cust">${esc(q.customer||'ยังไม่ระบุลูกค้า')}</div></div>
      <div class="ql-meta"><div class="ql-amt">${fmtBaht(q.grandTotal)} บาท</div><div class="ql-date">${esc(q.savedAtDisplay||'')}</div></div>
     </div>
     <div class="ql-actions">
      <button class="ql-btn reject" onclick="event.stopPropagation();rejectQuotation('${q.quotationNo}')">✕ Reject</button>
-     <button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O Request →</button>
+     ${transferBtn}
     </div>
-   </div>`).join('')}</div>`
+   </div>`;
+  }).join('')}</div>`
   : `<div class="ql-empty">ยังไม่มี Quotation ที่บันทึกไว้ — ไปที่ "Create Request Auction Quotation" แล้วบันทึกเลข Quotation ในหน้าใบเสนอราคา</div>`;
  document.getElementById('quotationListOverlay').classList.remove('hidden');
 }

@@ -614,6 +614,10 @@ function rejectQuotation(qNo){
  const list = getSavedQuotations();
  const rec = list.find(q=>q.quotationNo===qNo);
  if(rec){ rec.status='rejected'; rec.rejectedAt=new Date().toISOString(); saveSavedQuotations(list); }
+ // ยกเลิกคำขออนุมัติส่วนลดที่ยังรอ Mgr01 พิจารณา ให้หายไปจาก Mgr01 Dashboard ด้วย
+ saveDiscountApprovals(loadDiscountApprovals().filter(r=>!(r.quotationNo===qNo && r.status==='pending')));
+ // ยกเลิก Sales Order ที่ยังรออนุมัติซึ่งผูกกับ Quotation นี้ ให้หายไปจาก S/O Approval Dashboard ด้วย
+ saveSalesOrders(loadSalesOrders().filter(s=>!(s.quotationNo===qNo && s.status==='pending_approval')));
  openQuotationList();
  renderWidgetGrid();
 }
@@ -636,6 +640,9 @@ function getSOCountsByStatus(){
 const DISCOUNT_APPROVALS_KEY = 'tmt_discount_approvals';
 function loadDiscountApprovals(){
  try{ const raw=localStorage.getItem(DISCOUNT_APPROVALS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
+}
+function saveDiscountApprovals(list){
+ try{ localStorage.setItem(DISCOUNT_APPROVALS_KEY, JSON.stringify(list)); }catch(e){}
 }
 function getDiscountApprovalCounts(){
  const counts = {pending:0, approved:0, rejected:0};

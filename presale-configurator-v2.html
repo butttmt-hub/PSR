@@ -421,7 +421,6 @@ body.embedded-mode main{width:100%;margin:0 auto;padding:16px}
     <div class="actions">
       <button class="btn secondary" id="backBtn" onclick="go(-1)">← Back</button>
       <div style="display:flex;gap:8px">
-        <button class="btn secondary" id="demoBtn" onclick="loadExtraDemo()">Load Extra Demo</button>
         <button class="btn primary" id="nextBtn" onclick="go(1)">Next →</button>
         <button class="btn secondary" id="qPrintBtn" onclick="printQuotationGated()" style="display:none">🖨️ Print</button>
         <button class="btn primary" id="qSaveShareBtn" onclick="saveAndShareQuotation()" style="display:none">💾 Save &amp; Share</button>
@@ -2350,71 +2349,12 @@ function renderQuotation(){
  `;
  recalcQuoteTotals();
 }
-function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('backBtn').textContent=isHiddenStep(current)?'← กลับไป Summary':'← Back';const isLastVisible=current===visibleSteps[visibleSteps.length-1];const onQuoteStep=current===8;document.getElementById('demoBtn').style.display=onQuoteStep?'none':'inline-block';document.getElementById('nextBtn').style.display=onQuoteStep?'none':((isLastVisible&&!isHiddenStep(current))?'none':'inline-block');document.getElementById('nextBtn').textContent=isHiddenStep(current)?'✓ กลับไป Summary':'Next →';document.getElementById('nextBtn').onclick=()=>go(1);document.getElementById('qPrintBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qSaveShareBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qTransferSoBtn').style.display=onQuoteStep?'inline-block':'none';renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
+function showScreen(n){current=Math.max(1,Math.min(9,n));document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',+s.dataset.screen===current));const s=steps[current-1];document.getElementById('screenTitle').textContent=`Step ${current} — ${s.th} / ${s.t}`;document.getElementById('screenDesc').textContent=s.d;document.getElementById('backBtn').disabled=current===1;document.getElementById('backBtn').textContent=isHiddenStep(current)?'← กลับไป Summary':'← Back';const isLastVisible=current===visibleSteps[visibleSteps.length-1];const onQuoteStep=current===8;document.getElementById('nextBtn').style.display=onQuoteStep?'none':((isLastVisible&&!isHiddenStep(current))?'none':'inline-block');document.getElementById('nextBtn').textContent=isHiddenStep(current)?'✓ กลับไป Summary':'Next →';document.getElementById('nextBtn').onclick=()=>go(1);document.getElementById('qPrintBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qSaveShareBtn').style.display=onQuoteStep?'inline-block':'none';document.getElementById('qTransferSoBtn').style.display=onQuoteStep?'inline-block':'none';renderProgress();refreshAll();window.scrollTo({top:0,behavior:'smooth'});}
 function go(delta){
  if(isHiddenStep(current)){ showScreen(7); return; }
  const idx=visibleSteps.indexOf(current);
  const newIdx=Math.max(0,Math.min(visibleSteps.length-1,idx+delta));
  showScreen(visibleSteps[newIdx]);
-}
-function loadExtraDemo(){
- const demoByProduct={
-  'Cut Sheet':{mill:1,aiming:1,chemMech:1,appearance:1,packing:4,bundle:1,unloading:2,vehicle:1,delivery:1,cert:2,deliveryDoc:2},
-  'Tube':{tubeOD:1,tubeAiming:1,tubeChemMech:1,tubeGI:1,tubeStrap:1,tubePcsPack:1,tubeUnloading:2,tubeVehicle:2,tubeDelivery:1,tubeCert:2,tubeDeliveryDoc:2}
- };
- const choices=demoByProduct[currentProduct]||{};
- const specIds=new Set(productFieldDefs[currentProduct].filter(f=>PER_ITEM_CATS.includes(f.cat)).map(f=>f.id));
- const demoItem=productCart.find(i=>i.family===currentProduct);
- Object.entries(choices).forEach(([id,idx])=>{
-   if(specIds.has(id)){
-     if(!demoItem) return;
-     const f=productFieldDefs[currentProduct].find(x=>x.id===id);
-     const uid=`${id}__${demoItem.id}`;
-     const sel=document.getElementById(uid);
-     if(sel){
-       sel.selectedIndex=idx;
-       onItemFieldChange(demoItem,f,idx);
-       const di=document.getElementById('detailInput_'+uid);
-       if(di&&f.opts[idx][1]!=='STD'){
-         const detail='Customer special requirement';
-         di.value=detail; demoItem.specState[id].detail=detail;
-       }
-     }
-     return;
-   }
-   const f=fieldDefs.find(x=>x.id===id);
-   if(!f) return;
-   if(f.multi){
-     const cb=document.getElementById(`${id}_opt${idx}`);
-     if(!cb) return;
-     cb.checked=true;
-     cb.dispatchEvent(new Event('change'));
-     if((f.multiDetailIdx||[]).includes(idx)){
-       const di=document.getElementById(`${id}_detail${idx}`);
-       if(di){
-         let detail='Customer special requirement';
-         if(id.toLowerCase().includes('delivery'))detail='Before 10:00';
-         di.value=detail; fieldState[id].detailByIdx[idx]=detail;
-         onMultiFieldChange(f,cb.closest('.field'));
-       }
-     }
-   } else {
-     const sel=document.getElementById(id);
-     if(sel){
-       sel.selectedIndex=idx;
-       onFieldChange(f,idx);
-       const di=document.getElementById('detailInput_'+id);
-       if(di&&f.opts[idx][1]!=='STD'){
-         let detail='Customer special requirement';
-         if(id.toLowerCase().includes('unloading'))detail='Forklift 2.5 ton';
-         if(id.toLowerCase().includes('delivery'))detail='Before 10:00';
-         if(id==='tubeOD')detail='Special OD requested by customer';
-         di.value=detail;fieldState[id].detail=detail;
-       }
-     }
-   }
- });
- refreshAll();
 }
 function tryLoadViewMode(){
  const params=new URLSearchParams(window.location.search);

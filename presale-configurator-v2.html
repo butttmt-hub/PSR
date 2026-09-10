@@ -1990,8 +1990,8 @@ function renderApprovalInbox(){
  const cardActive=(key)=>approvalCardFilter===key?' active':'';
  const summaryHtml=`<div class="appr-summary">
    <div class="appr-stat${cardActive(null)}" onclick="setApprovalCardFilter(null)"><div class="appr-stat-num">${totalCount}</div><div class="appr-stat-lbl">รอดำเนินการทั้งหมด</div></div>
-   <div class="appr-stat${shipTomorrowCount>0?' urgent':''}${cardActive('shipTomorrow')}" onclick="setApprovalCardFilter('shipTomorrow')"><div class="appr-stat-num">${shipTomorrowCount}</div><div class="appr-stat-lbl">ด่วนงานขึ้นวันนี้</div></div>
-   <div class="appr-stat${approveTodayCount>0?' urgent':''}${cardActive('approveToday')}" onclick="setApprovalCardFilter('approveToday')"><div class="appr-stat-num">${approveTodayCount}</div><div class="appr-stat-lbl">ด่วนงานขึ้นพรุ่งนี้</div></div>
+   <div class="appr-stat${shipTomorrowCount>0?' urgent':''}${cardActive('shipTomorrow')}" onclick="setApprovalCardFilter('shipTomorrow')"><div class="appr-stat-num">${shipTomorrowCount}</div><div class="appr-stat-lbl">งานด่วนขึ้นวันนี้</div></div>
+   <div class="appr-stat${approveTodayCount>0?' urgent':''}${cardActive('approveToday')}" onclick="setApprovalCardFilter('approveToday')"><div class="appr-stat-num">${approveTodayCount}</div><div class="appr-stat-lbl">งานด่วนขึ้นพรุ่งนี้</div></div>
    <div class="appr-stat${cardActive('general')}" onclick="setApprovalCardFilter('general')"><div class="appr-stat-num">${generalCount}</div><div class="appr-stat-lbl">งานรออนุมัติทั่วไป</div></div>
    <div class="appr-stat${cardActive('noDate')}" onclick="setApprovalCardFilter('noDate')"><div class="appr-stat-num">${noDateCount}</div><div class="appr-stat-lbl">งานรอกำหนดส่ง</div></div>
   </div>`;

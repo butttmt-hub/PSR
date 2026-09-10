@@ -745,8 +745,8 @@ function renderSOApprovalSectionHTML(){
  const cardActive=(key)=>soApprovalCardFilter===key?' active':'';
  const summaryHtml=`<div class="appr-summary">
    <div class="appr-stat${cardActive(null)}" onclick="setSOApprovalCardFilter(null)"><div class="appr-stat-num">${totalCount}</div><div class="appr-stat-lbl">รอดำเนินการทั้งหมด</div></div>
-   <div class="appr-stat${shipTomorrowCount>0?' urgent':''}${cardActive('shipTomorrow')}" onclick="setSOApprovalCardFilter('shipTomorrow')"><div class="appr-stat-num">${shipTomorrowCount}</div><div class="appr-stat-lbl">ด่วนงานขึ้นวันนี้</div></div>
-   <div class="appr-stat${approveTodayCount>0?' urgent':''}${cardActive('approveToday')}" onclick="setSOApprovalCardFilter('approveToday')"><div class="appr-stat-num">${approveTodayCount}</div><div class="appr-stat-lbl">ด่วนงานขึ้นพรุ่งนี้</div></div>
+   <div class="appr-stat${shipTomorrowCount>0?' urgent':''}${cardActive('shipTomorrow')}" onclick="setSOApprovalCardFilter('shipTomorrow')"><div class="appr-stat-num">${shipTomorrowCount}</div><div class="appr-stat-lbl">งานด่วนขึ้นวันนี้</div></div>
+   <div class="appr-stat${approveTodayCount>0?' urgent':''}${cardActive('approveToday')}" onclick="setSOApprovalCardFilter('approveToday')"><div class="appr-stat-num">${approveTodayCount}</div><div class="appr-stat-lbl">งานด่วนขึ้นพรุ่งนี้</div></div>
    <div class="appr-stat${cardActive('general')}" onclick="setSOApprovalCardFilter('general')"><div class="appr-stat-num">${generalCount}</div><div class="appr-stat-lbl">งานรออนุมัติทั่วไป</div></div>
    <div class="appr-stat${cardActive('noDate')}" onclick="setSOApprovalCardFilter('noDate')"><div class="appr-stat-num">${noDateCount}</div><div class="appr-stat-lbl">งานรอกำหนดส่ง</div></div>
   </div>`;

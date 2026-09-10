@@ -892,10 +892,13 @@ function searchProducts(){
  renderProductsTable();
 }
 function stockCheckLink(r){
+ // สต็อกติดลบ: เช็คแผนผลิตตัดม้วนก่อนว่าคิวผลิตอยู่ตรงไหน — ถ้าสถานะ "รอม้วน"
+ // หน้าแผนผลิตจะมีลิงก์ต่อไปเช็คสต็อกม้วนดิบ (RM) ให้เองอัตโนมัติ
  const params=new URLSearchParams();
+ params.set('material',r.code);
  if(r.thickness!==undefined) params.set('thk',r.thickness);
  if(r.width!==undefined) params.set('wid',r.width);
- return `stock-rm-visibility-sale-view.html?${params.toString()}`;
+ return `${encodeURI('แผนผลิตตัดม้วน Sep - 2026 (Demo).html')}?${params.toString()}`;
 }
 function renderProductsTable(){
  const start=(pmCurrentPage-1)*pmPageSize;

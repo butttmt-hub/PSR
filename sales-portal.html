@@ -364,6 +364,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       <div class="name" id="dashBrandName">Sales Performance Dashboard<small>Phase C · Prototype · Not a production system</small></div>
     </div>
     <div class="who">
+      <button class="theme-toggle" id="clearTestDataBtn" onclick="clearTestData()" title="ล้างข้อมูลทดสอบ (Quotation / Sales Order / คำขออนุมัติ) — ไม่กระทบ Widget และธีม">🧹</button>
       <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="สลับธีมสว่าง/มืด">🌙</button>
       <div class="avatar" id="dashAvatar">S</div>
       <span>สวัสดี, <strong id="dashUserName">Sale01</strong></span>
@@ -1083,6 +1084,18 @@ function addWidgetSlot(){
  dashboardWidgets.push({widgetId:null});
  saveDashboardWidgets();
  renderWidgetGrid();
+}
+// ล้างเฉพาะข้อมูลทดสอบที่สะสมระหว่างทดลองใช้งาน (Quotation / Sales Order / คำขออนุมัติส่วนลด)
+// ไม่แตะ Widget layout, ธีม, หรือ session login ของผู้ใช้
+function clearTestData(){
+ if(!confirm('ยืนยันล้างข้อมูลทดสอบทั้งหมด?\n\nจะลบ Quotation, Sales Order และคำขออนุมัติส่วนลดที่สร้างไว้ทั้งหมด\n(ไม่กระทบการตั้งค่า Widget และธีมที่เลือกไว้)')) return;
+ try{
+  localStorage.removeItem(QUOTATIONS_KEY);
+  localStorage.removeItem(SALES_ORDERS_KEY);
+  localStorage.removeItem(DISCOUNT_APPROVALS_KEY);
+ }catch(e){}
+ alert('ล้างข้อมูลทดสอบเรียบร้อยแล้ว');
+ location.reload();
 }
 function logout(){
  sessionStorage.removeItem(SESSION_KEY);

@@ -1410,18 +1410,58 @@ let discountEvidence=null;
 function hasValidDiscountEvidence(){
  return !(quoteExtra.discountPct>0) || !!discountEvidence;
 }
+// บีบอัดรูปภาพก่อนแปลงเป็น dataUrl (ลดขนาดจากรูปถ่ายมือถือหลาย MB เหลือหลักร้อย KB)
+// เพื่อลดโอกาส localStorage เต็มระหว่างทดสอบ — ไม่แตะไฟล์ที่ไม่ใช่รูปภาพ (เช่น PDF)
+function compressImageToDataUrl(file,maxDim,quality){
+ maxDim=maxDim||1400; quality=quality||0.75;
+ return new Promise((resolve,reject)=>{
+  const reader=new FileReader();
+  reader.onload=function(){
+   const img=new Image();
+   img.onload=function(){
+    let w=img.width, h=img.height;
+    if(w>maxDim||h>maxDim){
+     const scale=maxDim/Math.max(w,h);
+     w=Math.round(w*scale); h=Math.round(h*scale);
+    }
+    const canvas=document.createElement('canvas');
+    canvas.width=w; canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    resolve(canvas.toDataURL('image/jpeg',quality));
+   };
+   img.onerror=function(){ reject(new Error('image decode failed')); };
+   img.src=reader.result;
+  };
+  reader.onerror=function(){ reject(new Error('file read failed')); };
+  reader.readAsDataURL(file);
+ });
+}
+function dataUrlApproxBytes(dataUrl){
+ const i=dataUrl.indexOf(',');
+ const b64=i>=0?dataUrl.slice(i+1):dataUrl;
+ return Math.round(b64.length*0.75);
+}
+function readFileAsAttachment(file,onDone,onFail){
+ if(file.type&&file.type.startsWith('image/')){
+  compressImageToDataUrl(file).then(dataUrl=>{
+   onDone({name:file.name,type:'image/jpeg',size:dataUrlApproxBytes(dataUrl),dataUrl});
+  }).catch(onFail);
+  return;
+ }
+ const reader=new FileReader();
+ reader.onload=function(){ onDone({name:file.name,type:file.type,size:file.size,dataUrl:reader.result}); };
+ reader.onerror=onFail;
+ reader.readAsDataURL(file);
+}
 function handleDiscountEvidenceSelect(e){
  const file=e.target.files&&e.target.files[0];
  if(!file) return;
- const MAX_BYTES=4*1024*1024;
- if(file.size>MAX_BYTES){ alert('ไฟล์มีขนาดใหญ่เกินไป (จำกัดไม่เกิน 4 MB)'); e.target.value=''; return; }
- const reader=new FileReader();
- reader.onload=function(){
-  discountEvidence={name:file.name,type:file.type,size:file.size,dataUrl:reader.result};
-  updateDiscountEvidenceGate();
- };
- reader.onerror=function(){ alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาลองใหม่'); };
- reader.readAsDataURL(file);
+ const MAX_BYTES=8*1024*1024;
+ if(file.size>MAX_BYTES){ alert('ไฟล์มีขนาดใหญ่เกินไป (จำกัดไม่เกิน 8 MB)'); e.target.value=''; return; }
+ readFileAsAttachment(file,
+  (att)=>{ discountEvidence=att; updateDiscountEvidenceGate(); },
+  ()=>{ alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาลองใหม่'); }
+ );
 }
 const DISCOUNT_APPROVALS_KEY='tmt_discount_approvals';
 function loadDiscountApprovals(){
@@ -1568,7 +1608,9 @@ function snapshotCurrentQuotation(qNo){
   cart:JSON.parse(JSON.stringify(productCart)),
   fieldState:JSON.parse(JSON.stringify(fieldState)),
   quoteExtra:JSON.parse(JSON.stringify(quoteExtra)),
-  discountEvidence:discountEvidence?JSON.parse(JSON.stringify(discountEvidence)):null,
+  // เก็บเฉพาะ metadata ไม่เก็บ dataUrl ซ้ำ — ตัวไฟล์เต็มอยู่ใน tmt_discount_approvals แล้ว
+  // (กันพื้นที่ localStorage เต็มเร็วเกินไปตอนแนบไฟล์หลักฐานส่วนลด)
+  discountEvidence:discountEvidence?{name:discountEvidence.name,type:discountEvidence.type,size:discountEvidence.size}:null,
  };
 }
 function renderQuotationNoBar(){
@@ -1856,28 +1898,28 @@ function setDeliveryDate(soNo,dateStr){
 function handlePOFileSelect(e,soNo){
  const file=e.target.files&&e.target.files[0];
  if(!file) return;
- const MAX_BYTES=4*1024*1024;
+ const MAX_BYTES=8*1024*1024;
  if(file.size>MAX_BYTES){
-  alert('ไฟล์มีขนาดใหญ่เกินไป (จำกัดไม่เกิน 4 MB สำหรับ Prototype นี้ที่เก็บไฟล์ใน localStorage)');
+  alert('ไฟล์มีขนาดใหญ่เกินไป (จำกัดไม่เกิน 8 MB สำหรับ Prototype นี้ที่เก็บไฟล์ใน localStorage)');
   e.target.value='';
   return;
  }
- const reader=new FileReader();
- reader.onload=function(){
-  const list=loadSalesOrders();
-  const rec=list.find(s=>s.soNo===soNo);
-  if(!rec) return;
-  rec.poAttachment={name:file.name,type:file.type,size:file.size,dataUrl:reader.result,attachedAt:new Date().toISOString()};
-  try{
-   localStorage.setItem(SALES_ORDERS_KEY,JSON.stringify(list));
-  }catch(err){
-   alert('บันทึกไฟล์ไม่สำเร็จ — ไฟล์อาจมีขนาดใหญ่เกินไปสำหรับพื้นที่จัดเก็บของเบราว์เซอร์ (Prototype นี้ใช้ localStorage ซึ่งมีพื้นที่จำกัด)');
-   return;
-  }
-  document.querySelector('.app').innerHTML=renderSalesOrderDoc(rec);
- };
- reader.onerror=function(){ alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาลองใหม่'); };
- reader.readAsDataURL(file);
+ readFileAsAttachment(file,
+  (att)=>{
+   const list=loadSalesOrders();
+   const rec=list.find(s=>s.soNo===soNo);
+   if(!rec) return;
+   rec.poAttachment={...att,attachedAt:new Date().toISOString()};
+   try{
+    localStorage.setItem(SALES_ORDERS_KEY,JSON.stringify(list));
+   }catch(err){
+    alert(STORAGE_FULL_MSG);
+    return;
+   }
+   document.querySelector('.app').innerHTML=renderSalesOrderDoc(rec);
+  },
+  ()=>{ alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาลองใหม่'); }
+ );
 }
 function showInfoModal(title,message,actionsHtml){
  closeInfoModal();
@@ -2387,6 +2429,10 @@ function tryLoadViewMode(){
  quoteExtra=rec.quoteExtra||quoteExtra;
  savedQuotationNo=rec.quotationNo;
  discountEvidence=rec.discountEvidence||null;
+ if(discountEvidence && !discountEvidence.dataUrl){
+  const apprRec=loadDiscountApprovals().find(r=>r.quotationNo===qNo);
+  if(apprRec && apprRec.evidence) discountEvidence={...discountEvidence, dataUrl:apprRec.evidence.dataUrl};
+ }
  Object.keys(fieldState).forEach(k=>delete fieldState[k]);
  fieldDefs.forEach(f=>{
   if(rec.fieldState && rec.fieldState[f.id]) fieldState[f.id]=rec.fieldState[f.id];

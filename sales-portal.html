@@ -294,6 +294,22 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .appr-delivery-badge.pending{background:#FFF3E8;color:#9A4C0B}
 @media(max-width:640px){.appr-summary{grid-template-columns:repeat(2,1fr)}}
 
+.appr-shell{display:flex;align-items:flex-start;gap:24px}
+.appr-sidebar{width:220px;flex-shrink:0;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:sticky;top:20px}
+.appr-sidebar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 16px 12px;font-size:13.5px;font-weight:800;color:var(--heading);border-bottom:1px solid var(--line)}
+.appr-bell{position:relative;font-size:16px;line-height:1;animation:apprBellRing 1.6s ease-in-out infinite}
+.appr-bell-dot{position:absolute;top:-3px;right:-4px;width:8px;height:8px;border-radius:50%;background:var(--review);border:1.5px solid var(--card)}
+@keyframes apprBellRing{0%,100%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-12deg)}30%{transform:rotate(8deg)}40%{transform:rotate(-6deg)}50%{transform:rotate(0)}}
+.appr-nav{display:flex;flex-direction:column;padding:8px}
+.appr-nav-item{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:10px 12px;font:inherit;font-size:12.5px;font-weight:700;color:var(--text);cursor:pointer;transition:.15s}
+.appr-nav-item:hover{background:var(--bg)}
+.appr-nav-item.active{background:var(--blue);color:#fff}
+.appr-nav-badge{min-width:22px;padding:2px 6px;border-radius:999px;background:var(--reviewBg);color:var(--review);font-size:11px;font-weight:800;text-align:center}
+.appr-nav-item.active .appr-nav-badge{background:rgba(255,255,255,.22);color:#fff}
+.appr-nav-badge.zero{background:var(--bg);color:var(--muted)}
+.appr-content{flex:1;min-width:0}
+@media(max-width:760px){.appr-shell{flex-direction:column}.appr-sidebar{width:100%;position:static}.appr-nav{flex-direction:row;flex-wrap:wrap}.appr-nav-item{width:auto;flex:1 1 auto}}
+
 /* ---------- Create Request Auction Quotation button ---------- */
 .fab-btn{
   display:inline-flex;align-items:center;gap:9px;flex-shrink:0;
@@ -669,6 +685,25 @@ function isQuotationStillActive(quotationNo){
  const rec=getSavedQuotations().find(q=>q.quotationNo===quotationNo);
  return !!rec && rec.status!=='rejected';
 }
+// เมนูแบบ sidebar ที่ใช้ร่วมกันระหว่างหน้า Mgr01 Discount Approval และ S/O Approval
+// counts.pending>0 จะโชว์สัญลักษณ์กระดิ่งแจ้งเตือนที่หัวเมนู
+function renderApprovalSidebarShell(opts){
+ const {icon,title,counts,activeStatus,navFn,contentHtml}=opts;
+ const navItem=(status,label)=>`<button class="appr-nav-item${activeStatus===status?' active':''}" onclick="${navFn}('${status}')">
+   <span>${esc(label)}</span><span class="appr-nav-badge${counts[status]>0?'':' zero'}">${counts[status]}</span>
+  </button>`;
+ return `<div class="appr-shell">
+  <aside class="appr-sidebar">
+   <div class="appr-sidebar-head"><span>${icon} ${esc(title)}</span>${counts.pending>0?`<span class="appr-bell" title="${counts.pending} งานรอดำเนินการ">🔔<span class="appr-bell-dot"></span></span>`:''}</div>
+   <nav class="appr-nav">
+    ${navItem('pending','รอดำเนินการ')}
+    ${navItem('approved','อนุมัติแล้ว')}
+    ${navItem('rejected','ปฏิเสธแล้ว')}
+   </nav>
+  </aside>
+  <div class="appr-content">${contentHtml}</div>
+ </div>`;
+}
 function renderDiscountApprovalSectionHTML(){
  const all=loadDiscountApprovals();
  const byStatus={
@@ -677,7 +712,6 @@ function renderDiscountApprovalSectionHTML(){
   rejected:all.filter(r=>r.status==='rejected'),
  };
  const list=byStatus[mngDiscountCardFilter].slice().sort((a,b)=>new Date(b.decidedAt||b.requestedAt||0)-new Date(a.decidedAt||a.requestedAt||0));
- const cardActive=(key)=>mngDiscountCardFilter===key?' active':'';
  const rowsHtml=list.length?list.map(rec=>{
   const initial=esc((rec.customer||'?').charAt(0));
   const dateLabel=esc(new Date(rec.decidedAt||rec.requestedAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
@@ -690,15 +724,12 @@ function renderDiscountApprovalSectionHTML(){
    <div class="appr-time">${dateLabel}</div>
   </a>`;
  }).join(''):`<div class="appr-empty">${DISCOUNT_STATUS_EMPTY[mngDiscountCardFilter]}</div>`;
- return `<section>
-  <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">💸 คำขออนุมัติส่วนลด (Mgr01)</h2>
-  <div class="appr-summary" style="grid-template-columns:repeat(3,1fr)">
-   <div class="appr-stat${byStatus.pending.length>0?' urgent':''}${cardActive('pending')}" onclick="setMngDiscountCardFilter('pending')"><div class="appr-stat-num">${byStatus.pending.length}</div><div class="appr-stat-lbl">รออนุมัติ</div></div>
-   <div class="appr-stat${cardActive('approved')}" onclick="setMngDiscountCardFilter('approved')"><div class="appr-stat-num">${byStatus.approved.length}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
-   <div class="appr-stat${cardActive('rejected')}" onclick="setMngDiscountCardFilter('rejected')"><div class="appr-stat-num">${byStatus.rejected.length}</div><div class="appr-stat-lbl">ปฏิเสธแล้ว</div></div>
-  </div>
-  <div class="appr-list">${rowsHtml}</div>
- </section>`;
+ return renderApprovalSidebarShell({
+  icon:'💸', title:'คำขออนุมัติส่วนลด',
+  counts:{pending:byStatus.pending.length,approved:byStatus.approved.length,rejected:byStatus.rejected.length},
+  activeStatus:mngDiscountCardFilter, navFn:'setMngDiscountCardFilter',
+  contentHtml:`<div class="appr-list">${rowsHtml}</div>`
+ });
 }
 function renderMgr01Dashboard(){
  document.getElementById('mgr01DashboardView').innerHTML = renderDiscountApprovalSectionHTML();
@@ -754,20 +785,15 @@ function renderSOApprovalSectionHTML(){
  const pending=allSO.filter(s=>s.status==='pending_approval' && isQuotationStillActive(s.quotationNo));
  const approvedAll=allSO.filter(s=>s.status==='approved').sort((a,b)=>new Date(b.approvedAt||0)-new Date(a.approvedAt||0));
  const rejectedAll=allSO.filter(s=>s.status==='rejected').sort((a,b)=>new Date(b.rejectedAt||0)-new Date(a.rejectedAt||0));
- const tabActive=(key)=>soApprovalStatusTab===key?' active':'';
- const statusTabsHtml=`<div class="appr-summary" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
-   <div class="appr-stat${pending.length>0?' urgent':''}${tabActive('pending')}" onclick="setSOApprovalStatusTab('pending')"><div class="appr-stat-num">${pending.length}</div><div class="appr-stat-lbl">รอดำเนินการ</div></div>
-   <div class="appr-stat${tabActive('approved')}" onclick="setSOApprovalStatusTab('approved')"><div class="appr-stat-num">${approvedAll.length}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
-   <div class="appr-stat${tabActive('rejected')}" onclick="setSOApprovalStatusTab('rejected')"><div class="appr-stat-num">${rejectedAll.length}</div><div class="appr-stat-lbl">ปฏิเสธแล้ว</div></div>
-  </div>`;
+ const counts={pending:pending.length,approved:approvedAll.length,rejected:rejectedAll.length};
  if(soApprovalStatusTab!=='pending'){
   const list=soApprovalStatusTab==='approved'?approvedAll:rejectedAll;
   const rowsHtml=list.length?list.map(renderSOHistoryRow).join(''):`<div class="appr-empty">${SO_HISTORY_EMPTY[soApprovalStatusTab]}</div>`;
-  return `<section>
-   <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">📥 คำขออนุมัติ Sales Order</h2>
-   ${statusTabsHtml}
-   <div class="appr-list">${rowsHtml}</div>
-  </section>`;
+  return renderApprovalSidebarShell({
+   icon:'📥', title:'คำขออนุมัติ Sales Order',
+   counts, activeStatus:soApprovalStatusTab, navFn:'setSOApprovalStatusTab',
+   contentHtml:`<div class="appr-list">${rowsHtml}</div>`
+  });
  }
  const classified=pending.map(rec=>({rec,cls:classifySOApprovalUrgency(rec)}));
  const totalCount=pending.length;
@@ -814,12 +840,11 @@ function renderSOApprovalSectionHTML(){
    <div class="appr-time">${sentDate}</div>
   </a>`;
  }).join(''):`<div class="appr-empty">${totalCount?'ไม่มีงานในหมวดนี้':'ไม่มีคำขออนุมัติที่รอดำเนินการ'}</div>`;
- return `<section>
-  <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">📥 คำขออนุมัติ Sales Order</h2>
-  ${statusTabsHtml}
-  ${summaryHtml}
-  <div class="appr-list">${rowsHtml}</div>
- </section>`;
+ return renderApprovalSidebarShell({
+  icon:'📥', title:'คำขออนุมัติ Sales Order',
+  counts, activeStatus:soApprovalStatusTab, navFn:'setSOApprovalStatusTab',
+  contentHtml:`${summaryHtml}<div class="appr-list">${rowsHtml}</div>`
+ });
 }
 function openSOList(statusFilter){
  const list = loadSalesOrders()

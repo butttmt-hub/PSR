@@ -766,8 +766,8 @@ function renderSOApprovalSectionHTML(){
   return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}&mode=approval">
    <div class="appr-avatar">${initial}</div>
    <div class="appr-main">
-    <div class="appr-subject">คำขออนุมัติ Sales Order <strong>${esc(rec.soNo)}</strong></div>
-    <div class="appr-snippet">${esc(rec.customer||'-')} · เลขที่ Quotation: ${esc(rec.quotationNo||'-')} · ${itemCount} รายการ · ${fmtBaht(rec.grandTotal||0)} บาท · แนบ PO: ${esc(rec.poAttachment?.name||'-')}</div>
+    <div class="appr-subject">คำขออนุมัติ Sales Order <strong>${esc(rec.soNo)}</strong> <span style="font-weight:400;color:var(--muted)">(เลขที่ Quotation: ${esc(rec.quotationNo||'-')})</span></div>
+    <div class="appr-snippet">${esc(rec.customer||'-')} · ${itemCount} รายการ · ${fmtBaht(rec.grandTotal||0)} บาท · แนบ PO: ${esc(rec.poAttachment?.name||'-')}</div>
     <div class="appr-delivery-row">${deliveryHtml}</div>
    </div>
    <div class="appr-time">${sentDate}</div>

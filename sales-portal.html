@@ -662,10 +662,17 @@ function setMngDiscountCardFilter(status){
  mngDiscountCardFilter=status;
  renderMgr01Dashboard();
 }
+// ป้องกันรายการค้าง (orphan): ถ้า Quotation ต้นทางถูกลบ/Reject ไปแล้วจากหน้า Sale
+// รายการที่ยังรอดำเนินการ (pending) จะไม่แสดงในหน้า Mgr01/Approval อีกต่อไป
+function isQuotationStillActive(quotationNo){
+ if(!quotationNo) return true;
+ const rec=getSavedQuotations().find(q=>q.quotationNo===quotationNo);
+ return !!rec && rec.status!=='rejected';
+}
 function renderDiscountApprovalSectionHTML(){
  const all=loadDiscountApprovals();
  const byStatus={
-  pending:all.filter(r=>r.status==='pending'),
+  pending:all.filter(r=>r.status==='pending' && isQuotationStillActive(r.quotationNo)),
   approved:all.filter(r=>r.status==='approved'),
   rejected:all.filter(r=>r.status==='rejected'),
  };
@@ -720,7 +727,7 @@ function renderApprovalDashboard(){
  document.getElementById('approvalDashboardView').innerHTML = renderSOApprovalSectionHTML();
 }
 function renderSOApprovalSectionHTML(){
- const pending=loadSalesOrders().filter(s=>s.status==='pending_approval');
+ const pending=loadSalesOrders().filter(s=>s.status==='pending_approval' && isQuotationStillActive(s.quotationNo));
  const classified=pending.map(rec=>({rec,cls:classifySOApprovalUrgency(rec)}));
  const totalCount=pending.length;
  const shipTomorrowCount=classified.filter(x=>x.cls==='shipTomorrow').length;

@@ -484,8 +484,8 @@ body.embedded-mode main{width:100%;margin:0 auto;padding:16px}
           <div><div class="pm-label">Size</div><select id="pmSize"><option value="All">All</option></select></div>
         </div>
         <div class="pm-row two-col">
-          <div><div class="pm-label">Material Code</div><input id="pmCode" type="text" placeholder=""></div>
-          <div><div class="pm-label">Material Description</div><input id="pmDesc" type="text" placeholder=""></div>
+          <div><div class="pm-label">Material Code</div><input id="pmCode" type="text" placeholder="" onkeydown="if(event.key==='Enter'){event.preventDefault();searchProducts();}"></div>
+          <div><div class="pm-label">Material Description</div><input id="pmDesc" type="text" placeholder="" onkeydown="if(event.key==='Enter'){event.preventDefault();searchProducts();}"></div>
         </div>
         <div class="pm-actions"><button class="btn primary" onclick="searchProducts()">🔍 Search</button> <button class="btn secondary" onclick="clearProductFilters()">⟲ Clear</button></div>
       </div>

@@ -513,7 +513,7 @@ body.embedded-mode main{width:100%;margin:0 auto;padding:16px}
     <div class="modal-body">
       <div id="qtyProductInfo" style="font-size:13px;line-height:1.5;margin-bottom:16px;padding:12px;background:#F4F7FA;border-radius:10px"></div>
       <div class="pm-label">จำนวน (Pcs.)</div>
-      <input type="number" id="qtyInput" min="1" step="1" value="1" oninput="updateQtyLineTotal()">
+      <input type="number" id="qtyInput" min="1" step="1" value="1" oninput="updateQtyLineTotal()" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmQuantity();}">
       <div id="qtyLineTotal" style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6"></div>
     </div>
     <div class="modal-foot">

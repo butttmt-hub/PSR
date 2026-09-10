@@ -227,6 +227,8 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .ql-row{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .ql-row-main{display:flex;justify-content:space-between;align-items:center;gap:12px;text-decoration:none;color:inherit;cursor:pointer;transition:.15s;border-radius:8px}
 .ql-row-main:hover{color:var(--blue2)}
+.ql-row-main.ql-row-main-locked{cursor:not-allowed;opacity:.65}
+.ql-row-main.ql-row-main-locked:hover{color:inherit}
 .ql-no{font-weight:800;font-size:13px;color:var(--heading)}
 .ql-cust{font-size:11.5px;color:var(--muted);margin-top:2px}
 .ql-meta{text-align:right;flex-shrink:0}
@@ -814,8 +816,12 @@ function openQuotationList(){
    const transferBtn = blocked
     ? `<button class="ql-btn transfer" disabled title="${blockReason}">🕒 ${blockReason}</button>`
     : `<button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O Request →</button>`;
+   const rowMainLocked = approvalStatus==='pending';
+   const rowMainAttrs = rowMainLocked
+    ? `class="ql-row-main ql-row-main-locked" title="รอ Mgr01 อนุมัติส่วนลด — ยังไม่สามารถเปิดดูได้จนกว่าจะได้รับผลอนุมัติ"`
+    : `class="ql-row-main" onclick="location.href='presale-configurator-v2.html?viewQuote=${encodeURIComponent(q.quotationNo)}'"`;
    return `<div class="ql-row">
-    <div class="ql-row-main" onclick="location.href='presale-configurator-v2.html?viewQuote=${encodeURIComponent(q.quotationNo)}'">
+    <div ${rowMainAttrs}>
      <div><div class="ql-no">${esc(q.quotationNo)}</div><div class="ql-cust">${esc(q.customer||'ยังไม่ระบุลูกค้า')}</div></div>
      <div class="ql-meta"><div class="ql-amt">${fmtBaht(q.grandTotal)} บาท</div><div class="ql-date">${esc(q.savedAtDisplay||'')}</div></div>
     </div>

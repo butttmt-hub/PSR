@@ -2011,7 +2011,7 @@ function renderApprovalInbox(){
   return `<div class="appr-row" onclick="location.href='presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}&mode=approval'">
    <div class="appr-avatar">${initial}</div>
    <div class="appr-main">
-    <div class="appr-subject">คำขออนุมัติ Sales Order <strong>${esc(rec.soNo)}</strong></div>
+    <div class="appr-subject">คำขออนุมัติ Sales Order <strong>${esc(rec.soNo)}</strong> <span style="font-weight:400;color:var(--muted)">(เลขที่ Quotation: ${esc(rec.quotationNo||'-')})</span></div>
     <div class="appr-snippet">${esc(rec.customer||'-')} · ${itemCount} รายการ · ${fmtMoney(rec.grandTotal||0)} บาท · แนบ PO: ${esc(rec.poAttachment?.name||'-')}</div>
     <div class="appr-delivery-row">${deliveryHtml}</div>
    </div>
@@ -2229,7 +2229,7 @@ function loadSOHandoverView(rec){
  const bar=document.getElementById('handoverViewBar');
  if(bar){
   bar.style.display='flex';
-  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — Handover สำหรับ S/O <strong>${esc(rec.soNo)}</strong></div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Sales Order</a></div>`;
+  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — Handover สำหรับ S/O <strong>${esc(rec.soNo)}</strong> (เลขที่ Quotation: ${esc(rec.quotationNo||'-')})</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Sales Order</a></div>`;
  }
  return true;
 }

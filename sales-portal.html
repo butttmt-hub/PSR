@@ -789,7 +789,7 @@ function openSOList(statusFilter){
  body.innerHTML = list.length ? `<div class="ql-list">${list.map(s=>{
    const cls = s.status==='pending_approval'?'waiting':s.status==='approved'?'approve':'reject';
    return `<a class="so-list-row" href="presale-configurator-v2.html?viewSO=${encodeURIComponent(s.soNo)}">
-    <div><div class="ql-no">${esc(s.soNo)}<span class="so-status-badge ${cls}">${SO_STATUS_LABELS[s.status]}</span></div><div class="ql-cust">${esc(s.customer||'ยังไม่ระบุลูกค้า')}</div></div>
+    <div><div class="ql-no">${esc(s.soNo)}<span class="so-status-badge ${cls}">${SO_STATUS_LABELS[s.status]}</span></div><div class="ql-cust">${esc(s.customer||'ยังไม่ระบุลูกค้า')} · เลขที่ Quotation: ${esc(s.quotationNo||'-')}</div></div>
     <div class="ql-meta"><div class="ql-amt">${fmtBaht(s.grandTotal)} บาท</div><div class="ql-date">${esc(s.createdAtDisplay||'')}</div></div>
    </a>`;
   }).join('')}</div>`

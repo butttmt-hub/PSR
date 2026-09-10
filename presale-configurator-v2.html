@@ -1931,7 +1931,7 @@ function confirmReject(){
  persistSalesOrders(list);
  markLinkedQuotationResolved(rec.quotationNo,'so_rejected',reason);
  closeRejectModal();
- window.location.href='presale-configurator-v2.html?approvalInbox=1';
+ window.location.href='sales-portal.html';
 }
 function approveSO(soNo){
  const list=loadSalesOrders();
@@ -1941,7 +1941,7 @@ function approveSO(soNo){
  rec.approvedAt=new Date().toISOString();
  persistSalesOrders(list);
  markLinkedQuotationResolved(rec.quotationNo,'so_approved');
- window.location.href='presale-configurator-v2.html?approvalInbox=1';
+ window.location.href='sales-portal.html';
 }
 function markLinkedQuotationResolved(quotationNo,status,reason){
  if(!quotationNo) return;
@@ -2148,8 +2148,7 @@ function approveDiscount(quotationNo){
  rec.status='approved';
  rec.decidedAt=new Date().toISOString();
  persistDiscountApprovals(list);
- document.body.classList.add('view-mode');
- document.querySelector('.app').innerHTML=renderDiscountApprovalView(rec);
+ window.location.href='sales-portal.html';
 }
 let discountRejectTargetQno=null;
 function openDiscountRejectModal(qno){
@@ -2172,8 +2171,7 @@ function confirmDiscountReject(){
  rec.rejectReason=reason;
  rec.decidedAt=new Date().toISOString();
  persistDiscountApprovals(list);
- document.body.classList.add('view-mode');
- document.querySelector('.app').innerHTML=renderDiscountApprovalView(rec);
+ window.location.href='sales-portal.html';
 }
 function tryLoadDiscountApprovalMode(){
  const params=new URLSearchParams(window.location.search);

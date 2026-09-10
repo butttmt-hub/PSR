@@ -723,11 +723,52 @@ function setSOApprovalCardFilter(key){
  soApprovalCardFilter=(soApprovalCardFilter===key)?null:key;
  renderApprovalDashboard();
 }
+let soApprovalStatusTab='pending';
+function setSOApprovalStatusTab(tab){
+ soApprovalStatusTab=tab;
+ soApprovalCardFilter=null;
+ renderApprovalDashboard();
+}
 function renderApprovalDashboard(){
  document.getElementById('approvalDashboardView').innerHTML = renderSOApprovalSectionHTML();
 }
+const SO_HISTORY_EMPTY={approved:'ยังไม่มีรายการที่อนุมัติแล้ว',rejected:'ยังไม่มีรายการที่ถูกปฏิเสธ'};
+function renderSOHistoryRow(rec){
+ const initial=esc((rec.customer||'?').charAt(0));
+ const itemCount=rec.cart?rec.cart.length:0;
+ const decided=rec.status==='approved'?rec.approvedAt:rec.rejectedAt;
+ const decidedDate=esc(new Date(decided||rec.sentToApprovalAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+ const decidedLabel=rec.status==='approved'?`✅ อนุมัติเมื่อ ${decidedDate}`:`❌ ปฏิเสธเมื่อ ${decidedDate}${rec.rejectReason?` — เหตุผล: ${esc(rec.rejectReason)}`:''}`;
+ return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}">
+  <div class="appr-avatar">${initial}</div>
+  <div class="appr-main">
+   <div class="appr-subject">Sales Order <strong>${esc(rec.soNo)}</strong> <span style="font-weight:400;color:var(--muted)">(เลขที่ Quotation: ${esc(rec.quotationNo||'-')})</span></div>
+   <div class="appr-snippet">${esc(rec.customer||'-')} · ${itemCount} รายการ · ${fmtBaht(rec.grandTotal||0)} บาท</div>
+   <div class="appr-delivery-row"><span class="appr-delivery-badge${rec.status==='rejected'?' urgent':''}">${decidedLabel}</span></div>
+  </div>
+  <div class="appr-time">${decidedDate}</div>
+ </a>`;
+}
 function renderSOApprovalSectionHTML(){
- const pending=loadSalesOrders().filter(s=>s.status==='pending_approval' && isQuotationStillActive(s.quotationNo));
+ const allSO=loadSalesOrders();
+ const pending=allSO.filter(s=>s.status==='pending_approval' && isQuotationStillActive(s.quotationNo));
+ const approvedAll=allSO.filter(s=>s.status==='approved').sort((a,b)=>new Date(b.approvedAt||0)-new Date(a.approvedAt||0));
+ const rejectedAll=allSO.filter(s=>s.status==='rejected').sort((a,b)=>new Date(b.rejectedAt||0)-new Date(a.rejectedAt||0));
+ const tabActive=(key)=>soApprovalStatusTab===key?' active':'';
+ const statusTabsHtml=`<div class="appr-summary" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+   <div class="appr-stat${pending.length>0?' urgent':''}${tabActive('pending')}" onclick="setSOApprovalStatusTab('pending')"><div class="appr-stat-num">${pending.length}</div><div class="appr-stat-lbl">รอดำเนินการ</div></div>
+   <div class="appr-stat${tabActive('approved')}" onclick="setSOApprovalStatusTab('approved')"><div class="appr-stat-num">${approvedAll.length}</div><div class="appr-stat-lbl">อนุมัติแล้ว</div></div>
+   <div class="appr-stat${tabActive('rejected')}" onclick="setSOApprovalStatusTab('rejected')"><div class="appr-stat-num">${rejectedAll.length}</div><div class="appr-stat-lbl">ปฏิเสธแล้ว</div></div>
+  </div>`;
+ if(soApprovalStatusTab!=='pending'){
+  const list=soApprovalStatusTab==='approved'?approvedAll:rejectedAll;
+  const rowsHtml=list.length?list.map(renderSOHistoryRow).join(''):`<div class="appr-empty">${SO_HISTORY_EMPTY[soApprovalStatusTab]}</div>`;
+  return `<section>
+   <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">📥 คำขออนุมัติ Sales Order</h2>
+   ${statusTabsHtml}
+   <div class="appr-list">${rowsHtml}</div>
+  </section>`;
+ }
  const classified=pending.map(rec=>({rec,cls:classifySOApprovalUrgency(rec)}));
  const totalCount=pending.length;
  const shipTomorrowCount=classified.filter(x=>x.cls==='shipTomorrow').length;
@@ -775,6 +816,7 @@ function renderSOApprovalSectionHTML(){
  }).join(''):`<div class="appr-empty">${totalCount?'ไม่มีงานในหมวดนี้':'ไม่มีคำขออนุมัติที่รอดำเนินการ'}</div>`;
  return `<section>
   <h2 style="margin:0 0 14px;color:var(--heading);font-size:18px">📥 คำขออนุมัติ Sales Order</h2>
+  ${statusTabsHtml}
   ${summaryHtml}
   <div class="appr-list">${rowsHtml}</div>
  </section>`;

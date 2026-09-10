@@ -686,7 +686,7 @@ const productFieldDefs = {
  {step:3,cat:'Product Quality',id:'marking',label:'Marking Format / รูปแบบ Marking',owner:'Production / Warehouse',std:'TMT No. (<3 mm HR1/SPHC) / Heat No. (≥3 mm)',extra:'ไม่พ่น / Heat+Coil / TMT no. no size / Other',type:'select',opts:[['Standard marking per matrix','STD'],['No marking','EXTRA'],['Heat + Coil','EXTRA'],['TMT no. no size','EXTRA'],['Other marking','EXTRA']],detail:true,rule:'Special marking = Extra'},
  // Step 4 Packing
  {step:4,cat:'Packing',id:'packing',label:'Packing / การแพ็ก',owner:'Warehouse',std:'ไม่รัดสายรัด',extra:'Strapping / ขาไม้ / ขาไม้+กระดาษ / Pallet / Pallet+paper',type:'select',opts:[['No strapping','STD','ไม่รัดสายรัด'],['Strapping','EXTRA','รัดสายรัด'],['ขาไม้ / Wood support','EXTRA','มีขาไม้รองรับ'],['ขาไม้ + กระดาษ','EXTRA','มีขาไม้ + กระดาษรอง'],['Pallet','EXTRA','แพ็คด้วยพาเลท'],['Pallet + paper','EXTRA','แพ็คด้วยพาเลท + กระดาษ']],detail:true,rule:'Anything beyond no-strapping = Extra'},
- {step:4,cat:'Packing',id:'sticker',label:'Tag / Sticker',owner:'Warehouse',std:'ไม่ติด Sticker แต่มี Barcode',extra:'Hang sticker / pallet sticker / product sticker',type:'select',opts:[['Barcode only / no sticker','STD','มีบาร์โค้ดอย่างเดียว ไม่ติดสติกเกอร์'],['Hang sticker','EXTRA','ติดสติกเกอร์แบบห้อย'],['Pallet sticker','EXTRA','ติดสติกเกอร์ที่พาเลท'],['Product sticker','EXTRA','ติดสติกเกอร์ที่ตัวสินค้า']],detail:true,rule:'Special sticker = Extra'},
+ {step:4,cat:'Packing',id:'sticker',label:'Tag / Sticker',owner:'Warehouse',std:'ไม่ติด Sticker แต่มี Barcode',extra:'Hang sticker / pallet sticker / product sticker',type:'select',opts:[['Barcode only / no sticker','STD','ไม่ติด Sticker แต่มี Barcode (ใบอนุญาตการผลิต)'],['Hang sticker','EXTRA','ติดสติกเกอร์แบบห้อย'],['Pallet sticker','EXTRA','ติดสติกเกอร์ที่พาเลท'],['Product sticker','EXTRA','ติดสติกเกอร์ที่ตัวสินค้า']],detail:true,rule:'Special sticker = Extra'},
  {step:4,cat:'Packing',id:'bundle',label:'Pcs/Bundle',owner:'Warehouse / Transport',std:'ตาม STD การผลิต',extra:'กำหนด pcs/ton per bundle ตามอุปกรณ์ลูกค้า',type:'select',opts:[['Standard production bundle','STD','มัดตามมาตรฐานโรงงาน'],['Customer specified pcs/ton per bundle','EXTRA','ลูกค้ากำหนดจำนวน/น้ำหนักต่อมัดเอง']],detail:true,rule:'Specific bundle requirement = Extra'},
  // Step 5 Service
  {step:5,cat:'Service',id:'loading',label:'Loading / การจัดเรียง',owner:'Warehouse',std:'วางแนวตั้งตรงกัน; แยกตาม width; standard wood separator between sizes',extra:'สลับฟันปลา / รองขาไม้ระหว่าง Pack / special arrangement',type:'select',opts:[['Standard straight stacking','STD'],['สลับฟันปลา','EXTRA'],['Wood between packs','EXTRA'],['Special arrangement','EXTRA']],detail:true,rule:'Special loading = Extra'},
@@ -988,7 +988,8 @@ function trySelectItemOption(item,f,matchFn){
  if(idx<0) return;
  item.specState[f.id]={status:f.opts[idx][1],value:f.opts[idx][0],detail:''};
 }
-function itemCurrentSelection(item,f){ const st=item.specState[f.id]; return st.detail?`${st.value} — ${st.detail}`:st.value; }
+function displayLabelForValue(f,value){ const found=f.opts.find(o=>o[0]===value); return found?(found[2]||found[0]):value; }
+function itemCurrentSelection(item,f){ const st=item.specState[f.id]; const label=displayLabelForValue(f,st.value); return st.detail?`${label} — ${st.detail}`:label; }
 function getCartCatStatus(cat){
  const statuses=[];
  productCart.forEach(item=>{
@@ -1261,7 +1262,7 @@ function updateStepBadge(){
  else if(current===7||current===8||current===9)s=overallStatus();
  const b=document.getElementById('stepStatus');b.className='badge '+statusClass(s);b.textContent=current===1?'OPEN':statusText(s);
 }
-function currentSelection(f){const st=fieldState[f.id];return st.detail?`${st.value} — ${st.detail}`:st.value}
+function currentSelection(f){const st=fieldState[f.id];const label=displayLabelForValue(f,st.value);return st.detail?`${label} — ${st.detail}`:label}
 function jumpToField(id,itemId){
  let step,domId;
  if(itemId){

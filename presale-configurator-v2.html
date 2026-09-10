@@ -650,6 +650,7 @@ function onSoldToChange(){
  renderCreditBox(c);
  shipToSel.innerHTML='<option value="">Please select</option>'+c.shipTos.map(s=>`<option value="${s.code}">${esc(s.name)}</option>`).join('');
  document.getElementById('shipToSub').textContent='-';
+ renderFields();
  refreshAll();
 }
 function onShipToChange(){
@@ -729,6 +730,42 @@ const productFieldDefs = {
 
  ]
 };
+
+// --- Customer Requirement Master Data (Prototype sample) ---
+// เก็บค่าเริ่มต้น (Default) ของคำตอบ Requirement ต่อลูกค้าแต่ละราย (อ้างอิงรหัส Sold To)
+// เมื่อ Sale เลือกลูกค้า + เพิ่มสินค้า ระบบจะกรอก Step 2-6 ให้อัตโนมัติตาม Master Data นี้
+// Sale ยังแก้ไขค่าที่กรอกได้ตามปกติ เผื่อลูกค้าเปลี่ยนเงื่อนไขกระทันหัน
+const customerRequirementDefaults = {
+ // บริษัท ไทย เมทัล เวิร์คส์ จำกัด (0010002) — Extra ทุกข้อในหมวด Packing/Service, นัดส่งเวลา 06:30 น.
+ '0010002': {
+  'Cut Sheet': {
+   packing:[{opt:'Strapping'}],
+   sticker:[{opt:'Hang sticker'}],
+   bundle:[{opt:'Customer specified pcs/ton per bundle'}],
+   loading:[{opt:'สลับฟันปลา'}],
+   unloading:[{opt:'อุปกรณ์อื่นๆ (Other equipment)',detail:'รถเครนติดรถ 10 ตัน (ระบุอุปกรณ์เฉพาะของลูกค้า)'}],
+   vehicle:[{opt:'No trailer (ห้าม TL)'}],
+   delivery:[{opt:'Specific time window (ระบุเวลา)',detail:'06:30 น. (กำหนดเวลาส่งเช้า)'}]
+  },
+  'Tube': {
+   tubeStrap:[{opt:'Custom number of straps'}],
+   tubeSticker:[{opt:'Special sticker requirement'}],
+   tubePcsPack:[{opt:'Customer specified pcs/rows'}],
+   tubeLoading:[{opt:'Vertical wood support'}],
+   tubeUnloading:[{opt:'อุปกรณ์อื่นๆ (Other equipment)',detail:'รถเครนติดรถ 10 ตัน (ระบุอุปกรณ์เฉพาะของลูกค้า)'}],
+   tubeVehicle:[{opt:'No trailer (ห้าม TL)'}],
+   tubeDelivery:[{opt:'Specific time window (ระบุเวลา)',detail:'06:30 น. (กำหนดเวลาส่งเช้า)'}]
+  }
+ }
+};
+function getCustomerDefaultEntries(code,family,fieldId){
+ const c=code && customerRequirementDefaults[code];
+ const arr=c && c[family] && c[family][fieldId];
+ return arr && arr.length ? arr : null;
+}
+function findOptIndexByLabel(f,label){ return f.opts.findIndex(o=>o[0]===label); }
+function currentSoldToCode(){ const el=document.getElementById('soldTo'); return el?el.value:''; }
+
 let currentProduct='Cut Sheet';
 let fieldDefs = productFieldDefs[currentProduct];
 
@@ -936,8 +973,13 @@ function itemCatDefsFor(family,cat){
 }
 function initItemSpecState(item){
  item.specState={};
+ const soldToCode=currentSoldToCode();
  productFieldDefs[item.family].filter(f=>PER_ITEM_CATS.includes(f.cat)).forEach(f=>{
-  item.specState[f.id]={status:f.opts[0][1],value:f.opts[0][0],detail:''};
+  const entries=getCustomerDefaultEntries(soldToCode,item.family,f.id);
+  const entry=entries&&entries[0];
+  const idx=entry?findOptIndexByLabel(f,entry.opt):-1;
+  if(idx>=0){ item.specState[f.id]={status:f.opts[idx][1],value:f.opts[idx][0],detail:entry.detail||''}; }
+  else{ item.specState[f.id]={status:f.opts[0][1],value:f.opts[0][0],detail:''}; }
  });
 }
 function trySelectItemOption(item,f,matchFn){
@@ -1089,19 +1131,32 @@ function renderFields(){
  Object.keys(fieldState).forEach(k=>delete fieldState[k]);
  const targets={5:'serviceFields',6:'documentFields'};
  Object.values(targets).forEach(id=>document.getElementById(id).innerHTML='');
+ const soldToCode=currentSoldToCode();
  fieldDefs.filter(f=>!PER_ITEM_CATS.includes(f.cat)).forEach(f=>{
   const el=document.createElement('div');el.className='field';el.id='field_'+f.id;
+  const entries=getCustomerDefaultEntries(soldToCode,currentProduct,f.id);
   if(f.multi){
-   fieldState[f.id]={status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}};
+   if(entries){
+    const selected=[]; const detailByIdx={};
+    entries.forEach(e=>{ const idx=findOptIndexByLabel(f,e.opt); if(idx>0){ selected.push(idx); if(e.detail) detailByIdx[idx]=e.detail; } });
+    const statuses=selected.map(idx=>f.opts[idx][1]);
+    const status=statuses.length?(statuses.includes('REVIEW')?'REVIEW':statuses.includes('EXTRA')?'EXTRA':'STD'):'STD';
+    const value=selected.length?selected.map(idx=>{const d=detailByIdx[idx];return d?`${f.opts[idx][0]} (${d})`:f.opts[idx][0];}).join(', '):f.opts[0][0];
+    fieldState[f.id]={status,value,detail:'',selected,detailByIdx};
+   } else {
+    fieldState[f.id]={status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}};
+   }
    el.innerHTML=buildMultiFieldHTML(f);
    document.getElementById(targets[f.step]).appendChild(el);
    wireMultiField(f,el);
   } else {
-   fieldState[f.id]={status:f.opts[0][1],value:f.opts[0][0],detail:''};
-   let opts=f.opts.map((o,i)=>`<option value="${i}">${esc(o[0])}</option>`).join('');
-   el.innerHTML=`<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge ${statusClass(f.opts[0][1])}" id="badge_${f.id}">${statusText(f.opts[0][1])}</span></div>
+   let idx=0, detail='';
+   if(entries){ const found=findOptIndexByLabel(f,entries[0].opt); if(found>=0){ idx=found; detail=entries[0].detail||''; } }
+   fieldState[f.id]={status:f.opts[idx][1],value:f.opts[idx][0],detail};
+   let opts=f.opts.map((o,i)=>`<option value="${i}" ${i===idx?'selected':''}>${esc(o[0])}</option>`).join('');
+   el.innerHTML=`<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge ${statusClass(f.opts[idx][1])}" id="badge_${f.id}">${statusText(f.opts[idx][1])}</span></div>
    <select id="${f.id}">${opts}</select>
-   <div class="detail" id="detail_${f.id}"><input type="text" id="detailInput_${f.id}" placeholder="ระบุ Customer Requirement / Exact requirement"></div>
+   <div class="detail ${f.opts[idx][1]!=='STD'?'show':''}" id="detail_${f.id}"><input type="text" id="detailInput_${f.id}" placeholder="ระบุ Customer Requirement / Exact requirement" value="${esc(detail)}"></div>
    ${f.attach?`<div class="attach">Attach Spec / แนบเอกสาร (Prototype placeholder)</div>`:''}
    <div class="rule"><strong>STD:</strong> ${f.std}<br><strong>Extra:</strong> ${f.extra}<br><strong>Decision Rule:</strong> ${f.rule}</div>`;
    document.getElementById(targets[f.step]).appendChild(el);
@@ -1116,21 +1171,24 @@ function onFieldChange(f,index){
  const b=document.getElementById('badge_'+f.id);b.className='badge '+statusClass(opt[1]);b.textContent=statusText(opt[1]);
  refreshAll();
 }
-function multiCheckboxRow(f,idx){
+function multiCheckboxRow(f,idx,st){
  const [label,status]=f.opts[idx];
  const needsDetail=(f.multiDetailIdx||[]).includes(idx);
- return `<label class="mchk" for="${f.id}_opt${idx}"><input type="checkbox" id="${f.id}_opt${idx}"><span>${esc(label)}</span><span class="badge ${statusClass(status)}">${statusText(status)}</span></label>
- ${needsDetail?`<input type="text" class="mchk-detail" id="${f.id}_detail${idx}" placeholder="ระบุรายละเอียด / Exact requirement" style="display:none">`:''}`;
+ const checked=st.selected.includes(idx);
+ const detailVal=st.detailByIdx[idx]||'';
+ return `<label class="mchk" for="${f.id}_opt${idx}"><input type="checkbox" id="${f.id}_opt${idx}" ${checked?'checked':''}><span>${esc(label)}</span><span class="badge ${statusClass(status)}">${statusText(status)}</span></label>
+ ${needsDetail?`<input type="text" class="mchk-detail" id="${f.id}_detail${idx}" placeholder="ระบุรายละเอียด / Exact requirement" style="display:${checked?'block':'none'}" value="${esc(detailVal)}">`:''}`;
 }
 function buildMultiFieldHTML(f){
- const baseline=f.noBaseline?'':`<label class="mchk mchk-baseline" for="${f.id}_base"><input type="checkbox" id="${f.id}_base" disabled checked><span>${esc(f.opts[0][0])}</span><span class="badge std">STD</span></label>`;
+ const st=fieldState[f.id];
+ const baseline=f.noBaseline?'':`<label class="mchk mchk-baseline" for="${f.id}_base"><input type="checkbox" id="${f.id}_base" disabled ${st.selected.length===0?'checked':''}><span>${esc(f.opts[0][0])}</span><span class="badge std">STD</span></label>`;
  let body;
  if(f.multiGroups){
-  body=f.multiGroups.map(g=>`<div class="mgroup"><div class="mgroup-title">${esc(g.title)}${g.stdNote?` <span style="font-weight:400;color:var(--muted)">· ${esc(g.stdNote)}</span>`:''}</div>${g.idxs.map(idx=>multiCheckboxRow(f,idx)).join('')}</div>`).join('');
+  body=f.multiGroups.map(g=>`<div class="mgroup"><div class="mgroup-title">${esc(g.title)}${g.stdNote?` <span style="font-weight:400;color:var(--muted)">· ${esc(g.stdNote)}</span>`:''}</div>${g.idxs.map(idx=>multiCheckboxRow(f,idx,st)).join('')}</div>`).join('');
  } else {
-  body=f.opts.map((_,i)=>i).filter(i=>i>0).map(idx=>multiCheckboxRow(f,idx)).join('');
+  body=f.opts.map((_,i)=>i).filter(i=>i>0).map(idx=>multiCheckboxRow(f,idx,st)).join('');
  }
- return `<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge std" id="badge_${f.id}">STD</span></div>
+ return `<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge ${statusClass(st.status)}" id="badge_${f.id}">${statusText(st.status)}</span></div>
  <div class="mchk-wrap">${baseline}${body}</div>
  ${f.attach?`<div class="attach">Attach Spec / แนบเอกสาร (Prototype placeholder)</div>`:''}
  <div class="rule"><strong>STD:</strong> ${f.std}<br><strong>Extra:</strong> ${f.extra}<br><strong>Decision Rule:</strong> ${f.rule}</div>`;

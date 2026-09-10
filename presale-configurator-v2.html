@@ -674,11 +674,11 @@ const productFieldDefs = {
  {step:2,cat:'Product',id:'thkCert',label:'Thickness Certificate / หนา Cert. ที่ต้องการ',owner:'Planning / QA',std:'ตาม Spec',extra:'ระบุ Requirement เพิ่มเติม',type:'select',opts:[['ตาม Spec','STD'],['Specify certificate thickness','EXTRA']],detail:true,rule:'ตาม Spec = STD; Requirement เพิ่มเติม = Extra'},
  {step:2,cat:'Product',id:'aiming',label:'Thickness Aiming / หนา Aiming',owner:'Planning / Production',std:'5.80 ขึ้นไป (ตัวอย่าง 5.80)',extra:'5.70 / 5.90 / 5.8-5.9 only / Specific aiming',type:'select',opts:[['Standard ≥ 5.80','STD'],['5.70','EXTRA'],['5.90','EXTRA'],['5.8-5.9 only','EXTRA'],['Specific aiming','EXTRA']],detail:true,rule:'Standard aiming = STD; Specific aiming = Extra'},
  {step:2,cat:'Product',id:'thkTol',label:'Thickness Tolerance / Tolerance ความหนา',owner:'Planning / Production / QA',std:'TMT standard tolerance',extra:'Customer specified +__/−__ mm',type:'select',opts:[['TMT standard tolerance','STD'],['Customer specified tolerance','EXTRA']],detail:true,rule:'Customer tolerance = Extra'},
- {step:2,cat:'Product',id:'width',label:'Width / ความกว้าง',owner:'Planning / Production',std:'1219 (−0/+30), 1524 (−0/+35)',extra:'Other width',type:'select',opts:[['1219 mm (−0/+30)','STD'],['1524 mm (−0/+35)','STD'],['Other width','EXTRA']],detail:true,rule:'1219 หรือ 1524 = STD; ค่าอื่น = Extra'},
+ {step:2,cat:'Product',id:'width',label:'Width / ความกว้าง',owner:'Planning / Production',std:'1219 (−0/+30), 1524 (−0/+35)',extra:'Other width',type:'select',opts:[['1219 mm (−0/+30)','STD'],['1524 mm (−0/+35)','STD'],['Other width','EXTRA']],detail:true,rule:'1219 หรือ 1524 = STD; ค่าอื่น = Extra',lockedForCart:true},
  {step:2,cat:'Product',id:'grade',label:'Grade / เกรด',owner:'Planning / QA / Procurement',std:'SS400, HR1/SPHC, SM490YA, A572 Gr50, A36/A283C, SS540, SS490 (มี Material Code)',extra:'Other grade',type:'select',opts:[['SS400','STD'],['HR1/SPHC','STD'],['SM490YA','STD'],['A572 Gr50','STD'],['A36/A283C','STD'],['SS540','STD'],['SS490','STD'],['Other grade','EXTRA']],detail:true,rule:'Existing Material Code = STD; Other grade = Extra'},
- {step:2,cat:'Product',id:'length',label:'Length / ความยาว',owner:'Planning / Production',std:'2438 (−0/+3), 3048 (−0/+3), 6096 (−0/+10)',extra:'6000 / Other',type:'select',opts:[['2438 mm (−0/+3)','STD'],['3048 mm (−0/+3)','STD'],['6096 mm (−0/+10)','STD'],['6000 mm','EXTRA'],['Other length','EXTRA']],detail:true,rule:'Listed standard lengths = STD; ค่าอื่น = Extra'},
+ {step:2,cat:'Product',id:'length',label:'Length / ความยาว',owner:'Planning / Production',std:'2438 (−0/+3), 3048 (−0/+3), 6096 (−0/+10)',extra:'6000 / Other',type:'select',opts:[['2438 mm (−0/+3)','STD'],['3048 mm (−0/+3)','STD'],['6096 mm (−0/+10)','STD'],['6000 mm','EXTRA'],['Other length','EXTRA']],detail:true,rule:'Listed standard lengths = STD; ค่าอื่น = Extra',lockedForCart:true},
  {step:2,cat:'Product',id:'lengthTol',label:'Length Tolerance / Tolerance ความยาว',owner:'Production / QA',std:'ตาม TMT STD ของความยาวมาตรฐาน',extra:'Customer specified tolerance / special length',type:'select',opts:[['TMT STD length tolerance','STD'],['Customer specified tolerance','EXTRA']],detail:true,rule:'Customer specified tolerance = Extra'},
- {step:2,cat:'Product',id:'productType',label:'Product Type / ประเภทสินค้า',owner:'Planning / Production',std:'Stayflat / Hot Rolled Cut Sheet',extra:'Other product type',type:'select',opts:[['Stayflat','STD'],['Hot Rolled Cut Sheet','STD'],['Other product type','EXTRA']],detail:true,rule:'Listed product type = STD; Other = Extra'},
+ {step:2,cat:'Product',id:'productType',label:'Product Type / ประเภทสินค้า',owner:'Planning / Production',std:'Stayflat / Hot Rolled Cut Sheet',extra:'Other product type',type:'select',opts:[['Stayflat','STD'],['Hot Rolled Cut Sheet','STD'],['Other product type','EXTRA']],detail:true,rule:'Listed product type = STD; Other = Extra',lockedForCart:true},
  // Step 3 Quality
  {step:3,cat:'Product Quality',id:'chemMech',label:'Chemical & Mechanical Properties / ค่าเคมีและคุณสมบัติเชิงกล',owner:'Planning / QA',std:'Standard ตาม Grade',extra:'Specific Chemistry / Yield / Tensile ฯลฯ',type:'select',opts:[['Standard by grade','STD'],['Specific chemistry / mechanical properties','EXTRA']],detail:true,attach:true,rule:'Standard ตาม Grade = STD; Specific property = Extra'},
  {step:3,cat:'Product Quality',id:'flatness',label:'Flatness Tolerance / ความเรียบ',owner:'Production / QA',std:'Stayflat ≤5 mm; Non-Stayflat ≤12 mm (ตาม Protocol)',extra:'Tighter / special flatness',type:'select',opts:[['Standard flatness per protocol','STD'],['Tighter / special flatness','EXTRA']],detail:true,rule:'Tighter than standard = Extra'},
@@ -1031,15 +1031,18 @@ function renderItemFieldsForCart(containerId,cat){
    const uid=`${f.id}__${item.id}`;
    const st=item.specState[f.id];
    const el=document.createElement('div');el.className='field';el.id='field_'+uid;
+   const locked=!!f.lockedForCart;
    let opts=f.opts.map((o,i)=>`<option value="${i}" ${st.value===o[0]?'selected':''}>${esc(o[2]||o[0])}</option>`).join('');
-   el.innerHTML=`<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">Review by: ${f.owner}</div></div><span class="badge ${statusClass(st.status)}" id="badge_${uid}">${statusText(st.status)}</span></div>
-   <select id="${uid}">${opts}</select>
-   <div class="detail ${st.status!=='STD'?'show':''}" id="detail_${uid}"><input type="text" id="detailInput_${uid}" placeholder="ระบุ Customer Requirement / Exact requirement" value="${esc(st.detail)}"></div>
+   el.innerHTML=`<div class="field-top"><div><div class="label">${f.label}</div><div class="sub">${locked?'🔒 อ้างอิงจากสินค้าที่เลือกใน Step 1 — แก้ไขไม่ได้':`Review by: ${f.owner}`}</div></div><span class="badge ${statusClass(st.status)}" id="badge_${uid}">${statusText(st.status)}</span></div>
+   <select id="${uid}" ${locked?'disabled':''}>${opts}</select>
+   <div class="detail ${st.status!=='STD'?'show':''}" id="detail_${uid}"><input type="text" id="detailInput_${uid}" placeholder="ระบุ Customer Requirement / Exact requirement" value="${esc(st.detail)}" ${locked?'disabled':''}></div>
    ${f.attach?`<div class="attach">Attach Spec / แนบเอกสาร (Prototype placeholder)</div>`:''}
    <div class="rule"><strong>STD:</strong> ${f.std}<br><strong>Extra:</strong> ${f.extra}<br><strong>Decision Rule:</strong> ${f.rule}</div>`;
    grid.appendChild(el);
-   el.querySelector('select').addEventListener('change',e=>onItemFieldChange(item,f,e.target.selectedIndex));
-   const di=el.querySelector(`#detailInput_${uid}`); if(di) di.addEventListener('input',e=>{item.specState[f.id].detail=e.target.value;refreshAll()});
+   if(!locked){
+    el.querySelector('select').addEventListener('change',e=>onItemFieldChange(item,f,e.target.selectedIndex));
+    const di=el.querySelector(`#detailInput_${uid}`); if(di) di.addEventListener('input',e=>{item.specState[f.id].detail=e.target.value;refreshAll()});
+   }
   });
  });
 }
@@ -1056,12 +1059,14 @@ function onCartChanged(newItem){
  }
  initItemSpecState(newItem);
  if(newItem.family==='Cut Sheet'){
+  const defs=productSpecDefsFor('Cut Sheet');
   const m=newItem.desc.match(/(\d{3,4})\s*X\s*(\d{3,4})/i);
   if(m){
-   const defs=productSpecDefsFor('Cut Sheet');
    trySelectItemOption(newItem,defs.find(f=>f.id==='width'),opt=>opt.includes(m[1]));
    trySelectItemOption(newItem,defs.find(f=>f.id==='length'),opt=>opt.includes(m[2]));
   }
+  const ptLabel=newItem.code.startsWith('2HSSF')?'Stayflat':'Hot Rolled Cut Sheet';
+  trySelectItemOption(newItem,defs.find(f=>f.id==='productType'),opt=>opt===ptLabel);
  }
  renderProductSpecForCart();
  renderQualityForCart();

@@ -646,6 +646,18 @@ function dlf(d){var l=dl(d);return l.num+' '+l.mon+(l.note?' ('+l.note+')':'');}
 function uniq(arr){var s={},o=[];arr.forEach(function(x){if(!s[x]){s[x]=1;o.push(x);}});return o;}
 function esc(s){if(!s&&s!==0) return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 // ไฮไลท์คำค้นหาในข้อความผลลัพธ์ (รับ text ที่ esc() แล้ว, q เป็นคำค้นหาดิบ)
+// สร้างเนื้อหาช่องหมายเหตุ: ถ้าเป็น "รอม้วน" แนบปุ่มเช็คสถานะม้วนดิบไว้ในฟิลด์เดียวกันเลย
+function remarkCellHtml(r){
+  var txt=esc(r.remark);
+  if((r.remark||'').indexOf('รอม้วน')>=0){
+    var rmParams=new URLSearchParams();
+    if(r.thickness) rmParams.set('thk',r.thickness);
+    if(r.width) rmParams.set('wid',r.width);
+    var rmUrl='stock-rm-visibility-sale-view.html'+(rmParams.toString()?('?'+rmParams.toString()):'');
+    txt+='<br><a href="'+rmUrl+'" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;margin-top:3px;background:#dc2626;color:#fff;padding:2px 8px;border-radius:5px;font-size:10.5px;font-weight:700;text-decoration:none;white-space:nowrap;">🔍 เช็คม้วนดิบ</a>';
+  }
+  return txt;
+}
 function hlText(text,q){
   if(!q) return text;
   var ql=q.toLowerCase(), tl=text.toLowerCase();
@@ -671,29 +683,14 @@ document.addEventListener('DOMContentLoaded',function(){
   var t=dates.indexOf(today)>=0?today:(dates.length?dates[0]:'');
   if(t) selectDate(t);
 
-  // เชื่อมจาก Presale Configurator (สต็อกติดลบ): ถ้ามี material code ส่งมาทาง URL
-  // ให้ค้นหาอัตโนมัติ และถ้าพบว่ารายการนั้น remark เป็น "รอม้วน" ให้ชี้ไปเช็คสต็อกม้วนดิบต่อ
+  // เชื่อมจาก Presale Configurator (สต็อกติดลบ): ถ้ามี material code ส่งมาทาง URL ให้ค้นหาอัตโนมัติ
+  // ปุ่มเช็คม้วนดิบจะแสดงในช่องหมายเหตุของแถวที่สถานะ "รอม้วน" เองแล้ว (ดู remarkCellHtml)
   var qp = new URLSearchParams(location.search);
   var matParam = qp.get('material');
   if(matParam){
    var gsInputEl = document.getElementById('gsInput');
    if(gsInputEl) gsInputEl.value = matParam;
    runGlobalSearch(matParam);
-   var matHits = allData.filter(function(r){ return r.material===matParam && !r.is_note; });
-   var waitingCoil = matHits.some(function(r){ return (r.remark||'').indexOf('รอม้วน')>=0; });
-   if(waitingCoil){
-    var thk = qp.get('thk'), wid = qp.get('wid');
-    var rmParams = new URLSearchParams();
-    if(thk) rmParams.set('thk', thk);
-    if(wid) rmParams.set('wid', wid);
-    var rmUrl = 'stock-rm-visibility-sale-view.html' + (rmParams.toString() ? ('?' + rmParams.toString()) : '');
-    var banner = document.createElement('div');
-    banner.style.cssText = 'margin:12px 20px 0;padding:12px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#991b1b;';
-    banner.innerHTML = '<span>⏳ รหัส <strong>'+esc(matParam)+'</strong> อยู่ในสถานะ <strong>รอม้วน</strong> — ต้องรอวัตถุดิบก่อนจึงจะผลิตได้</span>'
-     +'<a href="'+rmUrl+'" target="_blank" style="background:#dc2626;color:#fff;padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;text-decoration:none;white-space:nowrap;">🔍 เช็คสถานะม้วนดิบ →</a>';
-    var gsrEl = document.getElementById('gsrContainer');
-    if(gsrEl && gsrEl.parentNode) gsrEl.parentNode.insertBefore(banner, gsrEl);
-   }
   }
 });
 
@@ -943,7 +940,7 @@ function renderPlan(){
           +'<td class="wc">'+fwt(r.weight)+'</td>'
           +'<td style="font-size:13px;color:var(--text2);">'+esc(r.spray)+'</td>'
           +'<td class="dlc '+gdc(r.delivery)+'">'+esc(r.delivery||'—')+'</td>'
-          +'<td style="font-size:13px;color:var(--text2);">'+esc(r.remark)+'</td>'
+          +'<td style="font-size:13px;color:var(--text2);">'+remarkCellHtml(r)+'</td>'
           +'</tr>';
       });
 
@@ -967,7 +964,7 @@ function renderPlan(){
           +'<td class="wc">'+fwt(r.weight)+'</td>'
           +'<td style="font-size:13px;color:var(--text2);">'+esc(r.spray)+'</td>'
           +'<td class="dlc">'+esc(r.delivery||'—')+'</td>'
-          +'<td style="font-size:10px;color:var(--text3);">'+esc(r.remark)+'</td>'
+          +'<td style="font-size:10px;color:var(--text3);">'+remarkCellHtml(r)+'</td>'
           +'</tr>';
       });
 

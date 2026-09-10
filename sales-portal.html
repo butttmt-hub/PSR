@@ -827,9 +827,12 @@ function openQuotationList(){
    const approvalStatus = q.quoteExtra?.discountPct>0 ? getDiscountApprovalStatus(q.quotationNo) : null;
    const blocked = q.quoteExtra?.discountPct>0 && approvalStatus!=='approved';
    const blockReason = approvalStatus==='pending' ? 'รอ Mgr01 อนุมัติส่วนลด' : approvalStatus==='rejected' ? 'ส่วนลดถูกปฏิเสธ' : 'ต้องขออนุมัติส่วนลดจาก Mgr01 ก่อน';
-   const transferBtn = blocked
-    ? `<button class="ql-btn transfer" disabled title="${blockReason}">🕒 ${blockReason}</button>`
-    : `<button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O Request →</button>`;
+   const pendingSO = loadSalesOrders().find(s=>s.quotationNo===q.quotationNo && s.status==='pending_approval');
+   const transferBtn = pendingSO
+    ? `<button class="ql-btn transfer" disabled title="รอ Apv01 อนุมัติ S/O">🕒 รอ Apv01 อนุมัติ S/O</button>`
+    : blocked
+     ? `<button class="ql-btn transfer" disabled title="${blockReason}">🕒 ${blockReason}</button>`
+     : `<button class="ql-btn transfer" onclick="event.stopPropagation();transferQuotationToSO('${q.quotationNo}')">Transfer to S/O Request →</button>`;
    const rowMainLocked = approvalStatus==='pending';
    const rowMainAttrs = rowMainLocked
     ? `class="ql-row-main ql-row-main-locked" title="รอ Mgr01 อนุมัติส่วนลด — ยังไม่สามารถเปิดดูได้จนกว่าจะได้รับผลอนุมัติ"`

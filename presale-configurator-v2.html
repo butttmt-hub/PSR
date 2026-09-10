@@ -736,7 +736,18 @@ const productFieldDefs = {
 // เมื่อ Sale เลือกลูกค้า + เพิ่มสินค้า ระบบจะกรอก Step 2-6 ให้อัตโนมัติตาม Master Data นี้
 // Sale ยังแก้ไขค่าที่กรอกได้ตามปกติ เผื่อลูกค้าเปลี่ยนเงื่อนไขกระทันหัน
 const customerRequirementDefaults = {
- // บริษัท ไทย เมทัล เวิร์คส์ จำกัด (0010002) — Extra ทุกข้อในหมวด Packing/Service, นัดส่งเวลา 06:30 น.
+ // บริษัท เอบีซี สตีล จำกัด (0010001) — STD ทั้งหมด, เอกสารใบส่งของเลือก "บิลปกติ" เป็นค่าเริ่มต้น
+ '0010001': {
+  'Cut Sheet': {
+   cert:[{opt:'Mill Cert.'}],
+   deliveryDoc:[{opt:'บิลปกติ'}]
+  },
+  'Tube': {
+   tubeCert:[{opt:'TMT Cert. / Mill Cert. per product'}],
+   tubeDeliveryDoc:[{opt:'บิลปกติ'}]
+  }
+ },
+ // บริษัท ไทย เมทัล เวิร์คส์ จำกัด (0010002) — Extra ทุกข้อในหมวด Packing/Service, นัดส่งเวลา 06:30 น., เอกสาร Extra
  '0010002': {
   'Cut Sheet': {
    packing:[{opt:'Strapping'}],
@@ -745,7 +756,9 @@ const customerRequirementDefaults = {
    loading:[{opt:'สลับฟันปลา'}],
    unloading:[{opt:'อุปกรณ์อื่นๆ (Other equipment)',detail:'รถเครนติดรถ 10 ตัน (ระบุอุปกรณ์เฉพาะของลูกค้า)'}],
    vehicle:[{opt:'No trailer (ห้าม TL)'}],
-   delivery:[{opt:'Specific time window (ระบุเวลา)',detail:'06:30 น. (กำหนดเวลาส่งเช้า)'}]
+   delivery:[{opt:'Specific time window (ระบุเวลา)',detail:'06:30 น. (กำหนดเวลาส่งเช้า)'}],
+   cert:[{opt:'Inspection sheet'}],
+   deliveryDoc:[{opt:'บิลปกติ'},{opt:'PO copy'},{opt:'VAT handling (VAT)'}]
   },
   'Tube': {
    tubeStrap:[{opt:'Custom number of straps'}],
@@ -754,7 +767,9 @@ const customerRequirementDefaults = {
    tubeLoading:[{opt:'Vertical wood support'}],
    tubeUnloading:[{opt:'อุปกรณ์อื่นๆ (Other equipment)',detail:'รถเครนติดรถ 10 ตัน (ระบุอุปกรณ์เฉพาะของลูกค้า)'}],
    tubeVehicle:[{opt:'No trailer (ห้าม TL)'}],
-   tubeDelivery:[{opt:'Specific time window (ระบุเวลา)',detail:'06:30 น. (กำหนดเวลาส่งเช้า)'}]
+   tubeDelivery:[{opt:'Specific time window (ระบุเวลา)',detail:'06:30 น. (กำหนดเวลาส่งเช้า)'}],
+   tubeCert:[{opt:'Inspection sheet'}],
+   tubeDeliveryDoc:[{opt:'บิลปกติ'},{opt:'PO copy'},{opt:'VAT handling (VAT)'}]
   }
  }
 };

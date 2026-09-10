@@ -767,7 +767,7 @@ function renderSOApprovalSectionHTML(){
    <div class="appr-avatar">${initial}</div>
    <div class="appr-main">
     <div class="appr-subject">คำขออนุมัติ Sales Order <strong>${esc(rec.soNo)}</strong></div>
-    <div class="appr-snippet">${esc(rec.customer||'-')} · ${itemCount} รายการ · ${fmtBaht(rec.grandTotal||0)} บาท · แนบ PO: ${esc(rec.poAttachment?.name||'-')}</div>
+    <div class="appr-snippet">${esc(rec.customer||'-')} · เลขที่ Quotation: ${esc(rec.quotationNo||'-')} · ${itemCount} รายการ · ${fmtBaht(rec.grandTotal||0)} บาท · แนบ PO: ${esc(rec.poAttachment?.name||'-')}</div>
     <div class="appr-delivery-row">${deliveryHtml}</div>
    </div>
    <div class="appr-time">${sentDate}</div>

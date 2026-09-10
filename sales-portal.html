@@ -689,12 +689,14 @@ function isQuotationStillActive(quotationNo){
 // counts.pending>0 จะโชว์สัญลักษณ์กระดิ่งแจ้งเตือนที่หัวเมนู
 function renderApprovalSidebarShell(opts){
  const {icon,title,counts,activeStatus,navFn,contentHtml}=opts;
+ const bellHtml=counts.pending>0?`<span class="appr-bell" title="${counts.pending} งานรอดำเนินการ">🔔<span class="appr-bell-dot"></span></span>`:'';
  const navItem=(status,label)=>`<button class="appr-nav-item${activeStatus===status?' active':''}" onclick="${navFn}('${status}')">
-   <span>${esc(label)}</span><span class="appr-nav-badge${counts[status]>0?'':' zero'}">${counts[status]}</span>
+   <span>${esc(label)}</span>
+   <span style="display:flex;align-items:center;gap:6px"><span class="appr-nav-badge${counts[status]>0?'':' zero'}">${counts[status]}</span>${status==='pending'?bellHtml:''}</span>
   </button>`;
  return `<div class="appr-shell">
   <aside class="appr-sidebar">
-   <div class="appr-sidebar-head"><span>${icon} ${esc(title)}</span>${counts.pending>0?`<span class="appr-bell" title="${counts.pending} งานรอดำเนินการ">🔔<span class="appr-bell-dot"></span></span>`:''}</div>
+   <div class="appr-sidebar-head"><span>${icon} ${esc(title)}</span></div>
    <nav class="appr-nav">
     ${navItem('pending','รอดำเนินการ')}
     ${navItem('approved','อนุมัติแล้ว')}

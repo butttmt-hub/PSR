@@ -1,0 +1,53 @@
+rules_version = '2';
+
+// Security Rules สำหรับ Pilot (tmt-presale-pilot)
+// วางทั้งไฟล์นี้ที่ Firebase Console → Firestore Database → Rules → Publish
+//
+// หลักการ: ต้อง login ก่อนจึงอ่านได้ และสิทธิ์เขียนแยกตาม role ที่เก็บใน users/{uid}.role
+//   sales    = Sale (สร้าง/แก้ Quotation, S/O, คำขออนุมัติส่วนลด)
+//   mgr01    = Mgr01 (อนุมัติ/ปฏิเสธส่วนลด)
+//   approval = Apv01 (อนุมัติ/ปฏิเสธ S/O)
+// หมายเหตุ: Rules ระดับนี้คุมตามประเภทเอกสารและ role ยังไม่ตรวจลำดับสถานะระดับฟิลด์ (ทำเพิ่มได้ตอนขึ้นใช้งานจริง)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function hasRole() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function role() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // ผู้ใช้อ่านได้เฉพาะโปรไฟล์ของตัวเอง และไม่มีใครเขียนได้จากฝั่งเว็บ (สร้าง/แก้ใน Console เท่านั้น)
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /quotations/{id} {
+      allow read: if hasRole();
+      // Sale สร้าง/แก้ได้ และ Apv01 ปิดสถานะ Quotation ต้นทางเมื่ออนุมัติ/ปฏิเสธ S/O
+      allow create, update: if hasRole() && (role() == 'sales' || role() == 'approval');
+      allow delete: if hasRole() && role() == 'sales';
+    }
+
+    match /salesOrders/{id} {
+      allow read: if hasRole();
+      allow create: if hasRole() && role() == 'sales';
+      allow update: if hasRole() && (role() == 'sales' || role() == 'approval');
+      allow delete: if hasRole() && role() == 'sales';
+    }
+
+    match /discountApprovals/{id} {
+      allow read: if hasRole();
+      allow create: if hasRole() && role() == 'sales';
+      allow update: if hasRole() && (role() == 'sales' || role() == 'mgr01');
+      allow delete: if hasRole() && role() == 'sales';
+    }
+  }
+}

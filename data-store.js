@@ -98,7 +98,18 @@
 
   /* ---------------- core: cache + subscribe ---------------- */
 
-  var adapter = localAdapter;
+  // backend: 'local' (Demo, localStorage) หรือ 'firestore' (Pilot)
+  // เลือกด้วย ?backend=firestore | ?backend=local ในลิงก์ (จำค่าไว้ในเบราว์เซอร์) ค่าเริ่มต้นคือ local
+  function getBackendPref(){
+    try{
+      var m = /[?&]backend=(firestore|local)\b/.exec(location.search);
+      if(m){ localStorage.setItem('tmt_backend', m[1]); return m[1]; }
+      return localStorage.getItem('tmt_backend') === 'firestore' ? 'firestore' : 'local';
+    }catch(e){ return 'local'; }
+  }
+  var backend = getBackendPref();
+
+  var adapter = null;
   var cache = {};
   var listeners = [];
   var errorListeners = [];
@@ -125,7 +136,7 @@
   // hydrate: adapter ที่ sync (localStorage) พร้อมใช้งานทันทีตั้งแต่โหลดสคริปต์
   // adapter ที่ async (Firestore) ให้หน้าจอรอ TMTStore.whenReady ก่อน render ครั้งแรก
   function hydrate(){
-    readyState = { done: false, waiters: [] };
+    readyState.done = false;           // เก็บ waiters ที่รออยู่ไว้ ไม่ทิ้ง
     var pending = 0, async = false;
     COLLECTIONS.forEach(function(name){
       var res = adapter.load(name);
@@ -167,6 +178,7 @@
 
   // ใช้ผลของ adapter (sync) หรือ optimistic + rollback (async) แล้วคืน boolean ให้ caller เดิม
   function runWrite(name, optimistic, send){
+    if(!adapter) return false;         // ยังไม่ได้ login / ยังไม่ได้แนบ backend
     var before = cache[name];
     var next = optimistic(before.slice());
     var res = send();
@@ -301,7 +313,9 @@
     whenReady: function(fn){
       if(readyState.done) fn(); else readyState.waiters.push(fn);
     },
-    adapterName: function(){ return adapter.name; },
+    adapterName: function(){ return adapter ? adapter.name : null; },
+    backend: function(){ return backend; },
+    isAttached: function(){ return !!adapter; },
 
     // ล้างเฉพาะข้อมูลทดสอบ ไม่แตะ prefs/session
     clearTransactions: function(){
@@ -309,16 +323,82 @@
       COLLECTIONS.forEach(function(n){ self[n].clear(); });
     },
 
-    // สำหรับสลับ backend (Firestore) และใช้ทดสอบ — ไม่ได้ใช้ในหน้าจอ
-    _useAdapter: function(a){
+    // แนบ backend (เรียกหลัง login สำเร็จในโหมด Firestore) แล้ว hydrate ข้อมูลเข้า cache
+    attachAdapter: function(a){
+      this.detachAdapter(true);
       adapter = a;
-      cache = {};
       hydrate();
       wireWatch();
+    },
+    // ถอด backend ออก (logout) — ล้าง cache ในหน่วยความจำ ไม่แตะข้อมูลบนเซิร์ฟเวอร์
+    detachAdapter: function(silent){
+      if(adapter && typeof adapter.unwatch === 'function') adapter.unwatch();
+      adapter = null;
+      COLLECTIONS.forEach(function(n){ cache[n] = []; });
+      readyState.done = false;
+      if(!silent) emit({ type: 'change', collection: '*', source: 'detach' });
+    },
+    // ไม่มีผู้ใช้ login — ให้หน้าที่รอ whenReady ทำงานต่อ (เช่น แสดงหน้า login) โดยยังไม่มีข้อมูล
+    signalNoAuth: function(){ markReady(); },
+    _useAdapter: function(a){ this.attachAdapter(a); },   // ใช้ทดสอบ
+
+    // ข้อความ error ภาษาไทยสำหรับแสดงผู้ใช้
+    describeError: function(err){
+      var code = (err && (err.code || err.message)) || '';
+      var map = {
+        'doc-too-large': 'เอกสารมีขนาดใหญ่เกินไป — ลดขนาดหรือจำนวนไฟล์แนบแล้วลองใหม่',
+        'permission-denied': 'ไม่มีสิทธิ์ทำรายการนี้ด้วยบัญชีปัจจุบัน',
+        'auth/invalid-credential': 'Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่',
+        'auth/invalid-email': 'Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่',
+        'auth/user-not-found': 'Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่',
+        'auth/wrong-password': 'Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่',
+        'auth/too-many-requests': 'ลองผิดหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่',
+        'auth/network-request-failed': 'เชื่อมต่ออินเทอร์เน็ตไม่ได้ กรุณาลองใหม่',
+        'no-role': 'บัญชีนี้ยังไม่ได้กำหนดสิทธิ์การใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+        'unavailable': 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่'
+      };
+      for(var k in map){ if(code.indexOf(k) >= 0) return map[k]; }
+      return 'บันทึกไม่สำเร็จ (' + (code || 'unknown error') + ')';
+    },
+
+    // Firebase module ลงทะเบียนตัวเองที่นี่ เพื่อให้หน้า login รอจนโหลดเสร็จได้
+    _registerFirebase: function(fb){
+      firebaseApi = fb;
+      firebaseWaiters.splice(0).forEach(function(res){ res(fb); });
+    },
+    firebase: function(){
+      return new Promise(function(res){ if(firebaseApi) res(firebaseApi); else firebaseWaiters.push(res); });
     }
   };
 
-  hydrate();
-  wireWatch();
+  var firebaseApi = null, firebaseWaiters = [];
+
+  if(backend === 'firestore'){
+    // รอจนกว่าจะ login + แนบ Firestore: ซ่อนหน้าไว้กันเห็นหน้าว่าง และมี timeout กันค้างถ้าโหลด Firebase ไม่ได้
+    COLLECTIONS.forEach(function(n){ cache[n] = []; });
+    try{
+      var st = document.createElement('style');
+      st.id = 'tmt-boot-style';
+      st.textContent = 'html.tmt-booting body{visibility:hidden}';
+      document.head.appendChild(st);
+      document.documentElement.classList.add('tmt-booting');
+    }catch(e){}
+    var unhide = function(){
+      try{ document.documentElement.classList.remove('tmt-booting'); }catch(e){}
+    };
+    store.whenReady(unhide);
+    setTimeout(function(){
+      if(!readyState.done){
+        unhide();
+        if(global.console) console.error('TMTStore: Firebase did not become ready within 10s');
+        try{ alert('เชื่อมต่อ Firebase ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วรีเฟรชหน้า'); }catch(e){}
+        markReady();
+      }
+    }, 10000);
+  } else {
+    adapter = localAdapter;
+    hydrate();
+    wireWatch();
+  }
   global.TMTStore = store;
 })(window);

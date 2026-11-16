@@ -525,8 +525,11 @@ body.embedded-mode main{width:100%;margin:0 auto;padding:16px}
 <footer id="prototypeFooter">Phase C Prototype V2.0 · Cut Sheet · Not a production system</footer>
 </div>
 
+<script src="firebase-config.js"></script>
 <script src="data-store.js"></script>
+<script type="module" src="firebase-adapter.js"></script>
 <script>
+TMTStore.onError(function(e){ alert(TMTStore.describeError(e.error)); });
 const steps = [
  {t:'Select Product', th:'เลือกสินค้า', d:'Customer & Product Type'},
  {t:'Product Spec', th:'สเปกสินค้า', d:'Grade · Dimension · Mill · Tolerance'},
@@ -2363,13 +2366,17 @@ TMTStore.subscribe(function(ev){
   try{ updateDiscountEvidenceGate(); }catch(e){}
  }
 });
-if(!tryLoadDiscountApprovalInboxMode() && !tryLoadDiscountApprovalMode() && !tryLoadApprovalInboxMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
- populateCustomerDetailOptions();
- selectProduct('Cut Sheet');
- renderProductSpecForCart();
- renderQualityForCart();
- renderPackingForCart();
-}
+// โหมด Firestore: รอ login + โหลดข้อมูลเสร็จก่อน (ไม่ได้ login → กลับหน้า login) โหมด Demo พร้อมทันที
+TMTStore.whenReady(function bootConfigurator(){
+ if(TMTStore.backend()==='firestore' && !TMTStore.session.getUser()){ location.href='sales-portal.html'; return; }
+ if(!tryLoadDiscountApprovalInboxMode() && !tryLoadDiscountApprovalMode() && !tryLoadApprovalInboxMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
+  populateCustomerDetailOptions();
+  selectProduct('Cut Sheet');
+  renderProductSpecForCart();
+  renderQualityForCart();
+  renderPackingForCart();
+ }
+});
 </script>
 </body>
 </html>

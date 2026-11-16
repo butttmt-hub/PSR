@@ -425,8 +425,11 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   </div>
 </div>
 
+<script src="firebase-config.js"></script>
 <script src="data-store.js"></script>
+<script type="module" src="firebase-adapter.js"></script>
 <script>
+TMTStore.onError(function(e){ alert(TMTStore.describeError(e.error)); });
 function applyTheme(theme){
  document.documentElement.setAttribute('data-theme', theme);
  const btn = document.getElementById('themeToggleBtn');
@@ -445,10 +448,27 @@ const CREDENTIALS_LIST = [
  { username: 'Mgr01', password: 'M123', role: 'mgr01' },
  { username: 'Apv01', password: 'A123', role: 'approval' },
 ];
+async function attemptLoginFirestore(u, p, errEl){
+ const btn = document.querySelector('.login-btn');
+ const label = btn.textContent;
+ btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
+ try{
+  const fb = await TMTStore.firebase();
+  const profile = await fb.signIn(u, p);
+  errEl.classList.add('hidden');
+  showDashboard(profile.username, profile.role);
+ }catch(e){
+  errEl.textContent = TMTStore.describeError(e);
+  errEl.classList.remove('hidden');
+ }finally{
+  btn.disabled = false; btn.textContent = label;
+ }
+}
 function attemptLogin(){
  const u = document.getElementById('loginUser').value.trim();
  const p = document.getElementById('loginPass').value;
  const errEl = document.getElementById('loginError');
+ if(TMTStore.backend()==='firestore'){ attemptLoginFirestore(u, p, errEl); return; }
  const match = CREDENTIALS_LIST.find(c=>c.username===u && c.password===p);
  if(match){
   errEl.classList.add('hidden');
@@ -468,7 +488,11 @@ function showDashboard(user, role){
  document.getElementById('dashboardScreen').classList.remove('hidden');
  document.getElementById('dashUserName').textContent = user;
  document.getElementById('dashAvatar').textContent = user.charAt(0).toUpperCase();
- document.getElementById('dashBrandName').innerHTML = `${DASHBOARD_BRAND_BY_ROLE[role]||DASHBOARD_BRAND_BY_ROLE.sales}<small>Phase C · Prototype · Not a production system</small>`;
+ const isCloud = TMTStore.backend()==='firestore';
+ document.getElementById('dashBrandName').innerHTML = `${DASHBOARD_BRAND_BY_ROLE[role]||DASHBOARD_BRAND_BY_ROLE.sales}<small>Phase C · Prototype · ${isCloud?'Firestore Pilot (shared data)':'Not a production system'}</small>`;
+ // ล้างข้อมูลทดสอบจะลบข้อมูลที่ใช้ร่วมกันทุกคน → ซ่อนปุ่มในโหมด Firestore
+ const clearBtn = document.getElementById('clearTestDataBtn');
+ if(clearBtn) clearBtn.style.display = isCloud ? 'none' : '';
  document.getElementById('salesDashboardView').classList.toggle('hidden', role!=='sales');
  document.getElementById('mgr01DashboardView').classList.toggle('hidden', role!=='mgr01');
  document.getElementById('approvalDashboardView').classList.toggle('hidden', role!=='approval');
@@ -1056,7 +1080,13 @@ function clearTestData(){
  alert('ล้างข้อมูลทดสอบเรียบร้อยแล้ว');
  location.reload();
 }
-function logout(){
+async function logout(){
+ if(TMTStore.backend()==='firestore'){
+  // ออกจากระบบ Firebase แล้ว observer ใน firebase-adapter.js จะถอด backend และพากลับหน้า login ให้เอง
+  const fb = await TMTStore.firebase();
+  await fb.signOut();
+  return;
+ }
  TMTStore.session.clear();
  document.getElementById('dashboardScreen').classList.add('hidden');
  document.getElementById('loginScreen').classList.remove('hidden');
@@ -1084,11 +1114,17 @@ TMTStore.subscribe(function(ev){
  clearTimeout(liveRefreshTimer);
  liveRefreshTimer = setTimeout(refreshLiveViews, 80);
 });
-(function initSession(){
+(function initLoginHint(){
+ if(TMTStore.backend()!=='firestore') return;
+ const hint = document.querySelector('.login-hint');
+ if(hint) hint.innerHTML = 'Firestore Pilot — เข้าสู่ระบบด้วยบัญชีที่ผู้ดูแลระบบสร้างให้<br>พิมพ์ Username (เช่น Sale01) หรืออีเมลเต็ม';
+})();
+// โหมด Firestore: รอจนตรวจสถานะ login + โหลดข้อมูลเสร็จก่อนจึงแสดง Dashboard (โหมด Demo พร้อมทันที)
+TMTStore.whenReady(function initSession(){
  const saved = TMTStore.session.getUser();
  const role = TMTStore.session.getRole() || 'sales';
  if(saved) showDashboard(saved, role);
-})();
+});
 </script>
 </body>
 </html>

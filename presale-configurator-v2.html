@@ -525,6 +525,7 @@ body.embedded-mode main{width:100%;margin:0 auto;padding:16px}
 <footer id="prototypeFooter">Phase C Prototype V2.0 · Cut Sheet · Not a production system</footer>
 </div>
 
+<script src="data-store.js"></script>
 <script>
 const steps = [
  {t:'Select Product', th:'เลือกสินค้า', d:'Customer & Product Type'},
@@ -571,7 +572,7 @@ const salesEmployeeMasterData=[
  {code:'Demo Sales',name:'Demo Sales'},
 ];
 function getLoggedInSalesUser(){
- try{ return sessionStorage.getItem('tmt_sales_portal_user') || null; }catch(e){ return null; }
+ return TMTStore.session.getUser();
 }
 function toggleCustomerDetail(){
  document.getElementById('cdHead').classList.toggle('collapsed');
@@ -1465,13 +1466,7 @@ function handleDiscountEvidenceSelect(e){
   ()=>{ alert('ไม่สามารถอ่านไฟล์นี้ได้ กรุณาลองใหม่'); }
  );
 }
-const DISCOUNT_APPROVALS_KEY='tmt_discount_approvals';
-function loadDiscountApprovals(){
- try{ const raw=localStorage.getItem(DISCOUNT_APPROVALS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
-}
-function persistDiscountApprovals(list){
- try{ localStorage.setItem(DISCOUNT_APPROVALS_KEY, JSON.stringify(list)); return true; }catch(e){ return false; }
-}
+function loadDiscountApprovals(){ return TMTStore.discountApprovals.list(); }
 function getDiscountApprovalStatus(quotationNo){
  if(!quotationNo) return null;
  const rec=loadDiscountApprovals().find(r=>r.quotationNo===quotationNo);
@@ -1555,29 +1550,8 @@ function renderInternalBreakdown(){
  box.innerHTML=`<h4>🔒 Internal Price Breakdown (Sales / Sales Admin เท่านั้น — ไม่ print ให้ลูกค้า)</h4>${blocks}<div class="ib-total">หมายเหตุ: Extra ในหมวด Product Spec / Quality / Packing มีผลเฉพาะรายการ (SKU) นั้นๆ เท่านั้น — ราคาที่ลูกค้าเห็นในเอกสารรวม surcharge นี้ไว้แล้ว ไม่แยกบรรทัดให้ลูกค้าเห็น</div>`;
 }
 let savedQuotationNo=null;
-const QUOTATIONS_KEY='tmt_saved_quotations';
-function generateQuotationNo(){
- const d=new Date();
- const ymd=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
- const seq=String(Math.floor(1+Math.random()*9999)).padStart(4,'0');
- return `QT-${ymd}-${seq}`;
-}
-function loadSavedQuotations(){
- try{ const raw=localStorage.getItem(QUOTATIONS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
-}
-function persistSavedQuotations(list){
- try{ localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(list)); return true; }catch(e){ return false; }
-}
-const SALES_ORDERS_KEY='tmt_sales_orders';
-function loadSalesOrders(){
- try{ const raw=localStorage.getItem(SALES_ORDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
-}
-function persistSalesOrders(list){
- try{ localStorage.setItem(SALES_ORDERS_KEY, JSON.stringify(list)); return true; }catch(e){ return false; }
-}
-function generateSONo(){
- return '1300'+String(Math.floor(100000+Math.random()*900000));
-}
+function loadSavedQuotations(){ return TMTStore.quotations.list(); }
+function loadSalesOrders(){ return TMTStore.salesOrders.list(); }
 function buildSalesOrderRecord(qRec,soNo){
  const now=new Date();
  return {
@@ -1628,10 +1602,8 @@ function renderQuotationNoBar(){
 const STORAGE_FULL_MSG='บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลในเบราว์เซอร์เต็ม กรุณาลบ Quotation หรือ S/O เก่าที่ไม่ใช้แล้วออก หรือใช้ไฟล์แนบขนาดเล็กลง แล้วลองใหม่';
 function saveQuotationNumber(){
  if(!productCart.length){ alert('กรุณาเพิ่มสินค้าในรายการก่อนบันทึกเลข Quotation'); return false; }
- const qNo=generateQuotationNo();
- const list=loadSavedQuotations();
- list.push(snapshotCurrentQuotation(qNo));
- if(!persistSavedQuotations(list)){ alert(STORAGE_FULL_MSG); return false; }
+ const qNo=TMTStore.numbering.nextQuotationNo();
+ if(!TMTStore.quotations.upsert(snapshotCurrentQuotation(qNo))){ alert(STORAGE_FULL_MSG); return false; }
  savedQuotationNo=qNo;
  renderQuotationNoBar();
  return true;
@@ -1645,8 +1617,7 @@ function saveAndShareQuotation(){
   const net=+(quoteBaseTotal-discountAmt).toFixed(2);
   const vat=+(net*0.07).toFixed(2);
   const grand=+(net+vat).toFixed(2);
-  const list=loadDiscountApprovals();
-  const idx=list.findIndex(r=>r.quotationNo===savedQuotationNo);
+  const existing=TMTStore.discountApprovals.get(savedQuotationNo);
   const rec={
    quotationNo:savedQuotationNo,
    customer:document.getElementById('customer').value,
@@ -1658,8 +1629,7 @@ function saveAndShareQuotation(){
    status:'pending',
    requestedAt:new Date().toISOString(),
   };
-  if(idx>=0) list[idx]={...list[idx],...rec}; else list.push(rec);
-  if(!persistDiscountApprovals(list)){ alert(STORAGE_FULL_MSG); return; }
+  if(!TMTStore.discountApprovals.upsert(existing?{...existing,...rec}:rec)){ alert(STORAGE_FULL_MSG); return; }
   window.location.href=`presale-configurator-v2.html?viewDiscountApproval=${encodeURIComponent(savedQuotationNo)}`;
   return;
  }
@@ -1670,15 +1640,12 @@ function transferToSO(){
  if(!hasValidDiscountEvidence()){ alert('มีการให้ส่วนลด กรุณาแนบหลักฐานก่อน Transfer to S/O Request'); return; }
  if(quoteExtra.discountPct>0 && getDiscountApprovalStatus(savedQuotationNo)!=='approved'){ alert('ต้องรอ Mgr01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้'); return; }
  if(!savedQuotationNo){ alert('กรุณาบันทึกเลข Quotation ก่อน Transfer to S/O Request'); return; }
- const qList=loadSavedQuotations();
- const qRec=qList.find(q=>q.quotationNo===savedQuotationNo);
+ const qRec=TMTStore.quotations.get(savedQuotationNo);
  if(!qRec){ alert('ไม่พบข้อมูล Quotation ที่บันทึกไว้'); return; }
- const soNo=generateSONo();
- const soList=loadSalesOrders();
- soList.push(buildSalesOrderRecord(qRec,soNo));
- if(!persistSalesOrders(soList)){ alert(STORAGE_FULL_MSG); return; }
+ const soNo=TMTStore.numbering.nextSalesOrderNo();
+ if(!TMTStore.salesOrders.upsert(buildSalesOrderRecord(qRec,soNo))){ alert(STORAGE_FULL_MSG); return; }
  qRec.status='transferred'; qRec.soNo=soNo;
- persistSavedQuotations(qList);
+ TMTStore.quotations.upsert(qRec);
  window.location.href=`presale-configurator-v2.html?viewSO=${encodeURIComponent(soNo)}`;
 }
 function soItemSummary(cart,fieldGetter){
@@ -1720,7 +1687,7 @@ function renderSalesOrderDoc(rec){
  const approvalMode=params.get('mode')==='approval'&&rec.status==='pending_approval';
  let toolbarHtml;
  if(approvalMode){
-  const isApprovalSession=sessionStorage.getItem('tmt_sales_portal_role')==='approval';
+  const isApprovalSession=TMTStore.session.getRole()==='approval';
   const approveRejectBtns=isApprovalSession
    ?`<button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openRejectModal('${esc(rec.soNo)}')">✕ Reject</button><button class="btn orange" onclick="approveSO('${esc(rec.soNo)}')">✓ Approve</button>`
    :'';
@@ -1879,21 +1846,19 @@ function renderDeliveryDateSection(rec){
   </div>`;
 }
 function setDeliveryDateType(soNo,type){
- const list=loadSalesOrders();
- const rec=list.find(s=>s.soNo===soNo);
+ const rec=TMTStore.salesOrders.get(soNo);
  if(!rec) return;
  rec.deliveryDateType=type;
  if(type==='pending') rec.deliveryDate=null;
- persistSalesOrders(list);
+ TMTStore.salesOrders.upsert(rec);
  document.body.classList.add('view-mode');
  document.querySelector('.app').innerHTML=renderSalesOrderDoc(rec);
 }
 function setDeliveryDate(soNo,dateStr){
- const list=loadSalesOrders();
- const rec=list.find(s=>s.soNo===soNo);
+ const rec=TMTStore.salesOrders.get(soNo);
  if(!rec) return;
  rec.deliveryDate=dateStr;
- persistSalesOrders(list);
+ TMTStore.salesOrders.upsert(rec);
  document.body.classList.add('view-mode');
  document.querySelector('.app').innerHTML=renderSalesOrderDoc(rec);
 }
@@ -1908,13 +1873,10 @@ function handlePOFileSelect(e,soNo){
  }
  readFileAsAttachment(file,
   (att)=>{
-   const list=loadSalesOrders();
-   const rec=list.find(s=>s.soNo===soNo);
+   const rec=TMTStore.salesOrders.get(soNo);
    if(!rec) return;
    rec.poAttachment={...att,attachedAt:new Date().toISOString()};
-   try{
-    localStorage.setItem(SALES_ORDERS_KEY,JSON.stringify(list));
-   }catch(err){
+   if(!TMTStore.salesOrders.upsert(rec)){
     alert(STORAGE_FULL_MSG);
     return;
    }
@@ -1940,13 +1902,12 @@ function closeInfoModal(){
  if(el) el.remove();
 }
 function sendToApproval(soNo){
- const list=loadSalesOrders();
- const rec=list.find(s=>s.soNo===soNo);
+ const rec=TMTStore.salesOrders.get(soNo);
  if(!rec||!rec.poAttachment){ alert('กรุณาแนบไฟล์ PO ก่อนส่ง Approval'); return; }
  if(!hasDeliveryDateInfo(rec)){ alert('กรุณาระบุวันที่กำหนดส่ง (รอแจ้ง หรือ เลือกวันที่) ก่อนส่ง Approval'); return; }
  rec.status='pending_approval';
  rec.sentToApprovalAt=new Date().toISOString();
- if(!persistSalesOrders(list)){ alert(STORAGE_FULL_MSG); return; }
+ if(!TMTStore.salesOrders.upsert(rec)){ alert(STORAGE_FULL_MSG); return; }
  document.querySelector('.app').innerHTML=renderSalesOrderDoc(rec);
  showInfoModal('✅ ส่งคำขออนุมัติเรียบร้อยแล้ว',
   `Sales Order <strong>${esc(soNo)}</strong> ถูกส่งไปรออนุมัติแล้ว<br>ระบบจะแจ้งผลเมื่อได้รับการอนุมัติ`,
@@ -1966,35 +1927,32 @@ function closeRejectModal(){
 function confirmReject(){
  const reason=document.getElementById('rejectReasonInput').value.trim();
  if(!reason){ document.getElementById('rejectReasonError').style.display='block'; return; }
- const list=loadSalesOrders();
- const rec=list.find(s=>s.soNo===rejectTargetSoNo);
+ const rec=TMTStore.salesOrders.get(rejectTargetSoNo);
  if(!rec) return;
  rec.status='rejected';
  rec.rejectedAt=new Date().toISOString();
  rec.rejectReason=reason;
- persistSalesOrders(list);
+ TMTStore.salesOrders.upsert(rec);
  markLinkedQuotationResolved(rec.quotationNo,'so_rejected',reason);
  closeRejectModal();
  window.location.href='sales-portal.html';
 }
 function approveSO(soNo){
- const list=loadSalesOrders();
- const rec=list.find(s=>s.soNo===soNo);
+ const rec=TMTStore.salesOrders.get(soNo);
  if(!rec) return;
  rec.status='approved';
  rec.approvedAt=new Date().toISOString();
- persistSalesOrders(list);
+ TMTStore.salesOrders.upsert(rec);
  markLinkedQuotationResolved(rec.quotationNo,'so_approved');
  window.location.href='sales-portal.html';
 }
 function markLinkedQuotationResolved(quotationNo,status,reason){
  if(!quotationNo) return;
- const qList=loadSavedQuotations();
- const qRec=qList.find(q=>q.quotationNo===quotationNo);
+ const qRec=TMTStore.quotations.get(quotationNo);
  if(!qRec) return;
  qRec.status=status;
  if(reason) qRec.soRejectReason=reason;
- persistSavedQuotations(qList);
+ TMTStore.quotations.upsert(qRec);
 }
 function approvalUrgencyDays(rec){
  if(rec.deliveryDateType!=='scheduled'||!rec.deliveryDate) return null;
@@ -2142,7 +2100,7 @@ function renderDiscountApprovalView(rec){
   :rec.status==='rejected'
   ?`<div class="notice danger"><strong>❌ Mgr01 ปฏิเสธส่วนลด</strong> — เหตุผล: ${esc(rec.rejectReason||'-')}</div>`
   :`<div class="notice warn"><strong>🕒 รอ Mgr01 อนุมัติส่วนลด</strong></div>`;
- const isMgr01Session=sessionStorage.getItem('tmt_sales_portal_role')==='mgr01';
+ const isMgr01Session=TMTStore.session.getRole()==='mgr01';
  const actionButtons=(rec.status==='pending'&&isMgr01Session)
   ?`<button class="btn secondary" style="border-color:#B42318;color:#B42318" onclick="openDiscountRejectModal('${esc(rec.quotationNo)}')">✕ Reject</button><button class="btn orange" onclick="approveDiscount('${esc(rec.quotationNo)}')">✓ Approve (Mgr01)</button>`
   :'';
@@ -2186,12 +2144,11 @@ function renderDiscountApprovalView(rec){
   </div>`;
 }
 function approveDiscount(quotationNo){
- const list=loadDiscountApprovals();
- const rec=list.find(r=>r.quotationNo===quotationNo);
+ const rec=TMTStore.discountApprovals.get(quotationNo);
  if(!rec) return;
  rec.status='approved';
  rec.decidedAt=new Date().toISOString();
- persistDiscountApprovals(list);
+ TMTStore.discountApprovals.upsert(rec);
  window.location.href='sales-portal.html';
 }
 let discountRejectTargetQno=null;
@@ -2208,13 +2165,12 @@ function closeDiscountRejectModal(){
 function confirmDiscountReject(){
  const reason=document.getElementById('discountRejectReasonInput').value.trim();
  if(!reason){ document.getElementById('discountRejectReasonError').style.display='block'; return; }
- const list=loadDiscountApprovals();
- const rec=list.find(r=>r.quotationNo===discountRejectTargetQno);
+ const rec=TMTStore.discountApprovals.get(discountRejectTargetQno);
  if(!rec) return;
  rec.status='rejected';
  rec.rejectReason=reason;
  rec.decidedAt=new Date().toISOString();
- persistDiscountApprovals(list);
+ TMTStore.discountApprovals.upsert(rec);
  window.location.href='sales-portal.html';
 }
 function tryLoadDiscountApprovalMode(){

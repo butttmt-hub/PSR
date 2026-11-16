@@ -425,31 +425,26 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   </div>
 </div>
 
+<script src="data-store.js"></script>
 <script>
-const THEME_KEY = 'tmt_theme';
 function applyTheme(theme){
  document.documentElement.setAttribute('data-theme', theme);
  const btn = document.getElementById('themeToggleBtn');
  if(btn) btn.textContent = theme==='dark' ? '☀️' : '🌙';
- try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+ TMTStore.prefs.setTheme(theme);
 }
 function toggleTheme(){
  const current = document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
  applyTheme(current==='dark' ? 'light' : 'dark');
 }
 (function initTheme(){
- let theme = 'light';
- try{ theme = localStorage.getItem(THEME_KEY) || 'light'; }catch(e){}
- applyTheme(theme);
+ applyTheme(TMTStore.prefs.getTheme());
 })();
 const CREDENTIALS_LIST = [
  { username: 'Sale01', password: 'S123', role: 'sales' },
  { username: 'Mgr01', password: 'M123', role: 'mgr01' },
  { username: 'Apv01', password: 'A123', role: 'approval' },
 ];
-const SESSION_KEY = 'tmt_sales_portal_user';
-const SESSION_ROLE_KEY = 'tmt_sales_portal_role';
-
 function attemptLogin(){
  const u = document.getElementById('loginUser').value.trim();
  const p = document.getElementById('loginPass').value;
@@ -457,8 +452,7 @@ function attemptLogin(){
  const match = CREDENTIALS_LIST.find(c=>c.username===u && c.password===p);
  if(match){
   errEl.classList.add('hidden');
-  sessionStorage.setItem(SESSION_KEY, u);
-  sessionStorage.setItem(SESSION_ROLE_KEY, match.role);
+  TMTStore.session.set(u, match.role);
   showDashboard(u, match.role);
  } else {
   errEl.classList.remove('hidden');
@@ -484,7 +478,6 @@ function showDashboard(user, role){
 }
 
 // ---------- Configurable dashboard widgets (Prototype — mock data, no live backend) ----------
-const WIDGET_STORAGE_KEY = 'tmt_dashboard_widgets';
 const DEFAULT_SLOT_COUNT = 3;
 const MAX_SLOTS = 12;
 const WIDGET_CATALOG = [
@@ -511,15 +504,11 @@ const WIDGET_ACCENT_STYLE = {
 const WIDGET_ACCENT_HEX = { navy:'#0c3843', orange:'#ff6a05', gold:'#fdc440', sky:'#8bbade', blue2:'#155163', review:'#B42318' };
 function widgetDef(id){ return WIDGET_CATALOG.find(w=>w.id===id); }
 function loadDashboardWidgets(){
- try{
-  const raw = localStorage.getItem(WIDGET_STORAGE_KEY);
-  if(raw){ const parsed = JSON.parse(raw); if(Array.isArray(parsed) && parsed.length) return parsed; }
- }catch(e){}
- return Array.from({length:DEFAULT_SLOT_COUNT}, ()=>({widgetId:null}));
+ return TMTStore.prefs.getWidgets() || Array.from({length:DEFAULT_SLOT_COUNT}, ()=>({widgetId:null}));
 }
 let dashboardWidgets = loadDashboardWidgets();
 function saveDashboardWidgets(){
- try{ localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(dashboardWidgets)); }catch(e){}
+ TMTStore.prefs.setWidgets(dashboardWidgets);
 }
 function widgetBar(pct, color){
  return `<div class="w-bar-track"><div class="w-bar-fill" style="width:${pct}%;background:${color}"></div></div>`;
@@ -610,57 +599,31 @@ function widgetDetailHTML(id){
  return null;
 }
 
-// ---------- Saved quotations (written by presale-configurator-v2.html, shared via localStorage) ----------
-const QUOTATIONS_KEY = 'tmt_saved_quotations';
-function getSavedQuotations(){
- try{
-  const raw = localStorage.getItem(QUOTATIONS_KEY);
-  const arr = raw ? JSON.parse(raw) : [];
-  return Array.isArray(arr) ? arr : [];
- }catch(e){ return []; }
-}
-function saveSavedQuotations(list){
- try{ localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(list)); }catch(e){}
-}
+// ---------- Saved quotations (written by presale-configurator-v2.html, shared via TMTStore) ----------
+function getSavedQuotations(){ return TMTStore.quotations.list(); }
 const RESOLVED_QUOTATION_STATUSES=['rejected','so_approved','so_rejected'];
 function getActiveQuotations(){
  return getSavedQuotations().filter(q=>!RESOLVED_QUOTATION_STATUSES.includes(q.status));
 }
 function rejectQuotation(qNo){
  if(!confirm(`ยืนยัน Reject ใบเสนอราคา ${qNo}?\nรายการนี้จะหายไปจากหน้าจอ แต่ข้อมูลยังถูกเก็บไว้หลังบ้านเพื่อนำไปวิเคราะห์ต่อ`)) return;
- const list = getSavedQuotations();
- const rec = list.find(q=>q.quotationNo===qNo);
- if(rec){ rec.status='rejected'; rec.rejectedAt=new Date().toISOString(); saveSavedQuotations(list); }
+ const rec = TMTStore.quotations.get(qNo);
+ if(rec){ rec.status='rejected'; rec.rejectedAt=new Date().toISOString(); TMTStore.quotations.upsert(rec); }
  // ยกเลิกคำขออนุมัติส่วนลดที่ยังรอ Mgr01 พิจารณา ให้หายไปจาก Mgr01 Dashboard ด้วย
- saveDiscountApprovals(loadDiscountApprovals().filter(r=>!(r.quotationNo===qNo && r.status==='pending')));
+ TMTStore.discountApprovals.removeWhere(r=>r.quotationNo===qNo && r.status==='pending');
  // ยกเลิก Sales Order ที่ยังรออนุมัติซึ่งผูกกับ Quotation นี้ ให้หายไปจาก S/O Approval Dashboard ด้วย
- saveSalesOrders(loadSalesOrders().filter(s=>!(s.quotationNo===qNo && s.status==='pending_approval')));
+ TMTStore.salesOrders.removeWhere(s=>s.quotationNo===qNo && s.status==='pending_approval');
  openQuotationList();
  renderWidgetGrid();
 }
-const SALES_ORDERS_KEY = 'tmt_sales_orders';
-function loadSalesOrders(){
- try{ const raw=localStorage.getItem(SALES_ORDERS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
-}
-function saveSalesOrders(list){
- try{ localStorage.setItem(SALES_ORDERS_KEY, JSON.stringify(list)); }catch(e){}
-}
-function generateSONo(){
- return '1300'+String(Math.floor(100000+Math.random()*900000));
-}
+function loadSalesOrders(){ return TMTStore.salesOrders.list(); }
 const SO_STATUS_LABELS = {pending_approval:'Waiting Approve', approved:'Approve', rejected:'Reject'};
 function getSOCountsByStatus(){
  const counts = {pending_approval:0, approved:0, rejected:0};
  loadSalesOrders().forEach(s=>{ if(counts.hasOwnProperty(s.status)) counts[s.status]++; });
  return counts;
 }
-const DISCOUNT_APPROVALS_KEY = 'tmt_discount_approvals';
-function loadDiscountApprovals(){
- try{ const raw=localStorage.getItem(DISCOUNT_APPROVALS_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }catch(e){ return []; }
-}
-function saveDiscountApprovals(list){
- try{ localStorage.setItem(DISCOUNT_APPROVALS_KEY, JSON.stringify(list)); }catch(e){}
-}
+function loadDiscountApprovals(){ return TMTStore.discountApprovals.list(); }
 function getDiscountApprovalCounts(){
  const counts = {pending:0, approved:0, rejected:0};
  loadDiscountApprovals().forEach(r=>{ if(counts.hasOwnProperty(r.status)) counts[r.status]++; });
@@ -870,24 +833,22 @@ function closeSOList(){
  document.getElementById('soListOverlay').classList.add('hidden');
 }
 function transferQuotationToSO(qNo){
- const qList = getSavedQuotations();
- const qRec = qList.find(q=>q.quotationNo===qNo);
+ const qRec = TMTStore.quotations.get(qNo);
  if(!qRec){ alert('ไม่พบข้อมูล Quotation ที่บันทึกไว้'); return; }
  if(qRec.quoteExtra?.discountPct>0 && getDiscountApprovalStatus(qNo)!=='approved'){ alert('ต้องรอ Mgr01 อนุมัติส่วนลดก่อนจึงจะ Transfer to S/O Request ได้'); return; }
- const soNo = generateSONo();
+ const soNo = TMTStore.numbering.nextSalesOrderNo();
  const now = new Date();
- const soList = loadSalesOrders();
- soList.push({
+ const soRec = {
   soNo, quotationNo:qRec.quotationNo,
   createdAt:now.toISOString(),
   createdAtDisplay:now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}),
   createdTimeDisplay:now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
   project:qRec.project, refNo:qRec.refNo, customer:qRec.customer, sales:qRec.sales, soldToCode:qRec.soldToCode,
   currentProduct:qRec.currentProduct, cart:qRec.cart, fieldState:qRec.fieldState, quoteExtra:qRec.quoteExtra, grandTotal:qRec.grandTotal,
- });
- saveSalesOrders(soList);
+ };
+ if(!TMTStore.salesOrders.upsert(soRec)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
  qRec.status='transferred'; qRec.soNo=soNo;
- saveSavedQuotations(qList);
+ TMTStore.quotations.upsert(qRec);
  location.href = `presale-configurator-v2.html?viewSO=${encodeURIComponent(soNo)}`;
 }
 function openQuotationList(){
@@ -1089,17 +1050,12 @@ function addWidgetSlot(){
 // ไม่แตะ Widget layout, ธีม, หรือ session login ของผู้ใช้
 function clearTestData(){
  if(!confirm('ยืนยันล้างข้อมูลทดสอบทั้งหมด?\n\nจะลบ Quotation, Sales Order และคำขออนุมัติส่วนลดที่สร้างไว้ทั้งหมด\n(ไม่กระทบการตั้งค่า Widget และธีมที่เลือกไว้)')) return;
- try{
-  localStorage.removeItem(QUOTATIONS_KEY);
-  localStorage.removeItem(SALES_ORDERS_KEY);
-  localStorage.removeItem(DISCOUNT_APPROVALS_KEY);
- }catch(e){}
+ TMTStore.clearTransactions();
  alert('ล้างข้อมูลทดสอบเรียบร้อยแล้ว');
  location.reload();
 }
 function logout(){
- sessionStorage.removeItem(SESSION_KEY);
- sessionStorage.removeItem(SESSION_ROLE_KEY);
+ TMTStore.session.clear();
  document.getElementById('dashboardScreen').classList.add('hidden');
  document.getElementById('loginScreen').classList.remove('hidden');
  document.getElementById('loginUser').value='';
@@ -1110,8 +1066,8 @@ document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==
 document.getElementById('loginUser').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
 
 (function initSession(){
- const saved = sessionStorage.getItem(SESSION_KEY);
- const role = sessionStorage.getItem(SESSION_ROLE_KEY) || 'sales';
+ const saved = TMTStore.session.getUser();
+ const role = TMTStore.session.getRole() || 'sales';
  if(saved) showDashboard(saved, role);
 })();
 </script>

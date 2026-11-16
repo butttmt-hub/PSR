@@ -76,6 +76,46 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .price-table th{color:var(--muted);font-weight:700}
 .price-table tfoot td{border-top:2px solid var(--line);border-bottom:0;font-weight:800;font-size:14px;color:var(--blue)}
 .price-summary.empty{color:var(--muted);font-size:12px;text-align:center;padding:18px;border-style:dashed}
+/* Handover: view แยกตามแผนก */
+.ho-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.ho-tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+.ho-tab:hover{border-color:var(--blue)}
+.ho-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ho-tab .ho-cnt{background:#F59E0B;color:#fff;border-radius:999px;font-size:10.5px;min-width:18px;padding:1px 6px;text-align:center}
+.ho-tab.active .ho-cnt{background:#fff;color:#B45309}
+.ho-tab .ho-cnt.zero{background:#D7E3EE;color:#5B7083}
+.ho-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.ho-head .ho-ico{font-size:28px;line-height:1}
+.ho-head h4{margin:0;font-size:17px;color:var(--blue)}
+.ho-head .ho-goal{font-size:12px;color:var(--muted);margin-top:2px}
+.ho-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.ho-kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.ho-kpi .ho-kv{font-size:16px;font-weight:800;color:#12304A;word-break:break-word}
+.ho-kpi .ho-kl{font-size:11px;color:var(--muted);margin-top:2px}
+.ho-kpi.warn{background:#FFF7ED;border-color:#F5C99B}
+.ho-kpi.warn .ho-kv{color:#B45309}
+.ho-sec{margin-bottom:14px}
+.ho-sec h5{margin:0 0 8px;font-size:12.5px;color:var(--blue);text-transform:none}
+.ho-att{border-radius:10px;padding:10px 14px;font-size:12px;margin-bottom:14px;line-height:1.6}
+.ho-att.ok{background:#EAF7EE;color:#14632E}
+.ho-att.warn{background:#FFF3E8;color:#9A4C0B}
+.ho-att ul{margin:4px 0 0;padding-left:18px}
+.ho-item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.ho-item-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;margin-bottom:10px}
+.ho-item-h strong{color:#12304A;font-size:13px}
+.ho-item-h .ho-pill{background:#EAF3FA;color:var(--blue);border-radius:999px;padding:2px 9px;font-weight:700}
+.ho-fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.ho-f{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;background:#FBFDFF}
+.ho-f.x{background:#FFF7ED;border-color:#F5C99B}
+.ho-fl{color:var(--muted);flex:0 0 38%;font-weight:700}
+.ho-fv{flex:1;word-break:break-word}
+.ho-tbl{overflow:auto;margin-bottom:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+.ho-tbl .num{text-align:right;white-space:nowrap}
+.ho-info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px}
+.ho-info div span{color:var(--muted);display:inline-block;min-width:110px}
+.owner-card.clickable{cursor:pointer}.owner-card.clickable:hover{border-color:var(--blue)}
+@media(max-width:680px){.ho-fgrid,.ho-info{grid-template-columns:1fr}}
+@media print{body.handover-view .screen[data-screen="9"]{display:block!important}body.handover-view .ho-tabs,body.handover-view .section-title{display:none!important}}
 .quote-doc{background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px;font-size:12.5px;color:#222}
 .quote-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
 .quote-logo{display:flex;align-items:center;gap:10px}
@@ -428,7 +468,8 @@ body.embedded-mode main{width:100%;margin:0 auto;padding:16px}
           <h3 id="handoverTitle">Requirement Handover</h3>
           <div id="handoverMeta" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
           <div id="priceSummaryBox" style="margin-bottom:16px"></div>
-          <div class="owner-grid" id="ownerGrid"></div>
+          <div class="ho-tabs" id="hoTabs"></div>
+          <div id="ownerGrid"></div>
         </div>
         <div class="notice danger" id="commitGate" style="margin-top:16px"></div>
       </div>
@@ -1408,23 +1449,234 @@ function renderHandover(){
     <tfoot><tr><td colspan="5" style="text-align:right">Grand Total</td><td>${fmtMoney(grandTotal)} บาท</td></tr></tfoot></table></div>`;
   }
  }
- const owners=['Planning','Production','QA','Material Sourcing','Procurement','Warehouse','Transport','Sales Admin','Finance','Billing'];
- const grid=document.getElementById('ownerGrid');
- grid.innerHTML=owners.map(owner=>{
-  const sharedItems=fieldDefs.filter(f=>!PER_ITEM_CATS.includes(f.cat) && f.owner.includes(owner) && fieldState[f.id].status!=='STD');
-  const specItems=[];
-  productCart.forEach(item=>{
-   if(!item.specState) return;
-   productFieldDefs[item.family].filter(f=>PER_ITEM_CATS.includes(f.cat)).forEach(f=>{
-    if(f.owner.includes(owner) && item.specState[f.id].status!=='STD') specItems.push({f,item});
-   });
-  });
-  const total=sharedItems.length+specItems.length;
-  const listHtml=total?`<ul>${specItems.map(({f,item})=>`<li><strong>[${esc(item.code)}] ${f.label.split('/')[0]}</strong>: ${esc(itemCurrentSelection(item,f))} <span class="badge ${statusClass(item.specState[f.id].status)}">${statusText(item.specState[f.id].status)}</span></li>`).join('')}${sharedItems.map(f=>`<li><strong>${f.label.split('/')[0]}</strong>: ${esc(currentSelection(f))} <span class="badge ${statusClass(fieldState[f.id].status)}">${statusText(fieldState[f.id].status)}</span></li>`).join('')}</ul>`:'<div style="font-size:11px;color:var(--muted)">No extra/review item</div>';
-  return `<div class="owner-card ${total?'':'empty'}"><h4>${owner}</h4>${listHtml}</div>`;
- }).join('');
+ renderHandoverOwners();
  const ov=overallStatus();document.getElementById('commitGate').innerHTML=ov==='STD'?'<strong>Final Gate:</strong> All requirements are STD. Proceed normal process and submit structured handover.':ov==='EXTRA'?'<strong>Final Gate:</strong> Extra requirement exists. Request Operation review before final commitment where applicable.':'<strong>Final Gate:</strong> REVIEW REQUIRED. ห้าม Commit รายการที่ถูก Flag ก่อน Operation Confirm.';
  document.getElementById('commitGate').className='notice '+(ov==='STD'?'info':ov==='EXTRA'?'warn':'danger');
+}
+// ===== Handover: view แยกตามแผนก =====
+let handoverRec=null;      // S/O record เมื่อเปิดจากหน้า S/O (null ตอนอยู่ใน flow ออกใบเสนอราคา)
+let handoverTab='overview';
+const HO_DEPTS=[
+ {k:'Planning',icon:'🗓️',th:'วางแผนการผลิต',goal:'จัดแผนผลิตและกำลังการผลิตให้ทันวันส่ง'},
+ {k:'Production',icon:'🏭',th:'ฝ่ายผลิต',goal:'ผลิตตามสเปค ขนาด Tolerance และคุณภาพผิวที่ลูกค้ากำหนด'},
+ {k:'QA',icon:'🔬',th:'ประกันคุณภาพ',goal:'ตรวจสอบเกรด/คุณสมบัติ และเตรียมใบรับรองที่ลูกค้าต้องการ'},
+ {k:'Material Sourcing',icon:'🧲',th:'จัดหาวัตถุดิบ',goal:'จัดหาวัตถุดิบตาม Mill เกรด ความหนา และความกว้าง'},
+ {k:'Procurement',icon:'🛒',th:'จัดซื้อ',goal:'สั่งซื้อวัตถุดิบ และเปิด Material Code ที่ยังไม่มีในระบบ'},
+ {k:'Warehouse',icon:'📦',th:'คลังสินค้า',goal:'แพ็ก ติดป้าย จัดเรียง และโหลดขึ้นรถตามที่กำหนด'},
+ {k:'Transport',icon:'🚚',th:'ขนส่ง',goal:'จัดรถ เวลาส่ง และเงื่อนไขหน้างานปลายทาง'},
+ {k:'Sales Admin',icon:'🗂️',th:'ธุรการขาย',goal:'ออก S/O เอกสารส่งมอบ และประสานงานลูกค้า'},
+ {k:'Finance',icon:'💰',th:'การเงิน',goal:'ตรวจสอบราคา ส่วนลด เครดิต และเงื่อนไขการชำระเงิน'},
+ {k:'Billing',icon:'🧾',th:'วางบิล',goal:'จัดชุดเอกสารวางบิลตามที่ลูกค้ากำหนด'}
+];
+function setHandoverTab(k){ handoverTab=k; renderHandoverOwners(); }
+
+// ---- ข้อมูลกลางที่ทุกแผนกใช้ ----
+function hoCtx(){
+ const rec=handoverRec, qe=quoteExtra||{};
+ const items=productCart.map((item,i)=>{
+  const w=+(item.qty*item.weight).toFixed(2);
+  const sur=computeExtraSurchargeForItem(item);
+  const priceKg=item.pricePcs==='-'?0:+(item.priceKg*(1+sur.pct/100)).toFixed(2);
+  return {item,i,w,sur,priceKg,amount:+(w*priceKg).toFixed(2)};
+ });
+ const totalW=+items.reduce((s,x)=>s+x.w,0).toFixed(2);
+ const totalQty=items.reduce((s,x)=>s+x.item.qty,0);
+ const subtotal=+items.reduce((s,x)=>s+x.amount,0).toFixed(2);
+ const disc=+(subtotal*(qe.discountPct||0)/100).toFixed(2);
+ const net=+(subtotal-disc).toFixed(2);
+ const vat=+(net*0.07).toFixed(2);
+ const delivery=(rec&&rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?soFmtDate(rec.deliveryDate+'T00:00:00'):(qe.deliveryDate||'รอแจ้งวันส่ง');
+ return {rec,qe,items,totalW,totalQty,subtotal,disc,net,vat,total:+(net+vat).toFixed(2),delivery,
+  plants:[...new Set(items.map(x=>x.item.plant||'1200'))],
+  customer:document.getElementById('customer').value||'-',
+  sales:document.getElementById('sales').value||'-',
+  project:document.getElementById('project').value||'-',
+  refNo:document.getElementById('refNo').value||'-'};
+}
+const hoNum=(n)=>(+n||0).toLocaleString('en-US',{maximumFractionDigits:2});
+function hoItemFields(item,owner){
+ if(!item.specState) return [];
+ return productFieldDefs[item.family].filter(f=>PER_ITEM_CATS.includes(f.cat)&&f.owner.includes(owner)&&item.specState[f.id]);
+}
+function hoSharedFields(owner){ return fieldDefs.filter(f=>!PER_ITEM_CATS.includes(f.cat)&&f.owner.includes(owner)&&fieldState[f.id]); }
+// ค่า Spec ของ item จาก id ที่เป็นไปได้ (Cut Sheet / Tube ใช้ id ต่างกัน) พร้อม badge เมื่อเป็น Extra
+function hoSpecIds(item,ids){ return ids.filter(i=>item.specState&&item.specState[i]); }
+function hoSpec(item,ids,plain){
+ const found=hoSpecIds(item,ids); if(!found.length) return '-';
+ return found.map(id=>{
+  const f=productFieldDefs[item.family].find(x=>x.id===id);
+  const txt=esc(itemCurrentSelection(item,f));
+  return (!plain&&item.specState[id].status!=='STD')?`<span style="color:#B45309;font-weight:700">${txt}</span>`:txt;
+ }).join(' · ');
+}
+function hoFieldRow(label,val,status){
+ return `<div class="ho-f ${status==='STD'?'':'x'}"><span class="ho-fl">${esc(label.split(' / ')[0])}</span><span class="ho-fv">${esc(val)}</span><span class="badge ${statusClass(status)}">${statusText(status)}</span></div>`;
+}
+function hoKpis(list){
+ return `<div class="ho-kpis">${list.map(([l,v,t])=>`<div class="ho-kpi ${t||''}"><div class="ho-kv">${v}</div><div class="ho-kl">${l}</div></div>`).join('')}</div>`;
+}
+function hoTable(head,rows,foot,numCols){
+ const nc=numCols||[];
+ const cell=(c,i,tag)=>`<${tag} class="${nc.includes(i)?'num':''}">${c}</${tag}>`;
+ return `<div class="ho-tbl"><table class="price-table"><thead><tr>${head.map((h,i)=>cell(h,i,'th')).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map((c,i)=>cell(c,i,'td')).join('')}</tr>`).join('')}</tbody>${foot?`<tfoot>${foot}</tfoot>`:''}</table></div>`;
+}
+function hoInfo(pairs){ return `<div class="ho-info">${pairs.map(([l,v])=>`<div><span>${l}</span><strong>${v}</strong></div>`).join('')}</div>`; }
+function hoSec(title,body){ return body?`<div class="ho-sec"><h5>${title}</h5>${body}</div>`:''; }
+// รายการ Extra/Review ที่แผนกนี้ต้องยืนยัน
+function hoExtraEntries(c,owner){
+ const out=[];
+ c.items.forEach(({item})=>hoItemFields(item,owner).forEach(f=>{
+  const st=item.specState[f.id];
+  if(st.status!=='STD') out.push({code:item.code,label:f.label.split(' / ')[0],val:itemCurrentSelection(item,f),status:st.status});
+ }));
+ hoSharedFields(owner).forEach(f=>{
+  const st=fieldState[f.id];
+  if(st.status!=='STD') out.push({code:null,label:f.label.split(' / ')[0],val:currentSelection(f),status:st.status});
+ });
+ return out;
+}
+function hoCount(owner){ return hoExtraEntries(hoCtx(),owner).length; }
+function hoAttention(c,owner){
+ const ex=hoExtraEntries(c,owner);
+ if(!ex.length) return `<div class="ho-att ok">✅ ไม่มีข้อกำหนดพิเศษสำหรับแผนกนี้ — ดำเนินการตามมาตรฐาน</div>`;
+ return `<div class="ho-att warn"><strong>⚠️ ต้องยืนยัน ${ex.length} รายการ (Extra / Review)</strong><ul>${ex.map(e=>`<li>${e.code?`<strong>[${esc(e.code)}]</strong> `:''}${esc(e.label)}: ${esc(e.val)} <span class="badge ${statusClass(e.status)}">${statusText(e.status)}</span></li>`).join('')}</ul></div>`;
+}
+function hoSpecCards(c,owner){
+ return c.items.map(({item,w})=>{
+  const fs=hoItemFields(item,owner); if(!fs.length) return '';
+  const nx=fs.filter(f=>item.specState[f.id].status!=='STD').length;
+  return `<div class="ho-item"><div class="ho-item-h"><strong>${esc(item.code)}</strong><span>${esc(item.desc)}</span><span class="ho-pill">${item.qty.toLocaleString()} pcs · ${hoNum(w)} kg</span>${nx?`<span class="badge extra">${nx} Extra</span>`:'<span class="badge std">STD ทั้งหมด</span>'}</div><div class="ho-fgrid">${fs.map(f=>hoFieldRow(f.label,itemCurrentSelection(item,f),item.specState[f.id].status)).join('')}</div></div>`;
+ }).join('');
+}
+function hoSharedBlock(owner,title){
+ const fs=hoSharedFields(owner); if(!fs.length) return '';
+ return hoSec(title,`<div class="ho-fgrid">${fs.map(f=>hoFieldRow(f.label,currentSelection(f),fieldState[f.id].status)).join('')}</div>`);
+}
+const hoSizeLabel=(item)=>item.thickness!=null&&item.width!=null?`${item.thickness.toFixed(2)} × ${item.width} mm`:esc(item.sizeLabel||'-');
+const hoStockLabel=(item)=>item.type==='Stock'?'Stock':'ผลิตตามสั่ง';
+function hoGroupBy(c,keyFn){
+ const m=new Map();
+ c.items.forEach(x=>{ const k=keyFn(x); if(!m.has(k)) m.set(k,{rows:[],qty:0,w:0}); const g=m.get(k); g.rows.push(x); g.qty+=x.item.qty; g.w+=x.w; });
+ return [...m.entries()];
+}
+
+// ---- มุมมองของแต่ละแผนก ----
+const HO_VIEWS={
+ 'Planning':(c)=>
+  hoKpis([['รายการสินค้า',c.items.length],['จำนวนรวม (pcs)',c.totalQty.toLocaleString()],['น้ำหนักรวม (kg)',hoNum(c.totalW)],['กำหนดส่งมอบ',esc(c.delivery),/รอแจ้ง/.test(c.delivery)?'warn':''],['Plant ผลิต/จัดส่ง',esc(c.plants.join(', ')||'-')]])
+  +hoAttention(c,'Planning')
+  +hoSec('แผนผลิตรายการสินค้า',hoTable(['#','Material Code','รายละเอียด','Plant','ประเภท','จำนวน (pcs)','น้ำหนัก (kg)','Mill','Aiming'],
+    c.items.map(({item,i,w})=>[i+1,esc(item.code),esc(item.desc),esc(item.plant||'1200'),hoStockLabel(item),item.qty.toLocaleString(),hoNum(w),hoSpec(item,['mill','tubeMill']),hoSpec(item,['aiming','tubeAiming'])]),null,[5,6])
+  )+hoSec('สเปคที่ Planning รับผิดชอบ (ต่อรายการ)',hoSpecCards(c,'Planning')),
+
+ 'Production':(c)=>{
+  const nx=c.items.reduce((s,{item})=>s+hoItemFields(item,'Production').filter(f=>item.specState[f.id].status!=='STD').length,0);
+  return hoKpis([['รายการที่ต้องผลิต',c.items.length],['น้ำหนักรวม (kg)',hoNum(c.totalW)],['ข้อกำหนดพิเศษ (Extra)',nx,nx?'warn':''],['กำหนดส่งมอบ',esc(c.delivery)]])
+  +hoAttention(c,'Production')
+  +hoSec('ใบสั่งผลิต — สเปคต่อรายการ',hoSpecCards(c,'Production'));
+ },
+
+ 'QA':(c)=>{
+  const grades=[...new Set(c.items.map(({item})=>itemGrade(item)))];
+  const cert=hoSharedFields('QA').find(f=>/^(tube)?cert$/i.test(f.id));
+  return hoKpis([['เกรดที่เกี่ยวข้อง',esc(grades.join(', ')||'-')],['ใบรับรองที่ต้องออก',esc(cert?currentSelection(cert):'-'),cert&&fieldState[cert.id].status!=='STD'?'warn':''],['รายการตรวจ',c.items.length]])
+  +hoAttention(c,'QA')
+  +hoSec('ตารางตรวจสอบคุณภาพ',hoTable(['Material Code','เกรด','Chem. & Mech.','Thickness Cert.','Tolerance','Appearance'],
+    c.items.map(({item})=>[esc(item.code),esc(itemGrade(item)),hoSpec(item,['chemMech','tubeChemMech']),hoSpec(item,['thkCert']),hoSpec(item,['thkTol','lengthTol','tubeODTol','tubeThkTol','tubeLengthTol']),hoSpec(item,['appearance'])]))
+  )+hoSharedBlock('QA','เอกสาร / ใบรับรอง')+hoSec('สเปคที่ QA รับผิดชอบ (ต่อรายการ)',hoSpecCards(c,'QA'));
+ },
+
+ 'Material Sourcing':(c)=>{
+  const groups=hoGroupBy(c,({item})=>[hoSpec(item,['mill','tubeMill'],true),itemGrade(item),hoSizeLabel(item)].join('||'));
+  return hoKpis([['กลุ่มวัตถุดิบ',groups.length],['น้ำหนักวัตถุดิบรวม (kg)',hoNum(c.totalW)],['กำหนดส่งมอบ',esc(c.delivery)]])
+  +hoAttention(c,'Material Sourcing')
+  +hoSec('ความต้องการวัตถุดิบ (รวมตาม Mill / เกรด / ขนาด)',hoTable(['Mill','เกรด','ขนาด (หนา × กว้าง)','จำนวน (pcs)','น้ำหนัก (kg)','รายการอ้างอิง'],
+    groups.map(([k,g])=>{ const p=k.split('||'); return [p[0],esc(p[1]),p[2],g.qty.toLocaleString(),hoNum(g.w),g.rows.map(x=>esc(x.item.code)).join('<br>')]; }),
+    `<tr><td colspan="4" style="text-align:right">รวม</td><td class="num">${hoNum(c.totalW)}</td><td></td></tr>`,[3,4]))
+  +hoSec('สเปคที่ Material Sourcing รับผิดชอบ (ต่อรายการ)',hoSpecCards(c,'Material Sourcing'));
+ },
+
+ 'Procurement':(c)=>{
+  const groups=hoGroupBy(c,({item})=>itemGrade(item));
+  const other=c.items.filter(({item})=>hoItemFields(item,'Procurement').some(f=>item.specState[f.id].status!=='STD')).length;
+  return hoKpis([['เกรดที่ต้องสั่ง',groups.length],['น้ำหนักรวม (kg)',hoNum(c.totalW)],['ต้องเปิด Material Code ใหม่',other,other?'warn':'']])
+  +hoAttention(c,'Procurement')
+  +hoSec('รายการสั่งซื้อตามเกรด',hoTable(['เกรด','จำนวนรายการ','จำนวน (pcs)','น้ำหนัก (kg)','Material Code'],
+    groups.map(([g,v])=>[esc(g),v.rows.length,v.qty.toLocaleString(),hoNum(v.w),v.rows.map(x=>esc(x.item.code)).join('<br>')]),null,[1,2,3]))
+  +hoSec('สเปคที่ Procurement รับผิดชอบ (ต่อรายการ)',hoSpecCards(c,'Procurement'));
+ },
+
+ 'Warehouse':(c)=>{
+  const nx=c.items.reduce((s,{item})=>s+hoItemFields(item,'Warehouse').filter(f=>item.specState[f.id].status!=='STD').length,0);
+  return hoKpis([['จำนวนรวม (pcs)',c.totalQty.toLocaleString()],['น้ำหนักรวม (kg)',hoNum(c.totalW)],['ข้อกำหนดแพ็ก/โหลดพิเศษ',nx+hoSharedFields('Warehouse').filter(f=>fieldState[f.id].status!=='STD').length,nx?'warn':''],['Plant',esc(c.plants.join(', ')||'-')]])
+  +hoAttention(c,'Warehouse')
+  +hoSec('ใบเตรียมสินค้า / แพ็ก',hoTable(['Material Code','จำนวน (pcs)','น้ำหนัก (kg)','การแพ็ก','Tag / Sticker','Pcs/Bundle','Marking'],
+    c.items.map(({item,w})=>[esc(item.code),item.qty.toLocaleString(),hoNum(w),hoSpec(item,['packing','tubePackingType','tubeStrap']),hoSpec(item,['sticker','tubeSticker']),hoSpec(item,['bundle','tubePcsPack','tubePcsPackExtra']),hoSpec(item,['marking','tubeMarking'])]),null,[1,2])
+  )+hoSharedBlock('Warehouse','การจัดเรียงและโหลด');
+ },
+
+ 'Transport':(c)=>{
+  const byPlant=hoGroupBy(c,({item})=>item.plant||'1200');
+  const qe=c.qe;
+  return hoKpis([['วันส่งมอบ',esc(c.delivery),/รอแจ้ง/.test(c.delivery)?'warn':''],['น้ำหนักรวม (kg)',hoNum(c.totalW)],['จำนวนรวม (pcs)',c.totalQty.toLocaleString()],['ต้นทาง (Plant)',esc(c.plants.join(', ')||'-')]])
+  +hoInfo([['ลูกค้า',esc(c.customer)],['สถานที่ส่ง',esc(qe.deliveryPlace||'-')],['ผู้ติดต่อ',esc(qe.attention||'-')],['โทร',esc(qe.tel||'-')]])
+  +hoAttention(c,'Transport')
+  +hoSec('น้ำหนักที่ต้องขนส่งแยกตาม Plant',hoTable(['Plant ต้นทาง','จำนวนรายการ','จำนวน (pcs)','น้ำหนัก (kg)'],byPlant.map(([p,g])=>[esc(p),g.rows.length,g.qty.toLocaleString(),hoNum(g.w)]),null,[1,2,3]))
+  +hoSharedBlock('Transport','เงื่อนไขรถและการส่งของ')
+  +hoSec('ข้อกำหนดต่อรายการ (มัด/แพ็ก)',hoSpecCards(c,'Transport'));
+ },
+
+ 'Sales Admin':(c)=>{
+  const r=c.rec;
+  return hoKpis([['ลูกค้า',esc(c.customer)],['มูลค่ารวม VAT (บาท)',fmtMoney(c.total)],['กำหนดส่งมอบ',esc(c.delivery),/รอแจ้ง/.test(c.delivery)?'warn':''],['Payment Term',esc(c.qe.paymentTerm||'-')]])
+  +hoInfo([['เลขที่ S/O',esc(r?r.soNo:'ยังไม่ออก S/O')],['เลขที่ Quotation',esc(r?(r.quotationNo||'-'):'-')],['PO No.',esc(r&&r.poNo?r.poNo:'-')],['ไฟล์ PO',esc(r&&r.poAttachment?r.poAttachment.name:'ยังไม่แนบ')],['Project',esc(c.project)],['Ref No.',esc(c.refNo)],['Sales',esc(c.sales)],['สถานที่ส่ง',esc(c.qe.deliveryPlace||'-')]])
+  +hoAttention(c,'Sales Admin')
+  +hoSharedBlock('Sales Admin','เอกสารที่ต้องจัดทำ / ส่งมอบ');
+ },
+
+ 'Finance':(c)=>{
+  const dp=c.qe.discountPct||0;
+  return hoKpis([['ยอดก่อน VAT (บาท)',fmtMoney(c.net)],['ส่วนลด',dp?`${dp}% (${fmtMoney(c.disc)})`:'-',dp?'warn':''],['ยอดรวม VAT 7% (บาท)',fmtMoney(c.total)],['Payment Term',esc(c.qe.paymentTerm||'-')]])
+  +hoAttention(c,'Finance')
+  +hoSec('สรุปมูลค่าต่อรายการ',hoTable(['Material Code','จำนวน (pcs)','น้ำหนัก (kg)','ราคา/kg','Extra Surcharge','มูลค่า (บาท)'],
+    c.items.map(({item,w,sur,priceKg,amount})=>[esc(item.code),item.qty.toLocaleString(),hoNum(w),priceKg?fmtMoney(priceKg):'ยังไม่มีราคา',sur.pct?`+${sur.pct}%`:'-',priceKg?fmtMoney(amount):'-']),
+    `<tr><td colspan="5" class="num">รวมก่อนส่วนลด</td><td class="num">${fmtMoney(c.subtotal)}</td></tr>`
+    +(dp?`<tr><td colspan="5" class="num">ส่วนลด ${dp}%</td><td class="num">-${fmtMoney(c.disc)}</td></tr>`:'')
+    +`<tr><td colspan="5" class="num">ยอดสุทธิ</td><td class="num">${fmtMoney(c.net)}</td></tr><tr><td colspan="5" class="num">VAT 7%</td><td class="num">${fmtMoney(c.vat)}</td></tr><tr><td colspan="5" class="num">รวมทั้งสิ้น</td><td class="num">${fmtMoney(c.total)}</td></tr>`,[1,2,3,4,5]))
+  +hoSharedBlock('Finance','เอกสารที่เกี่ยวกับการเงิน');
+ },
+
+ 'Billing':(c)=>{
+  const r=c.rec, fs=fieldState;
+  const docF=fieldDefs.find(f=>/^(tube)?deliveryDoc$/i.test(f.id)), certF=fieldDefs.find(f=>/^(tube)?cert$/i.test(f.id));
+  const chk=[['ใบกำกับภาษี / Invoice','ตามมาตรฐาน TMT'],['ใบส่งของ',docF&&fs[docF.id]?currentSelection(docF):'-'],['ใบรับรอง',certF&&fs[certF.id]?currentSelection(certF):'-'],['PO ลูกค้า',r&&r.poNo?`PO No. ${esc(r.poNo)}`:'-']];
+  return hoKpis([['ลูกค้า',esc(c.customer)],['ยอดวางบิล รวม VAT (บาท)',fmtMoney(c.total)],['Payment Term',esc(c.qe.paymentTerm||'-')],['PO No.',esc(r&&r.poNo?r.poNo:'-')]])
+  +hoAttention(c,'Billing')
+  +hoSec('ชุดเอกสารวางบิล',hoTable(['เอกสาร','รายละเอียดที่ลูกค้าต้องการ'],chk.map(([a,b])=>[a,esc(b)])))
+  +hoSharedBlock('Billing','เงื่อนไขเอกสารที่เกี่ยวข้อง');
+ }
+};
+
+function renderHandoverOwners(){
+ const grid=document.getElementById('ownerGrid'), tabs=document.getElementById('hoTabs'); if(!grid||!tabs) return;
+ const c=hoCtx();
+ const psb=document.getElementById('priceSummaryBox');
+ if(!HO_DEPTS.some(d=>d.k===handoverTab)) handoverTab='overview';
+ if(psb) psb.style.display=handoverTab==='overview'?'':'none';
+ const counts={}; HO_DEPTS.forEach(d=>counts[d.k]=hoExtraEntries(c,d.k).length);
+ tabs.innerHTML=`<button class="ho-tab ${handoverTab==='overview'?'active':''}" onclick="setHandoverTab('overview')">📋 ภาพรวม</button>`
+  +HO_DEPTS.map(d=>`<button class="ho-tab ${handoverTab===d.k?'active':''}" onclick="setHandoverTab('${d.k}')">${d.icon} ${d.k}<span class="ho-cnt ${counts[d.k]?'':'zero'}">${counts[d.k]}</span></button>`).join('');
+ if(handoverTab==='overview'){
+  grid.innerHTML=`<div class="owner-grid">${HO_DEPTS.map(d=>{
+   const ex=hoExtraEntries(c,d.k);
+   const listHtml=ex.length?`<ul>${ex.map(e=>`<li>${e.code?`<strong>[${esc(e.code)}]</strong> `:''}<strong>${esc(e.label)}</strong>: ${esc(e.val)} <span class="badge ${statusClass(e.status)}">${statusText(e.status)}</span></li>`).join('')}</ul>`:'<div style="font-size:11px;color:var(--muted)">No extra/review item</div>';
+   return `<div class="owner-card clickable ${ex.length?'':'empty'}" onclick="setHandoverTab('${d.k}')"><h4>${d.icon} ${d.k} <span style="font-size:11px;font-weight:600;color:var(--muted)">· ${d.th}</span></h4>${listHtml}</div>`;
+  }).join('')}</div>`;
+  return;
+ }
+ const d=HO_DEPTS.find(x=>x.k===handoverTab);
+ grid.innerHTML=`<div class="ho-head"><div class="ho-ico">${d.icon}</div><div><h4>${d.k} · ${d.th}</h4><div class="ho-goal">${d.goal}</div></div></div>`
+  +(c.items.length?HO_VIEWS[d.k](c):`<div class="ho-att warn">ยังไม่มีสินค้าในรายการ — กลับไป Step 1 เพื่อเลือก Product ก่อน</div>`);
 }
 let quoteExtra={attention:'',tel:'',paymentTerm:'',deliveryPlace:'',deliveryDate:'',validity:'',discountPct:0};
 let quoteBaseTotal=0;
@@ -2306,7 +2558,8 @@ function loadSOHandoverView(rec){
  document.getElementById('refNo').value=rec.refNo||'';
  document.getElementById('customer').value=rec.customer||'';
  document.getElementById('sales').value=rec.sales||'';
- document.body.classList.add('view-mode');
+ document.body.classList.add('view-mode','handover-view');
+ handoverRec=rec;
  showScreen(9);
  const bar=document.getElementById('handoverViewBar');
  if(bar){

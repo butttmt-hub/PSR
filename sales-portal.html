@@ -352,7 +352,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       </div>
       <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
       <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b></div>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Planning: <b>Plan</b> / <b>P123</b></div>
     </div>
   </div>
 </div>
@@ -385,6 +385,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
     </div>
     <div id="mgr01DashboardView" class="hidden"></div>
     <div id="approvalDashboardView" class="hidden"></div>
+    <div id="planningDashboardView" class="hidden"></div>
   </main>
 </div>
 
@@ -447,6 +448,7 @@ const CREDENTIALS_LIST = [
  { username: 'Sale01', password: 'S123', role: 'sales' },
  { username: 'Mgr01', password: 'M123', role: 'mgr01' },
  { username: 'Apv01', password: 'A123', role: 'approval' },
+ { username: 'Plan', password: 'P123', role: 'planning' },
 ];
 async function attemptLoginFirestore(u, p, errEl){
  const btn = document.querySelector('.login-btn');
@@ -482,6 +484,7 @@ const DASHBOARD_BRAND_BY_ROLE = {
  sales: 'Sales Performance Dashboard',
  mgr01: 'Approval Dashboard (Mgr01)',
  approval: 'S/O Approval Dashboard',
+ planning: 'Planning Dashboard',
 };
 function showDashboard(user, role){
  document.getElementById('loginScreen').classList.add('hidden');
@@ -496,8 +499,11 @@ function showDashboard(user, role){
  document.getElementById('salesDashboardView').classList.toggle('hidden', role!=='sales');
  document.getElementById('mgr01DashboardView').classList.toggle('hidden', role!=='mgr01');
  document.getElementById('approvalDashboardView').classList.toggle('hidden', role!=='approval');
+ document.getElementById('planningDashboardView').classList.toggle('hidden', role!=='planning');
+ document.getElementById('salesDashboardView').classList.toggle('hidden', role==='mgr01'||role==='approval'||role==='planning');
  if(role==='mgr01') renderMgr01Dashboard();
  else if(role==='approval') renderApprovalDashboard();
+ else if(role==='planning') renderPlanningDashboard();
  else renderWidgetGrid();
 }
 
@@ -836,6 +842,74 @@ function renderSOApprovalSectionHTML(){
   contentHtml:`${summaryHtml}<div class="appr-list">${rowsHtml}</div>`
  });
 }
+// ---------- Planning Dashboard ----------
+// รายการ S/O ที่ Apv01 อนุมัติแล้ว เรียงตามความเร่งด่วน พร้อมสรุปว่าต้องผลิตเพิ่มเท่าไร (เทียบสต็อก ณ วันออกใบเสนอราคา)
+function planInfo(rec){
+ let kg=0, shortKg=0, shortPcs=0;
+ (rec.cart||[]).forEach(i=>{
+  kg+=i.qty*i.weight;
+  const remain=Number.isFinite(i.remain)?i.remain:null;
+  const short=(i.type!=='Stock'||remain===null)?i.qty:Math.max(i.qty-Math.max(remain,0),0);
+  shortPcs+=short; shortKg+=short*i.weight;
+ });
+ return {kg,shortKg,shortPcs,days:approvalUrgencyDays(rec)};
+}
+let planCardFilter=null;
+function setPlanCardFilter(key){
+ planCardFilter=(planCardFilter===key||key===null)?null:key;
+ renderPlanningDashboard();
+}
+function renderPlanningDashboard(){
+ const all=loadSalesOrders().filter(s=>s.status==='approved').map(rec=>({rec,...planInfo(rec)}));
+ const cls={
+  urgent:x=>x.days!==null&&x.days<=7,
+  short:x=>x.shortPcs>0,
+  noDate:x=>x.days===null
+ };
+ const count=k=>all.filter(cls[k]).length;
+ const list=(planCardFilter?all.filter(cls[planCardFilter]):all).slice().sort((a,b)=>{
+  if(a.days!==null&&b.days!==null) return a.days-b.days;
+  if(a.days!==null) return -1;
+  if(b.days!==null) return 1;
+  return new Date(b.rec.approvedAt||b.rec.createdAt||0)-new Date(a.rec.approvedAt||a.rec.createdAt||0);
+ });
+ const act=k=>planCardFilter===k?' active':'';
+ const summary=`<div class="appr-summary">
+  <div class="appr-stat${planCardFilter===null?' active':''}" onclick="setPlanCardFilter(null)"><div class="appr-stat-num">${all.length}</div><div class="appr-stat-lbl">S/O ทั้งหมดที่อนุมัติแล้ว</div></div>
+  <div class="appr-stat${count('urgent')>0?' urgent':''}${act('urgent')}" onclick="setPlanCardFilter('urgent')"><div class="appr-stat-num">${count('urgent')}</div><div class="appr-stat-lbl">ส่งภายใน 7 วัน / เลยกำหนด</div></div>
+  <div class="appr-stat${count('short')>0?' urgent':''}${act('short')}" onclick="setPlanCardFilter('short')"><div class="appr-stat-num">${count('short')}</div><div class="appr-stat-lbl">ต้องผลิตเพิ่ม</div></div>
+  <div class="appr-stat${act('noDate')}" onclick="setPlanCardFilter('noDate')"><div class="appr-stat-num">${count('noDate')}</div><div class="appr-stat-lbl">รอแจ้งวันส่ง</div></div>
+ </div>`;
+ const rows=list.length?list.map(({rec,kg,shortKg,shortPcs,days})=>{
+  const initial=esc((rec.customer||'?').charAt(0));
+  let dlv;
+  if(days!==null){
+   const dLabel=esc(new Date(rec.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+   const diff=days<0?`เลยกำหนด ${Math.abs(days)} วัน`:days===0?'ส่งวันนี้':`อีก ${days} วัน`;
+   dlv=`<span class="appr-delivery-badge${days<=7?' urgent':''}">📅 ${dLabel} (${diff})</span>`;
+  } else dlv=`<span class="appr-delivery-badge pending">🕒 รอแจ้งวันที่ส่ง</span>`;
+  const prod=shortPcs>0
+   ?`<span class="appr-delivery-badge urgent">🏭 ต้องผลิตเพิ่ม ${shortPcs.toLocaleString()} pcs · ${Math.round(shortKg).toLocaleString()} kg</span>`
+   :`<span class="appr-delivery-badge">✅ สต็อกพอส่ง</span>`;
+  const dt=esc(new Date(rec.approvedAt||rec.createdAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+  return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}&handover=1&tab=Planning">
+   <div class="appr-avatar">${initial}</div>
+   <div class="appr-main">
+    <div class="appr-subject">Sales Order <strong>${esc(rec.soNo)}</strong> <span style="font-weight:400;color:var(--muted)">(PO: ${esc(rec.poNo||'-')})</span></div>
+    <div class="appr-snippet">${esc(rec.customer||'-')} · ${(rec.cart||[]).length} รายการ · ${Math.round(kg).toLocaleString()} kg</div>
+    <div class="appr-delivery-row">${dlv} ${prod}</div>
+   </div>
+   <div class="appr-time">${dt}</div>
+  </a>`;
+ }).join(''):`<div class="appr-empty">${all.length?'ไม่มีงานในหมวดนี้':'ยังไม่มี S/O ที่อนุมัติแล้ว'}</div>`;
+ document.getElementById('planningDashboardView').innerHTML=`<div class="appr-shell">
+  <aside class="appr-sidebar">
+   <div class="appr-sidebar-head"><span>🗓️ Planning</span></div>
+   <nav class="appr-nav"><button class="appr-nav-item active"><span>S/O ที่อนุมัติแล้ว</span><span class="appr-nav-badge${all.length?'':' zero'}">${all.length}</span></button></nav>
+  </aside>
+  <div class="appr-content">${summary}<div class="appr-list">${rows}</div></div>
+ </div>`;
+}
 let lastSOListFilter;
 function openSOList(statusFilter){
  lastSOListFilter = statusFilter;
@@ -1104,6 +1178,7 @@ function refreshLiveViews(){
  const role = TMTStore.session.getRole() || 'sales';
  if(role==='mgr01') renderMgr01Dashboard();
  else if(role==='approval') renderApprovalDashboard();
+ else if(role==='planning') renderPlanningDashboard();
  else if(!cardDrag) renderWidgetGrid();
  if(!document.getElementById('quotationListOverlay').classList.contains('hidden')) openQuotationList();
  if(!document.getElementById('soListOverlay').classList.contains('hidden')) openSOList(lastSOListFilter);

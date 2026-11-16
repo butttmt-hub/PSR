@@ -1486,12 +1486,24 @@ function hoCtx(){
  const net=+(subtotal-disc).toFixed(2);
  const vat=+(net*0.07).toFixed(2);
  const delivery=(rec&&rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?soFmtDate(rec.deliveryDate+'T00:00:00'):(qe.deliveryDate||'รอแจ้งวันส่ง');
- return {rec,qe,items,totalW,totalQty,subtotal,disc,net,vat,total:+(net+vat).toFixed(2),delivery,
+ return {rec,qe,items,totalW,totalQty,subtotal,disc,net,vat,total:+(net+vat).toFixed(2),delivery,deliveryISO:(rec&&rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?rec.deliveryDate:null,
   plants:[...new Set(items.map(x=>x.item.plant||'1200'))],
   customer:document.getElementById('customer').value||'-',
   sales:document.getElementById('sales').value||'-',
   project:document.getElementById('project').value||'-',
   refNo:document.getElementById('refNo').value||'-'};
+}
+// สต็อก ณ วันที่ออกใบเสนอราคา เทียบกับจำนวนสั่ง → ต้องผลิตเพิ่มเท่าไร
+function hoStockInfo(item){
+ const remain=Number.isFinite(item.remain)?item.remain:null;
+ if(item.type!=='Stock'||remain===null) return {kind:'make',remain,short:item.qty};
+ const short=Math.max(item.qty-Math.max(remain,0),0);
+ return {kind:short?'short':'ok',remain,short};
+}
+function hoDaysLeft(c){
+ if(!c.deliveryISO) return null;
+ const d=new Date(c.deliveryISO+'T00:00:00'), t=new Date(); t.setHours(0,0,0,0);
+ return Math.round((d-t)/86400000);
 }
 const hoNum=(n)=>(+n||0).toLocaleString('en-US',{maximumFractionDigits:2});
 function hoItemFields(item,owner){
@@ -1562,12 +1574,35 @@ function hoGroupBy(c,keyFn){
 
 // ---- มุมมองของแต่ละแผนก ----
 const HO_VIEWS={
- 'Planning':(c)=>
-  hoKpis([['รายการสินค้า',c.items.length],['จำนวนรวม (pcs)',c.totalQty.toLocaleString()],['น้ำหนักรวม (kg)',hoNum(c.totalW)],['กำหนดส่งมอบ',esc(c.delivery),/รอแจ้ง/.test(c.delivery)?'warn':''],['Plant ผลิต/จัดส่ง',esc(c.plants.join(', ')||'-')]])
+ 'Planning':(c)=>{
+  const info=c.items.map(x=>({...x,s:hoStockInfo(x.item)}));
+  const needProd=info.filter(x=>x.s.short>0);
+  const prodKg=+needProd.reduce((s,x)=>s+x.s.short*x.item.weight,0).toFixed(2);
+  const prodPcs=needProd.reduce((s,x)=>s+x.s.short,0);
+  const dl=hoDaysLeft(c);
+  const dlTxt=dl===null?'':(dl<0?`เลยกำหนด ${-dl} วัน`:(dl===0?'วันนี้':`อีก ${dl} วัน`));
+  const planLink=(item)=>(item.family==='Cut Sheet'&&item.thickness!==undefined)
+   ?`<a href="${stockCheckLink(item)}" target="_blank" style="color:var(--blue);font-weight:700;white-space:nowrap">🔍 เช็คแผนผลิต</a>`:'-';
+  const stat=(s)=>s.kind==='ok'?`<span class="badge std">พอส่งจากสต็อก</span>`
+   :`<span class="badge extra">${s.kind==='make'?'ผลิตตามสั่ง':'ผลิตเพิ่ม '+s.short.toLocaleString()+' pcs'}</span>`;
+  const byPlant=hoGroupBy({items:info},(x)=>x.item.plant||'1200');
+  return hoKpis([
+    ['รายการสินค้า',c.items.length],
+    ['น้ำหนักรวม (kg)',hoNum(c.totalW)],
+    ['กำหนดส่งมอบ',esc(c.delivery)+(dlTxt?`<div style="font-size:11px;font-weight:700;color:${dl<=7?'#B45309':'#5B7083'}">${dlTxt}</div>`:''),(dl===null||dl<=7)?'warn':''],
+    ['ต้องผลิตเพิ่ม',needProd.length?`${prodPcs.toLocaleString()} pcs · ${hoNum(prodKg)} kg`:'ไม่มี',needProd.length?'warn':''],
+    ['Plant',esc(c.plants.join(', ')||'-')]])
   +hoAttention(c,'Planning')
-  +hoSec('แผนผลิตรายการสินค้า',hoTable(['#','Material Code','รายละเอียด','Plant','ประเภท','จำนวน (pcs)','น้ำหนัก (kg)','Mill','Aiming'],
-    c.items.map(({item,i,w})=>[i+1,esc(item.code),esc(item.desc),esc(item.plant||'1200'),hoStockLabel(item),item.qty.toLocaleString(),hoNum(w),hoSpec(item,['mill','tubeMill']),hoSpec(item,['aiming','tubeAiming'])]),null,[5,6])
-  )+hoSec('สเปคที่ Planning รับผิดชอบ (ต่อรายการ)',hoSpecCards(c,'Planning')),
+  +hoSec('ตรวจสต็อกและความต้องการผลิต',hoTable(['#','Material Code','จำนวนสั่ง (pcs)','สต็อกคงเหลือ (pcs)','ผลการตรวจ','ผลิตเพิ่ม (kg)','แผนผลิต'],
+    info.map(({item,i,s})=>[i+1,`<strong>${esc(item.code)}</strong><div style="color:var(--muted)">${esc(item.desc)} · Plant ${esc(item.plant||'1200')}</div>`,item.qty.toLocaleString(),s.remain===null?'-':`<span style="${s.remain<0?'color:#B42318;font-weight:700':''}">${s.remain.toLocaleString()}</span>`,stat(s),s.short?hoNum(s.short*item.weight):'-',s.short?planLink(item):'-']),
+    null,[2,3,5]))
+  +`<div style="font-size:11px;color:var(--muted);margin:-8px 0 14px">* สต็อกคงเหลือเป็นค่า ณ วันที่ออกใบเสนอราคา — Planning ต้องตรวจซ้ำกับข้อมูลจริงก่อนยืนยันวันผลิต</div>`
+  +hoSec('ภาระงานแยกตาม Plant',hoTable(['Plant','จำนวนรายการ','รวม (pcs)','รวม (kg)','ต้องผลิตเพิ่ม (kg)'],
+    byPlant.map(([p,g])=>[esc(p),g.rows.length,g.qty.toLocaleString(),hoNum(g.w),hoNum(g.rows.reduce((s,x)=>s+x.s.short*x.item.weight,0))]),null,[1,2,3,4]))
+  +hoSec('สเปคสำหรับวางแผน',hoTable(['Material Code','เกรด','Mill','Aiming','หนา × กว้าง','Product Type'],
+    c.items.map(({item})=>[esc(item.code),esc(itemGrade(item)),hoSpec(item,['mill','tubeMill']),hoSpec(item,['aiming','tubeAiming']),hoSizeLabel(item),hoSpec(item,['productType'])])))
+  +hoSec('รายละเอียดทุกฟิลด์ที่ Planning รับผิดชอบ',`<details><summary style="cursor:pointer;font-size:12px;color:var(--blue);margin-bottom:8px">แสดง/ซ่อนรายละเอียด</summary>${hoSpecCards(c,'Planning')}</details>`);
+ },
 
  'Production':(c)=>{
   const nx=c.items.reduce((s,{item})=>s+hoItemFields(item,'Production').filter(f=>item.specState[f.id].status!=='STD').length,0);
@@ -2560,11 +2595,14 @@ function loadSOHandoverView(rec){
  document.getElementById('sales').value=rec.sales||'';
  document.body.classList.add('view-mode','handover-view');
  handoverRec=rec;
+ const isPlanning=TMTStore.session.getRole()==='planning';
+ const tabParam=new URLSearchParams(window.location.search).get('tab')||(isPlanning?'Planning':'');
+ if(tabParam) handoverTab=tabParam;
  showScreen(9);
  const bar=document.getElementById('handoverViewBar');
  if(bar){
   bar.style.display='flex';
-  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — Handover สำหรับ S/O <strong>${esc(rec.soNo)}</strong> (เลขที่ Quotation: ${esc(rec.quotationNo||'-')})</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Sales Order</a></div>`;
+  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — Handover สำหรับ S/O <strong>${esc(rec.soNo)}</strong> (เลขที่ Quotation: ${esc(rec.quotationNo||'-')})</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="${isPlanning?'sales-portal.html':`presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}`}" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">${isPlanning?'← กลับไป Dashboard':'← กลับไป Sales Order'}</a></div>`;
  }
  return true;
 }

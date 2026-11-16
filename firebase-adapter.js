@@ -94,11 +94,11 @@ if (store && store.backend() === 'firestore') {
     };
   }
 
-  // role ของผู้ใช้เก็บที่ users/{uid} = { username, role } (role: sales | mgr01 | approval)
+  // role ของผู้ใช้เก็บที่ users/{uid} = { username, role } (role: sales | mgr01 | approval | planning)
   async function loadProfile(user) {
     const snap = await getDoc(doc(db, 'users', user.uid));
     const p = snap.exists() ? snap.data() : null;
-    if (!p || !['sales', 'mgr01', 'approval'].includes(p.role)) {
+    if (!p || !['sales', 'mgr01', 'approval', 'planning'].includes(p.role)) {
       const err = new Error('no role');
       err.code = 'no-role';
       throw err;

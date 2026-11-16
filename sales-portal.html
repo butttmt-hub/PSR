@@ -812,7 +812,9 @@ function renderSOApprovalSectionHTML(){
   contentHtml:`${summaryHtml}<div class="appr-list">${rowsHtml}</div>`
  });
 }
+let lastSOListFilter;
 function openSOList(statusFilter){
+ lastSOListFilter = statusFilter;
  const list = loadSalesOrders()
   .filter(s=>SO_STATUS_LABELS.hasOwnProperty(s.status) && (!statusFilter || s.status===statusFilter))
   .sort((a,b)=>new Date(b.sentToApprovalAt||b.createdAt||0)-new Date(a.sentToApprovalAt||a.createdAt||0));
@@ -1065,6 +1067,23 @@ function logout(){
 document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') attemptLogin(); });
 document.getElementById('loginUser').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
 
+// อัปเดตหน้าจอเองเมื่อข้อมูลเปลี่ยน (ทั้งจากตัวเอง และจาก tab/ผู้ใช้อื่น) — รวมกระดิ่งแจ้งเตือนของ Mgr01/Apv01
+let liveRefreshTimer = null;
+function refreshLiveViews(){
+ if(!TMTStore.session.getUser()) return;
+ const role = TMTStore.session.getRole() || 'sales';
+ if(role==='mgr01') renderMgr01Dashboard();
+ else if(role==='approval') renderApprovalDashboard();
+ else if(!cardDrag) renderWidgetGrid();
+ if(!document.getElementById('quotationListOverlay').classList.contains('hidden')) openQuotationList();
+ if(!document.getElementById('soListOverlay').classList.contains('hidden')) openSOList(lastSOListFilter);
+ if(expandedWidgetId && !document.getElementById('widgetExpandOverlay').classList.contains('hidden')) renderWidgetExpand();
+}
+TMTStore.subscribe(function(ev){
+ if(ev.type!=='change') return;
+ clearTimeout(liveRefreshTimer);
+ liveRefreshTimer = setTimeout(refreshLiveViews, 80);
+});
 (function initSession(){
  const saved = TMTStore.session.getUser();
  const role = TMTStore.session.getRole() || 'sales';

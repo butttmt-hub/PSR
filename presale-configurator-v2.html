@@ -2357,6 +2357,12 @@ function tryLoadViewMode(){
  return true;
 }
 ['project','refNo'].forEach(id=>document.getElementById(id).addEventListener('input',renderHandover));
+// Mgr01 อนุมัติ/ปฏิเสธส่วนลดจากหน้า/ผู้ใช้อื่น → ปุ่ม Transfer และสถานะบนหน้า Quotation อัปเดตเอง ไม่ต้องรีเฟรช
+TMTStore.subscribe(function(ev){
+ if(ev.type==='change' && ev.source==='remote' && ev.collection==='discountApprovals'){
+  try{ updateDiscountEvidenceGate(); }catch(e){}
+ }
+});
 if(!tryLoadDiscountApprovalInboxMode() && !tryLoadDiscountApprovalMode() && !tryLoadApprovalInboxMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
  populateCustomerDetailOptions();
  selectProduct('Cut Sheet');

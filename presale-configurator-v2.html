@@ -1478,6 +1478,8 @@ function renderHandover(){
 // ===== Handover: view แยกตามแผนก =====
 let handoverRec=null;      // S/O record เมื่อเปิดจากหน้า S/O (null ตอนอยู่ใน flow ออกใบเสนอราคา)
 let handoverTab='overview';
+let handoverDO=null;       // DO ที่เปิดดู (โหมด Warehouse/Transport ดูจาก DO) — จำกัดรายการและจำนวนตาม DO
+let handoverDepts=null;    // แผนกที่แสดงในโหมด DO
 const HO_DEPTS=[
  {k:'Planning',icon:'🗓️',th:'วางแผนการผลิต',goal:'จัดแผนผลิตและกำลังการผลิตให้ทันวันส่ง'},
  {k:'Production',icon:'🏭',th:'ฝ่ายผลิต',goal:'ผลิตตามสเปค ขนาด Tolerance และคุณภาพผิวที่ลูกค้ากำหนด'},
@@ -1508,7 +1510,7 @@ function hoCtx(){
  const net=+(subtotal-disc).toFixed(2);
  const vat=+(net*0.07).toFixed(2);
  const delivery=(rec&&rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?soFmtDate(rec.deliveryDate+'T00:00:00'):(qe.deliveryDate||'รอแจ้งวันส่ง');
- return {rec,qe,items,totalW,totalQty,subtotal,disc,net,vat,total:+(net+vat).toFixed(2),delivery,deliveryISO:(rec&&rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?rec.deliveryDate:null,
+ return {rec,qe,items,totalW,totalQty,subtotal,disc,net,vat,total:+(net+vat).toFixed(2),delivery:handoverDO?soFmtDate(handoverDO.deliveryDate+'T00:00:00'):delivery,deliveryISO:handoverDO?handoverDO.deliveryDate:((rec&&rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?rec.deliveryDate:null),
   plants:[...new Set(items.map(x=>x.item.plant||'1200'))],
   customer:document.getElementById('customer').value||'-',
   sales:document.getElementById('sales').value||'-',
@@ -1718,11 +1720,13 @@ function renderHandoverOwners(){
  const grid=document.getElementById('ownerGrid'), tabs=document.getElementById('hoTabs'); if(!grid||!tabs) return;
  const c=hoCtx();
  const psb=document.getElementById('priceSummaryBox');
- if(!HO_DEPTS.some(d=>d.k===handoverTab)) handoverTab='overview';
+ const visibleDepts=handoverDepts?HO_DEPTS.filter(d=>handoverDepts.includes(d.k)):HO_DEPTS;
+ if(handoverDepts){ if(!handoverDepts.includes(handoverTab)) handoverTab=handoverDepts[0]; }
+ else if(!HO_DEPTS.some(d=>d.k===handoverTab)) handoverTab='overview';
  if(psb) psb.style.display=handoverTab==='overview'?'':'none';
  const counts={}; HO_DEPTS.forEach(d=>counts[d.k]=hoExtraEntries(c,d.k).length);
- tabs.innerHTML=`<button class="ho-tab ${handoverTab==='overview'?'active':''}" onclick="setHandoverTab('overview')">📋 ภาพรวม</button>`
-  +HO_DEPTS.map(d=>`<button class="ho-tab ${handoverTab===d.k?'active':''}" onclick="setHandoverTab('${d.k}')">${d.icon} ${d.k}<span class="ho-cnt ${counts[d.k]?'':'zero'}">${counts[d.k]}</span></button>`).join('');
+ tabs.innerHTML=(handoverDepts?'':`<button class="ho-tab ${handoverTab==='overview'?'active':''}" onclick="setHandoverTab('overview')">📋 ภาพรวม</button>`)
+  +visibleDepts.map(d=>`<button class="ho-tab ${handoverTab===d.k?'active':''}" onclick="setHandoverTab('${d.k}')">${d.icon} ${d.k}<span class="ho-cnt ${counts[d.k]?'':'zero'}">${counts[d.k]}</span></button>`).join('');
  if(handoverTab==='overview'){
   grid.innerHTML=`<div class="owner-grid">${HO_DEPTS.map(d=>{
    const ex=hoExtraEntries(c,d.k);
@@ -1732,7 +1736,8 @@ function renderHandoverOwners(){
   return;
  }
  const d=HO_DEPTS.find(x=>x.k===handoverTab);
- grid.innerHTML=`<div class="ho-head"><div class="ho-ico">${d.icon}</div><div><h4>${d.k} · ${d.th}</h4><div class="ho-goal">${d.goal}</div></div></div>`
+ const doBanner=handoverDO?hoInfo([['Picking Slip No.',esc(handoverDO.doNo)],['S/O',esc(handoverDO.soNo)],['กำหนดส่งสินค้า',esc(c.delivery)],['ผู้จัดทำ DO',esc(handoverDO.createdBy||'-')],['ลูกค้า',esc(c.customer)],['เอกสาร',`<a href="presale-configurator-v2.html?viewDO=${encodeURIComponent(handoverDO.doNo)}">📄 เปิดใบ Picking Slip</a>`]]):'';
+ grid.innerHTML=`<div class="ho-head"><div class="ho-ico">${d.icon}</div><div><h4>${d.k} · ${d.th}</h4><div class="ho-goal">${d.goal}</div></div></div>`+doBanner
   +(c.items.length?HO_VIEWS[d.k](c):`<div class="ho-att warn">ยังไม่มีสินค้าในรายการ — กลับไป Step 1 เพื่อเลือก Product ก่อน</div>`);
 }
 let quoteExtra={attention:'',tel:'',paymentTerm:'',deliveryPlace:'',deliveryDate:'',validity:'',discountPct:0};
@@ -2625,7 +2630,7 @@ function renderDeliveryOrderDoc(d){
    <td class="do-c-c">KG</td>
   </tr>`;
  }).join('');
- const isService=TMTStore.session.getRole()==='service';
+ const isService=['service','warehouse','transport'].includes(TMTStore.session.getRole());
  return `<div class="so-doc do-doc">
   <div class="so-toolbar">
    <div style="font-size:12.5px;color:var(--muted)">🔒 มุมมองอ่านอย่างเดียว — Picking Slip <strong>${esc(d.doNo)}</strong> (S/O ${esc(d.soNo)})</div>
@@ -2679,6 +2684,42 @@ function renderDeliveryOrderDoc(d){
   </div>
  </div>`;
 }
+function loadDOHandoverView(d,dept){
+ const so=loadSalesOrders().find(s=>s.soNo===d.soNo);
+ const app=document.querySelector('.app');
+ if(!so){
+  app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Sales Order เลขที่ ${esc(d.soNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
+  return true;
+ }
+ currentProduct=so.currentProduct||'Cut Sheet';
+ fieldDefs=productFieldDefs[currentProduct];
+ // รายการและจำนวนตาม DO ใบนี้เท่านั้น (ไม่ใช่ทั้ง S/O)
+ productCart=(d.lines||[]).map(l=>{ const it=(so.cart||[]).find(i=>i.id===l.itemId); return it?{...it,qty:l.qty}:null; }).filter(Boolean);
+ quoteExtra=so.quoteExtra||quoteExtra;
+ Object.keys(fieldState).forEach(k=>delete fieldState[k]);
+ fieldDefs.forEach(f=>{
+  if(so.fieldState && so.fieldState[f.id]) fieldState[f.id]=so.fieldState[f.id];
+  else fieldState[f.id]=f.multi?{status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}}:{status:f.opts[0][1],value:f.opts[0][0],detail:''};
+ });
+ document.getElementById('project').value=so.project||'';
+ document.getElementById('refNo').value=so.refNo||'';
+ document.getElementById('customer').value=so.customer||'';
+ document.getElementById('sales').value=so.sales||'';
+ document.body.classList.add('view-mode','handover-view');
+ handoverRec=so; handoverDO=d; handoverDepts=['Warehouse','Transport'];
+ handoverTab=handoverDepts.includes(dept)?dept:'Warehouse';
+ showScreen(9);
+ const title=document.getElementById('handoverTitle'); if(title) title.textContent='Delivery Handover (จาก DO)';
+ const gate=document.getElementById('commitGate'); if(gate) gate.style.display='none';
+ const role=TMTStore.session.getRole();
+ const backHref=(role==='warehouse'||role==='transport'||role==='service')?'sales-portal.html':`presale-configurator-v2.html?viewDO=${encodeURIComponent(d.doNo)}`;
+ const bar=document.getElementById('handoverViewBar');
+ if(bar){
+  bar.style.display='flex';
+  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — จาก Picking Slip <strong>${esc(d.doNo)}</strong> (S/O ${esc(d.soNo)})</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="${backHref}" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Dashboard</a></div>`;
+ }
+ return true;
+}
 function tryLoadDOViewMode(){
  const params=new URLSearchParams(window.location.search);
  const doNo=params.get('viewDO');
@@ -2690,6 +2731,7 @@ function tryLoadDOViewMode(){
   app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Picking Slip เลขที่ ${esc(doNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
   return true;
  }
+ if(params.get('dept')) return loadDOHandoverView(rec,params.get('dept'));
  app.innerHTML=renderDeliveryOrderDoc(rec);
  return true;
 }

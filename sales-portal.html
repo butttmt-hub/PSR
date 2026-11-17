@@ -352,7 +352,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       </div>
       <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
       <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Planning: <b>Plan</b> / <b>P123</b> &nbsp;·&nbsp; Service: <b>Service</b> / <b>SV123</b></div>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Planning: <b>Plan</b> / <b>P123</b> &nbsp;·&nbsp; Service: <b>Service</b> / <b>SV123</b> &nbsp;·&nbsp; Warehouse: <b>Warehouse</b> / <b>W123</b> &nbsp;·&nbsp; Transport: <b>Transport</b> / <b>T123</b></div>
     </div>
   </div>
 </div>
@@ -387,6 +387,8 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
     <div id="approvalDashboardView" class="hidden"></div>
     <div id="planningDashboardView" class="hidden"></div>
     <div id="serviceDashboardView" class="hidden"></div>
+    <div id="warehouseDashboardView" class="hidden"></div>
+    <div id="transportDashboardView" class="hidden"></div>
   </main>
 </div>
 
@@ -479,7 +481,9 @@ const CREDENTIALS_LIST = [
  { username: 'Mgr01', password: 'M123', role: 'mgr01' },
  { username: 'Apv01', password: 'A123', role: 'approval' },
   { username: 'Plan', password: 'P123', role: 'planning' },
- { username: 'Service', password: 'SV123', role: 'service' },
+  { username: 'Service', password: 'SV123', role: 'service' },
+ { username: 'Warehouse', password: 'W123', role: 'warehouse' },
+ { username: 'Transport', password: 'T123', role: 'transport' },
 ];
 async function attemptLoginFirestore(u, p, errEl){
  const btn = document.querySelector('.login-btn');
@@ -516,7 +520,9 @@ const DASHBOARD_BRAND_BY_ROLE = {
  mgr01: 'Approval Dashboard (Mgr01)',
  approval: 'S/O Approval Dashboard',
   planning: 'Planning Dashboard',
- service: 'Service Dashboard (Transfer to DO)',
+  service: 'Service Dashboard (Transfer to DO)',
+ warehouse: 'Warehouse Dashboard (DO)',
+ transport: 'Transport Dashboard (DO)',
 };
 function showDashboard(user, role){
  document.getElementById('loginScreen').classList.add('hidden');
@@ -528,17 +534,17 @@ function showDashboard(user, role){
  // ล้างข้อมูลทดสอบจะลบข้อมูลที่ใช้ร่วมกันทุกคน → ซ่อนปุ่มในโหมด Firestore
  const clearBtn = document.getElementById('clearTestDataBtn');
  if(clearBtn) clearBtn.style.display = isCloud ? 'none' : '';
- document.getElementById('salesDashboardView').classList.toggle('hidden', role!=='sales');
- document.getElementById('mgr01DashboardView').classList.toggle('hidden', role!=='mgr01');
- document.getElementById('approvalDashboardView').classList.toggle('hidden', role!=='approval');
-  document.getElementById('planningDashboardView').classList.toggle('hidden', role!=='planning');
- document.getElementById('serviceDashboardView').classList.toggle('hidden', role!=='service');
- document.getElementById('salesDashboardView').classList.toggle('hidden', role==='mgr01'||role==='approval'||role==='planning'||role==='service');
- if(role==='mgr01') renderMgr01Dashboard();
- else if(role==='approval') renderApprovalDashboard();
-  else if(role==='planning') renderPlanningDashboard();
- else if(role==='service') renderServiceDashboard();
- else renderWidgetGrid();
+ const ROLE_VIEWS={
+  mgr01:['mgr01DashboardView',renderMgr01Dashboard],
+  approval:['approvalDashboardView',renderApprovalDashboard],
+  planning:['planningDashboardView',renderPlanningDashboard],
+  service:['serviceDashboardView',renderServiceDashboard],
+  warehouse:['warehouseDashboardView',renderWarehouseDashboard],
+  transport:['transportDashboardView',renderTransportDashboard]
+ };
+ Object.keys(ROLE_VIEWS).forEach(r=>document.getElementById(ROLE_VIEWS[r][0]).classList.toggle('hidden', role!==r));
+ document.getElementById('salesDashboardView').classList.toggle('hidden', !!ROLE_VIEWS[role]);
+ if(ROLE_VIEWS[role]) ROLE_VIEWS[role][1](); else renderWidgetGrid();
 }
 
 // ---------- Configurable dashboard widgets (Prototype — mock data, no live backend) ----------
@@ -1232,6 +1238,68 @@ function serviceDeliveryBadge(rec,days){
  const diff=days<0?`เลยกำหนด ${Math.abs(days)} วัน`:days===0?'ส่งวันนี้':`อีก ${days} วัน`;
  return `<span class="appr-delivery-badge${days<=SERVICE_TRANSFER_DAYS?' urgent':''}">📅 ${dLabel} (${diff})</span>`;
 }
+// ---------- Warehouse / Transport Dashboard: ดูจาก DO (Picking Slip) ที่ Service ออกแล้ว ----------
+let doDashFilter=null;
+function setDoDashFilter(k){ doDashFilter=(doDashFilter===k||k===null)?null:k; renderDODashboard(TMTStore.session.getRole()); }
+function renderWarehouseDashboard(){ renderDODashboard('warehouse'); }
+function renderTransportDashboard(){ renderDODashboard('transport'); }
+function renderDODashboard(role){
+ const dept=role==='warehouse'?'Warehouse':'Transport';
+ const el=document.getElementById(role==='warehouse'?'warehouseDashboardView':'transportDashboardView'); if(!el) return;
+ const today=new Date(); today.setHours(0,0,0,0);
+ const all=TMTStore.deliveryOrders.list().map(d=>{
+  const days=d.deliveryDate?Math.round((new Date(d.deliveryDate+'T00:00:00')-today)/86400000):null;
+  const kg=(d.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0), pcs=(d.lines||[]).reduce((s,l)=>s+l.qty,0);
+  return {d,days,kg,pcs};
+ });
+ const cls={
+  late:x=>x.days!==null&&x.days<0,
+  today:x=>x.days===0,
+  tomorrow:x=>x.days===1,
+  week:x=>x.days!==null&&x.days>=2&&x.days<=7
+ };
+ const cnt=k=>all.filter(cls[k]).length;
+ const list=(doDashFilter?all.filter(cls[doDashFilter]):all).slice().sort((a,b)=>{
+  if(a.days!==null&&b.days!==null) return a.days-b.days;
+  if(a.days!==null) return -1;
+  if(b.days!==null) return 1;
+  return new Date(b.d.createdAt||0)-new Date(a.d.createdAt||0);
+ });
+ const act=k=>doDashFilter===k?' active':'';
+ const summary=`<div class="appr-summary">
+  <div class="appr-stat${doDashFilter===null?' active':''}" onclick="setDoDashFilter(null)"><div class="appr-stat-num">${all.length}</div><div class="appr-stat-lbl">DO ทั้งหมด</div></div>
+  <div class="appr-stat${cnt('late')>0?' urgent':''}${act('late')}" onclick="setDoDashFilter('late')"><div class="appr-stat-num">${cnt('late')}</div><div class="appr-stat-lbl">เลยกำหนดส่ง</div></div>
+  <div class="appr-stat${cnt('today')>0?' urgent':''}${act('today')}" onclick="setDoDashFilter('today')"><div class="appr-stat-num">${cnt('today')}</div><div class="appr-stat-lbl">ส่งวันนี้</div></div>
+  <div class="appr-stat${act('tomorrow')}" onclick="setDoDashFilter('tomorrow')"><div class="appr-stat-num">${cnt('tomorrow')}</div><div class="appr-stat-lbl">ส่งพรุ่งนี้</div></div>
+  <div class="appr-stat${act('week')}" onclick="setDoDashFilter('week')"><div class="appr-stat-num">${cnt('week')}</div><div class="appr-stat-lbl">ภายใน 7 วัน</div></div>
+ </div>`;
+ const rows=list.length?list.map(({d,days,kg,pcs})=>{
+  const dLabel=d.deliveryDate?esc(new Date(d.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})):'-';
+  const diff=days===null?'':days<0?`เลยกำหนด ${Math.abs(days)} วัน`:days===0?'ส่งวันนี้':`อีก ${days} วัน`;
+  const plants=[...new Set((d.lines||[]).map(l=>l.plant||'1200'))].join(', ');
+  const so=loadSalesOrders().find(s=>s.soNo===d.soNo);
+  const place=so&&so.quoteExtra&&so.quoteExtra.deliveryPlace?so.quoteExtra.deliveryPlace:'-';
+  const info=dept==='Warehouse'
+   ?`${(d.lines||[]).length} รายการ · ${pcs.toLocaleString()} pcs · ${Math.round(kg).toLocaleString()} kg · Plant ${esc(plants)}`
+   :`${Math.round(kg).toLocaleString()} kg · ต้นทาง Plant ${esc(plants)} · ส่งที่: ${esc(place)}`;
+  return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewDO=${encodeURIComponent(d.doNo)}&dept=${dept}">
+   <div class="appr-avatar">${esc((d.customer||'?').charAt(0))}</div>
+   <div class="appr-main">
+    <div class="appr-subject">Picking Slip <strong>${esc(d.doNo)}</strong> <span style="font-weight:400;color:var(--muted)">(S/O ${esc(d.soNo)})</span></div>
+    <div class="appr-snippet">${esc(d.customer||'-')} · ${info}</div>
+    <div class="appr-delivery-row"><span class="appr-delivery-badge${days!==null&&days<=1?' urgent':''}">🚚 กำหนดส่ง ${dLabel}${diff?` (${diff})`:''}</span></div>
+   </div>
+   <div class="appr-time">${esc(sapDate(d.createdAt))}</div>
+  </a>`;
+ }).join(''):`<div class="appr-empty">${all.length?'ไม่มี DO ในหมวดนี้':'ยังไม่มี DO ที่ Service ออก'}</div>`;
+ el.innerHTML=`<div class="appr-shell">
+  <aside class="appr-sidebar">
+   <div class="appr-sidebar-head"><span>${dept==='Warehouse'?'📦 Warehouse':'🚚 Transport'}</span></div>
+   <nav class="appr-nav"><button class="appr-nav-item active"><span>DO ที่ต้องดำเนินการ</span><span class="appr-nav-badge${all.length?'':' zero'}">${all.length}</span></button></nav>
+  </aside>
+  <div class="appr-content">${summary}<div class="appr-list">${rows}</div></div>
+ </div>`;
+}
 let lastSOListFilter;
 function openSOList(statusFilter){
  lastSOListFilter = statusFilter;
@@ -1498,10 +1566,8 @@ let liveRefreshTimer = null;
 function refreshLiveViews(){
  if(!TMTStore.session.getUser()) return;
  const role = TMTStore.session.getRole() || 'sales';
- if(role==='mgr01') renderMgr01Dashboard();
- else if(role==='approval') renderApprovalDashboard();
-  else if(role==='planning') renderPlanningDashboard();
- else if(role==='service') renderServiceDashboard();
+ const liveRender={mgr01:renderMgr01Dashboard,approval:renderApprovalDashboard,planning:renderPlanningDashboard,service:renderServiceDashboard,warehouse:renderWarehouseDashboard,transport:renderTransportDashboard}[role];
+ if(liveRender) liveRender();
  else if(!cardDrag) renderWidgetGrid();
  if(!document.getElementById('quotationListOverlay').classList.contains('hidden')) openQuotationList();
  if(!document.getElementById('soListOverlay').classList.contains('hidden')) openSOList(lastSOListFilter);

@@ -1209,6 +1209,13 @@ function updateServiceDoBar(){
  bar.querySelector('.alv-bar-txt').textContent=dos.length?`เลือก ${dos.length} DO · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`:'ติ๊กเลือก DO ที่ต้องการรวมเป็น Picking Slip';
  bar.querySelector('button').disabled=!dos.length;
 }
+function deleteServicePS(psNo){
+ const p=TMTStore.pickingSlips.get(psNo); if(!p) return;
+ const dos=(p.doNos||[]).join(', ');
+ if(!confirm(`ลบ Picking Slip ${psNo} ?\n\nDO ที่รวมอยู่ (${dos}) จะกลับไปอยู่ในสถานะ "รอรวม" เหมือนเดิม\nWarehouse / Transport / Billing จะไม่เห็นใบนี้อีก`)) return;
+ if(!TMTStore.pickingSlips.remove(psNo)){ alert('ลบไม่สำเร็จ'); return; }
+ renderServiceDashboard();
+}
 function deleteServiceDO(doNo){
  const d=TMTStore.deliveryOrders.get(doNo); if(!d) return;
  const ps=psOfDO(doNo);
@@ -1292,7 +1299,7 @@ function renderServicePSTab(){
  return `<div class="appr-list">${list.length?list.map(p=>{
   const kg=(p.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0);
   const dl=p.deliveryDate?esc(sapDate(p.deliveryDate)):'-';
-  return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">
+  return `<div style="display:flex;gap:8px;align-items:stretch"><button class="ql-btn" style="align-self:center;padding:6px 10px;border-color:#E3B1AC;color:#B42318" onclick="deleteServicePS('${esc(p.psNo)}')" title="ลบ Picking Slip — DO กลับไปรอรวม">🗑 ลบ</button><a class="appr-row" style="flex:1;text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">
    <div class="appr-avatar">${esc((p.customer||'?').charAt(0))}</div>
    <div class="appr-main">
     <div class="appr-subject">Picking Slip <strong>${esc(p.psNo)}</strong> <span style="font-weight:400;color:var(--muted)">(${(p.doNos||[]).length} DO: ${esc((p.doNos||[]).join(', '))})</span></div>
@@ -1300,7 +1307,7 @@ function renderServicePSTab(){
     <div class="appr-delivery-row"><span class="appr-delivery-badge">🚚 กำหนดส่ง ${dl}</span></div>
    </div>
    <div class="appr-time">${esc(sapDate(p.createdAt))}</div>
-  </a>`;
+  </a></div>`;
  }).join(''):`<div class="appr-empty">ยังไม่มี Picking Slip — ไปที่แท็บ "DO ที่เปิดแล้ว" เพื่อเลือก DO มารวม</div>`}</div>`;
 }
 function renderServiceDashboard(){

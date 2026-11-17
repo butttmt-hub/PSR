@@ -569,13 +569,14 @@ body.embedded-mode main{width:100%;margin:0 auto;padding:16px}
       </div>
       <div class="pm-table-wrap">
         <table class="pm-table">
-          <thead><tr><th></th><th>Material Code</th><th>Material Description</th><th>Group</th><th>Quantity</th><th>Order Amount</th><th>Suggest Price Per Kg.</th><th>Suggest Price Per Pcs.</th><th>Remain Qty. (Pcs.)</th><th>น้ำหนักต่อชิ้น (Kg.)</th><th>ช่วงน้ำหนักเสนอขาย (Kg.)</th><th>Remark จัดซื้อ</th><th>จำนวน (เส้น/มัด)</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="pmSelAll" title="เลือก/ไม่เลือกทั้งหน้า" onchange="pmToggleAllPage(this.checked)"></th><th>Material Code</th><th>Material Description</th><th>Group</th><th>Quantity</th><th>Order Amount</th><th>Suggest Price Per Kg.</th><th>Suggest Price Per Pcs.</th><th>Remain Qty. (Pcs.)</th><th>น้ำหนักต่อชิ้น (Kg.)</th><th>ช่วงน้ำหนักเสนอขาย (Kg.)</th><th>Remark จัดซื้อ</th><th>จำนวน (เส้น/มัด)</th></tr></thead>
           <tbody id="pmTableBody"></tbody>
         </table>
       </div>
       <div class="pm-pagination" id="pmPagination"></div>
     </div>
     <div class="modal-foot">
+      <span id="pmSelCount" style="font-size:12.5px;font-weight:700;color:var(--blue);margin-right:14px"></span>
       <button class="btn primary" onclick="saveProductSelection()">💾 Save</button>
       <button class="btn secondary" onclick="closeProductsModal()">✕ Exit</button>
     </div>
@@ -926,13 +927,13 @@ function currentMasterData(){ return pmFamily==='Tube'?tubeProductMasterData:pro
 let pmFamily='Cut Sheet';
 let productCart=[];
 let cartIdSeq=1;
-let pmSelectedCode=null;
+let pmSelected=new Map();   // Multi Select: code → จำนวน (pcs) ที่ระบุในตาราง คงอยู่ข้ามหน้า/ข้ามการค้นหา
 let pmCurrentPage=1;
 const pmPageSize=25;
 let pmFiltered=productMasterData;
 function openProductsModal(family){
  pmFamily=family||pmFamily||'Cut Sheet';
- pmSelectedCode=null;
+ pmSelected=new Map();
  document.getElementById('productsModalOverlay').style.display='flex';
  document.getElementById('productsModalTitle').textContent=`Products — ${pmFamily}`;
  const data=currentMasterData();
@@ -990,19 +991,47 @@ function renderProductsTable(){
   const remainCell=canCheckPlan
    ?`<a href="${stockCheckLink(r)}" target="_blank" onclick="event.stopPropagation()" style="color:#B42318;font-weight:700;text-decoration:underline;cursor:pointer;white-space:nowrap" title="สต็อกติดลบ — คลิกเพื่อเช็คแผนผลิต">${r.remain.toFixed(2)} 🔍</a>`
    :`<span style="color:${r.remain<0?'#B42318':'#155163'}">${r.remain.toFixed(2)}</span>`;
-  return `<tr class="${pmSelectedCode===r.code?'selected':''}" onclick="selectProductRow('${r.code}')">
-  <td><input type="checkbox" ${pmSelectedCode===r.code?'checked':''} onclick="event.stopPropagation();selectProductRow('${r.code}')"></td>
-  <td>${esc(r.code)}</td><td>${esc(r.desc)}</td><td>${esc(r.group)}</td><td></td><td></td>
+  const sel=pmSelected.has(r.code), q=sel?pmSelected.get(r.code):1;
+  const qtyCell=sel?`<input type="number" min="1" step="1" value="${q}" class="pm-qty" style="width:72px;padding:4px 6px;border:1px solid var(--line);border-radius:6px" onclick="event.stopPropagation()" oninput="pmSetQty('${r.code}',this.value)">`:'';
+  return `<tr class="${sel?'selected':''}" onclick="selectProductRow('${r.code}')">
+  <td><input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();selectProductRow('${r.code}')"></td>
+  <td>${esc(r.code)}</td><td>${esc(r.desc)}</td><td>${esc(r.group)}</td><td>${qtyCell}</td><td id="pmAmt_${r.code}">${sel?pmAmountText(r,q):''}</td>
   <td>${r.priceKg==='-'?'-':r.priceKg.toFixed(2)}</td><td>${r.pricePcs==='-'?'-':r.pricePcs.toFixed(2)}</td>
   <td>${remainCell}</td>
   <td>${r.weight.toFixed(2)}</td><td>${r.range.toFixed(2)}</td><td></td><td></td></tr>`;
   }).join('')
   :`<tr><td colspan="13" style="text-align:center;padding:24px;color:var(--muted)">No results — ไม่พบสินค้าตามเงื่อนไขที่เลือก</td></tr>`;
  renderPmPagination();
+ pmUpdateSelUi(pageRows);
+}
+function pmAmountText(r,q){
+ return r.pricePcs==='-'?'<span style="color:var(--extra)">ยังไม่มีราคา</span>':fmtMoney(q*r.pricePcs);
 }
 function selectProductRow(code){
- pmSelectedCode=(pmSelectedCode===code)?null:code;
+ if(pmSelected.has(code)) pmSelected.delete(code); else pmSelected.set(code,1);
  renderProductsTable();
+}
+function pmSetQty(code,v){
+ const q=Math.max(1,parseInt(v)||1);
+ pmSelected.set(code,q);
+ const r=currentMasterData().find(x=>x.code===code), cell=document.getElementById('pmAmt_'+code);
+ if(r&&cell) cell.innerHTML=pmAmountText(r,q);
+ pmUpdateSelUi();
+}
+function pmToggleAllPage(on){
+ const start=(pmCurrentPage-1)*pmPageSize;
+ pmFiltered.slice(start,start+pmPageSize).forEach(r=>{ if(on){ if(!pmSelected.has(r.code)) pmSelected.set(r.code,1); } else pmSelected.delete(r.code); });
+ renderProductsTable();
+}
+// สรุปจำนวนที่เลือก + สถานะช่อง "เลือกทั้งหน้า"
+function pmUpdateSelUi(pageRows){
+ const data=currentMasterData();
+ let kg=0; pmSelected.forEach((q,code)=>{ const r=data.find(x=>x.code===code); if(r) kg+=q*r.weight; });
+ const el=document.getElementById('pmSelCount');
+ if(el) el.textContent=pmSelected.size?`เลือกแล้ว ${pmSelected.size} รายการ · ${Math.round(kg).toLocaleString()} kg`:'ยังไม่ได้เลือกรายการ';
+ const rows=pageRows||pmFiltered.slice((pmCurrentPage-1)*pmPageSize,pmCurrentPage*pmPageSize);
+ const all=document.getElementById('pmSelAll');
+ if(all){ const n=rows.filter(r=>pmSelected.has(r.code)).length; all.checked=rows.length>0&&n===rows.length; all.indeterminate=n>0&&n<rows.length; }
 }
 function renderPmPagination(){
  const totalPages=Math.max(1,Math.ceil(pmFiltered.length/pmPageSize));
@@ -1017,9 +1046,17 @@ function pmGoPage(p){
 }
 let pmPendingRow=null;
 function saveProductSelection(){
- if(!pmSelectedCode){ alert('กรุณาเลือก Product ก่อน Save'); return; }
- pmPendingRow=currentMasterData().find(r=>r.code===pmSelectedCode);
- openQtyModal();
+ if(!pmSelected.size){ alert('กรุณาเลือก Product อย่างน้อย 1 รายการก่อน Save'); return; }
+ const data=currentMasterData();
+ const picked=[...pmSelected.entries()].map(([code,qty])=>({row:data.find(r=>r.code===code),qty})).filter(x=>x.row);
+ closeProductsModal();
+ pmSelected=new Map();
+ // เพิ่มทีละรายการตามลำดับ (รายการแรกจะเป็นตัวกำหนด Product Family ของใบเสนอราคา)
+ picked.forEach(({row,qty})=>{
+  const item={...row, id:cartIdSeq++, family:pmFamily, qty:Math.max(1,qty)};
+  productCart.push(item);
+  onCartChanged(item);
+ });
 }
 function fmtMoney(n){ return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function openQtyModal(){

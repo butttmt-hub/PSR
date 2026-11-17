@@ -98,7 +98,7 @@ if (store && store.backend() === 'firestore') {
   async function loadProfile(user) {
     const snap = await getDoc(doc(db, 'users', user.uid));
     const p = snap.exists() ? snap.data() : null;
-    if (!p || !['sales', 'mgr01', 'approval', 'planning', 'service'].includes(p.role)) {
+    if (!p || !['sales', 'mgr01', 'approval', 'planning', 'service', 'warehouse', 'transport', 'billing'].includes(p.role)) {
       const err = new Error('no role');
       err.code = 'no-role';
       throw err;

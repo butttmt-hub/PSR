@@ -9,6 +9,7 @@ rules_version = '2';
 //   approval = Apv01 (อนุมัติ/ปฏิเสธ S/O)
 //   planning = Plan (ดูข้อมูลอย่างเดียว — อ่านได้แต่ไม่มีสิทธิ์เขียน จึงไม่ต้องแก้กฎด้านล่าง)
 //   service  = Service (Transfer S/O → DO สร้างเอกสารใน deliveryOrders)
+//   warehouse / transport / billing = ดู Picking Slip อย่างเดียว (อ่านได้ ไม่มีสิทธิ์เขียน จึงไม่ต้องแก้กฎด้านล่าง)
 // หมายเหตุ: Rules ระดับนี้คุมตามประเภทเอกสารและ role ยังไม่ตรวจลำดับสถานะระดับฟิลด์ (ทำเพิ่มได้ตอนขึ้นใช้งานจริง)
 
 service cloud.firestore {

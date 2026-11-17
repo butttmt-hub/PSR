@@ -352,7 +352,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       </div>
       <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
       <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Planning: <b>Plan</b> / <b>P123</b> &nbsp;·&nbsp; Service: <b>Service</b> / <b>SV123</b> &nbsp;·&nbsp; Warehouse: <b>Warehouse</b> / <b>W123</b> &nbsp;·&nbsp; Transport: <b>Transport</b> / <b>T123</b></div>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Planning: <b>Plan</b> / <b>P123</b> &nbsp;·&nbsp; Service: <b>Service</b> / <b>SV123</b> &nbsp;·&nbsp; Warehouse: <b>Warehouse</b> / <b>W123</b> &nbsp;·&nbsp; Transport: <b>Transport</b> / <b>T123</b> &nbsp;·&nbsp; Billing: <b>Billing</b> / <b>B123</b></div>
     </div>
   </div>
 </div>
@@ -389,6 +389,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
     <div id="serviceDashboardView" class="hidden"></div>
     <div id="warehouseDashboardView" class="hidden"></div>
     <div id="transportDashboardView" class="hidden"></div>
+    <div id="billingDashboardView" class="hidden"></div>
   </main>
 </div>
 
@@ -504,6 +505,7 @@ const CREDENTIALS_LIST = [
   { username: 'Service', password: 'SV123', role: 'service' },
  { username: 'Warehouse', password: 'W123', role: 'warehouse' },
  { username: 'Transport', password: 'T123', role: 'transport' },
+ { username: 'Billing', password: 'B123', role: 'billing' },
 ];
 async function attemptLoginFirestore(u, p, errEl){
  const btn = document.querySelector('.login-btn');
@@ -543,6 +545,7 @@ const DASHBOARD_BRAND_BY_ROLE = {
   service: 'Service Dashboard (Transfer to DO)',
  warehouse: 'Warehouse Dashboard (DO)',
  transport: 'Transport Dashboard (DO)',
+ billing: 'Billing Dashboard (Picking Slip)',
 };
 function showDashboard(user, role){
  document.getElementById('loginScreen').classList.add('hidden');
@@ -560,7 +563,8 @@ function showDashboard(user, role){
   planning:['planningDashboardView',renderPlanningDashboard],
   service:['serviceDashboardView',renderServiceDashboard],
   warehouse:['warehouseDashboardView',renderWarehouseDashboard],
-  transport:['transportDashboardView',renderTransportDashboard]
+  transport:['transportDashboardView',renderTransportDashboard],
+  billing:['billingDashboardView',renderBillingDashboard]
  };
  Object.keys(ROLE_VIEWS).forEach(r=>document.getElementById(ROLE_VIEWS[r][0]).classList.toggle('hidden', role!==r));
  document.getElementById('salesDashboardView').classList.toggle('hidden', !!ROLE_VIEWS[role]);
@@ -1501,9 +1505,10 @@ let doDashFilter=null;
 function setDoDashFilter(k){ doDashFilter=(doDashFilter===k||k===null)?null:k; renderDODashboard(TMTStore.session.getRole()); }
 function renderWarehouseDashboard(){ renderDODashboard('warehouse'); }
 function renderTransportDashboard(){ renderDODashboard('transport'); }
+function renderBillingDashboard(){ renderDODashboard('billing'); }
 function renderDODashboard(role){
- const dept=role==='warehouse'?'Warehouse':'Transport';
- const el=document.getElementById(role==='warehouse'?'warehouseDashboardView':'transportDashboardView'); if(!el) return;
+ const dept=role==='warehouse'?'Warehouse':role==='billing'?'Billing':'Transport';
+ const el=document.getElementById(role+'DashboardView'); if(!el) return;
  const today=new Date(); today.setHours(0,0,0,0);
  const all=TMTStore.pickingSlips.list().map(p=>{
   const days=p.deliveryDate?Math.round((new Date(p.deliveryDate+'T00:00:00')-today)/86400000):null;
@@ -1535,8 +1540,11 @@ function renderDODashboard(role){
   const dLabel=p.deliveryDate?esc(new Date(p.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})):'-';
   const diff=days===null?'':days<0?`เลยกำหนด ${Math.abs(days)} วัน`:days===0?'ส่งวันนี้':`อีก ${days} วัน`;
   const plants=[...new Set((p.lines||[]).map(l=>l.plant||'1200'))].join(', ');
+  const pos=[...new Set((p.lines||[]).map(l=>{ const so=loadSalesOrders().find(s=>s.soNo===l.soNo); return so&&so.poNo; }).filter(Boolean))].join(', ')||'-';
   const info=dept==='Warehouse'
    ?`${(p.doNos||[]).length} DO · ${(p.lines||[]).length} รายการ · ${pcs.toLocaleString()} pcs · ${Math.round(kg).toLocaleString()} kg · Plant ${esc(plants)}`
+   :dept==='Billing'
+   ?`${(p.doNos||[]).length} DO · ${(p.lines||[]).length} รายการ · ${Math.round(kg).toLocaleString()} kg · PO: ${esc(pos)}`
    :`${Math.round(kg).toLocaleString()} kg · ต้นทาง Plant ${esc(plants)} · ส่งที่: ${esc(p.shipTo||'-')}`;
   return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}&dept=${dept}">
    <div class="appr-avatar">${esc((p.customer||'?').charAt(0))}</div>
@@ -1550,7 +1558,7 @@ function renderDODashboard(role){
  }).join(''):`<div class="appr-empty">${all.length?'ไม่มี Picking Slip ในหมวดนี้':'ยังไม่มี Picking Slip ที่ Service ออก'}</div>`;
  el.innerHTML=`<div class="appr-shell">
   <aside class="appr-sidebar">
-   <div class="appr-sidebar-head"><span>${dept==='Warehouse'?'📦 Warehouse':'🚚 Transport'}</span></div>
+   <div class="appr-sidebar-head"><span>${dept==='Warehouse'?'📦 Warehouse':dept==='Billing'?'🧾 Billing':'🚚 Transport'}</span></div>
    <nav class="appr-nav"><button class="appr-nav-item active"><span>Picking Slip ที่ต้องดำเนินการ</span><span class="appr-nav-badge${all.length?'':' zero'}">${all.length}</span></button></nav>
   </aside>
   <div class="appr-content">${summary}<div class="appr-list">${rows}</div></div>
@@ -1822,7 +1830,7 @@ let liveRefreshTimer = null;
 function refreshLiveViews(){
  if(!TMTStore.session.getUser()) return;
  const role = TMTStore.session.getRole() || 'sales';
- const liveRender={mgr01:renderMgr01Dashboard,approval:renderApprovalDashboard,planning:renderPlanningDashboard,service:renderServiceDashboard,warehouse:renderWarehouseDashboard,transport:renderTransportDashboard}[role];
+ const liveRender={mgr01:renderMgr01Dashboard,approval:renderApprovalDashboard,planning:renderPlanningDashboard,service:renderServiceDashboard,warehouse:renderWarehouseDashboard,transport:renderTransportDashboard,billing:renderBillingDashboard}[role];
  if(liveRender) liveRender();
  else if(!cardDrag) renderWidgetGrid();
  if(!document.getElementById('quotationListOverlay').classList.contains('hidden')) openQuotationList();

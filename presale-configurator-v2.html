@@ -169,7 +169,9 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .do-table .do-fill td{height:260px}
 .do-c-c{text-align:center}.do-c-n{text-align:right;white-space:nowrap}.do-c-doc{font-size:11px}.do-c-code{word-break:break-all;max-width:110px}
 .do-bar{margin-top:6px}
-.do-own{font-size:9.5px;color:#555;font-weight:400;line-height:1.4;margin:1px 0 4px}
+.do-own{font-size:13px;color:#222;font-weight:400;line-height:1.55;margin:3px 0 7px}
+.do-own b{font-size:14px;color:#0B3C5D}
+.do-own-k{color:#555;font-weight:600}
 .do-docno{font-size:13px;font-weight:600}.do-sub{font-size:10.5px;color:#444;margin-top:2px}
 .do-note{border:1.5px solid #111;border-top:0;padding:8px 10px;font-size:12.5px}
 .do-cond{border:1.5px solid #111;border-top:0;padding:8px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 14px;font-size:12px}
@@ -2638,17 +2640,21 @@ function doFmtDot(d){
  return `${String(x.getDate()).padStart(2,'0')}.${String(x.getMonth()+1).padStart(2,'0')}.${x.getFullYear()}`;
 }
 // ป้ายใต้หัวข้อ: ส่วนงานที่ดูแล + ฟิลด์ใน Handover ที่เกี่ยวข้อง (อ้างอิง owner ของแต่ละฟิลด์ใน Handover)
+// ส่วนงานที่ใช้ใบ Picking Slip — ข้อมูลตาม Handover บนใบแสดงเฉพาะที่ 4 ส่วนงานนี้ดูแล (ส่วนงานอื่นไม่แสดง)
+const PS_DEPTS=['Service','Warehouse','Billing','Transport'];
 function psOwnTag(ids,fams){
  const owners=[], labels=[];
  Object.keys(productFieldDefs).filter(k=>!fams||!fams.length||fams.includes(k)).forEach(k=>productFieldDefs[k].forEach(f=>{
   if(!ids.includes(f.id)) return;
-  f.owner.split(' / ').map(o=>o.trim()).forEach(o=>{ if(!owners.includes(o)) owners.push(o); });
+  const mine=f.owner.split(' / ').map(o=>o.trim()).filter(o=>PS_DEPTS.includes(o));
+  if(!mine.length) return;
+  mine.forEach(o=>{ if(!owners.includes(o)) owners.push(o); });
   const l=f.label.replace(/\s*\/\s*[^\/]*[\u0E00-\u0E7F][^\/]*$/,'').trim();
   if(!labels.includes(l)) labels.push(l);
  }));
  if(!owners.length) return '';
  const icon=k=>(HO_DEPTS.find(d=>d.k===k)||{}).icon||'';
- return `<div class="do-own">ดูแลโดย: ${owners.map(o=>`${icon(o)} ${esc(o)}`).join(' · ')}<br>เกี่ยวข้อง: ${labels.map(esc).join(' · ')}</div>`;
+ return `<div class="do-own"><span class="do-own-k">ดูแลโดย:</span> <b>${owners.map(o=>`${icon(o)} ${esc(o)}`).join(' · ')}</b><br><span class="do-own-k">เกี่ยวข้อง:</span> ${labels.map(esc).join(' · ')}</div>`;
 }
 function psSalesOrders(ps){
  return [...new Set((ps.lines||[]).map(l=>l.soNo))].map(n=>loadSalesOrders().find(s=>s.soNo===n)).filter(Boolean);
@@ -2782,7 +2788,7 @@ function loadPSHandoverView(ps,dept){
  document.getElementById('customer').value=ps.customer||'';
  document.getElementById('sales').value=[...new Set(sos.map(s=>s.sales).filter(Boolean))].join(', ');
  document.body.classList.add('view-mode','handover-view');
- handoverRec=sos[0]; handoverDO=ps; handoverDepts=['Warehouse','Transport'];
+ handoverRec=sos[0]; handoverDO=ps; handoverDepts=['Warehouse','Transport','Billing'];
  handoverTab=handoverDepts.includes(dept)?dept:'Warehouse';
  showScreen(9);
  const title=document.getElementById('handoverTitle'); if(title) title.textContent='Picking Slip Handover (ใบงาน)';

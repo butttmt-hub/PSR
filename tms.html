@@ -86,12 +86,23 @@ body.with-drawer{padding-right:500px}
 .dr-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--brand);color:#fff}
 .dr-h b{font-size:14px}.dr-h small{display:block;opacity:.85;margin-top:2px;font-size:11.5px}
 .dr-h button{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.5);color:#fff}
-.dr-b{overflow:auto;flex:1;padding:10px;background:var(--bg)}
-details.dr-sec{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.dr-b{overflow:auto;flex:1;padding:10px;background:var(--bg);display:flex;flex-direction:column}
+details.dr-sec{flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
 details.dr-sec>summary{padding:10px 12px;cursor:pointer;background:var(--brand2);color:var(--brand);font-size:13px;list-style:none}
 details.dr-sec>summary::-webkit-details-marker{display:none}
 details.dr-sec>summary .sm{display:block;color:var(--muted);font-size:11.5px;font-weight:400;margin-top:2px}
 .dr-sec iframe{width:100%;height:300px;border:0;background:#fff;display:block}
+.seq{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.seq-h{margin-bottom:8px;color:var(--ink)}
+.seq-l{list-style:none;margin:0;padding:0}
+.seq-l li{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;background:#fff;cursor:grab;user-select:none}
+.seq-l li.dragging{opacity:.4}
+.seq-l li.over-top{box-shadow:0 -3px 0 var(--brand)}
+.seq-l li.over-bottom{box-shadow:0 3px 0 var(--brand)}
+.seq-l .grip{color:#8FA3B8;font-size:18px;cursor:grab}
+.seq-l .no{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:13px}
+.seq-l .seq-m{flex:1;min-width:0}
+.seq-l .seq-b{display:flex;gap:4px}
 .dr-no{display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;margin-right:8px}
 .dr-open{position:fixed;right:18px;bottom:18px;z-index:29;box-shadow:0 6px 18px rgba(20,38,59,.3);border-radius:999px;padding:10px 18px}
 .md-b input{width:100%}
@@ -150,7 +161,7 @@ const fmtDate=d=>{ if(!d) return '-'; const x=new Date(d.length<=10?d+'T00:00:00
 const fmtDT=d=>{ const x=new Date(d); return isNaN(x)?'-':x.toLocaleString('th-TH'); };
 const num=n=>(+n||0).toLocaleString('en-US',{maximumFractionDigits:0});
 
-let tab='inbox', filter='open', selected=new Set(), sessionUser=null;
+let tab='inbox', filter='open', selected=new Set(), sessionUser=null, flash='';
 try{ sessionUser=sessionStorage.getItem(K.user); }catch(e){}
 
 /* ---------- รับข้อมูลจาก V2 (interface) ---------- */
@@ -228,6 +239,7 @@ function eventsHtml(){
   if(!ev.length) return '';
   return `<div class="events">${ev.map((e,i)=>`<div class="event"><span>🔔 ${esc(e.text)} <small style="opacity:.7">· ${esc(fmtDT(e.at))}</small></span><button class="btn secondary small" onclick="dismissEvent('${esc(e.at)}')">รับทราบ</button></div>`).join('')}</div>`;
 }
+function flashHtml(){ return flash?`<div class="event" style="background:var(--okbg);border-color:#BFE3CB;color:var(--ok)"><span>${esc(flash)}</span><span><button class="btn secondary small" onclick="setTab('ship')">ไปที่ Shipments</button> <button class="btn secondary small" onclick="flash='';render()">ปิด</button></span></div>`:''; }
 function dismissEvent(at){ set(K.events,get(K.events,[]).map(e=>e.at===at?{...e,read:true}:e)); render(); }
 /* ===== Picking Slip ที่รับเข้า — ตารางตามหน้าตา TMS จริง: Select · Map · Picking No. · Sold to · Ship to · District · Province · Weight
    มีช่องกรองใต้หัวคอลัมน์ และกดหัวคอลัมน์เพื่อเรียงลำดับ ===== */
@@ -255,17 +267,17 @@ function inboxList(orders){
 }
 function mapUrl(s){ return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([s.shipName||s.customer,s.district,s.province].filter(x=>x&&x!=='-').join(' ')); }
 function inboxRowsHtml(list){
-  if(!list.length) return `<tr><td colspan="12" class="empty">ไม่พบรายการ</td></tr>`;
+  if(!list.length) return `<tr><td colspan="12" class="empty">ไม่มี Picking Slip ที่รอจัดรถ</td></tr>`;
   return list.map(o=>{
     const s=o.summary, isOpen=o.status==='open';
     return `<tr class="${selected.has(o.psNo)?'sel':''}">
-     <td class="c">${isOpen?`<input type="checkbox" ${selected.has(o.psNo)?'checked':''} onchange="toggleSel('${esc(o.psNo)}',this.checked,this)">`:''}</td>
+     <td class="c">${isOpen?`<input type="checkbox" ${selected.has(o.psNo)?'checked':''} onchange="toggleSel('${esc(o.psNo)}',this.checked,this)">`:'<input type="checkbox" disabled title="จัดรถแล้ว — อยู่ใน Shipment '+esc(o.shipNo)+'">'}</td>
      <td class="c"><a href="${esc(mapUrl(s))}" target="_blank" rel="noopener" title="เปิดแผนที่">${MAP_SVG}</a></td>
      <td><a class="plink" href="#" onclick="event.preventDefault();viewPS('${esc(o.psNo)}')">${esc(o.psNo)}</a><div class="sub">DO: ${esc(s.doNos.join(', '))}</div></td>
      <td>${esc(s.customer)}</td><td>${esc(s.shipName||'')}</td><td>${esc(s.district||'')}</td><td>${esc(s.province||'')}</td>
      <td class="n-r">${kgFmt(s.kg)}</td>
      <td>${esc(fmtDate(s.deliveryDate))}</td>
-     <td>${isOpen?'<span class="badge open">รอจัดรถ</span>':`<span class="badge done">จัดรถแล้ว · ${esc(o.shipNo)}</span>`}</td>
+     <td>${isOpen?'<span class="badge open">รอจัดรถ</span>':`<span class="badge done" style="cursor:pointer" onclick="setTab('ship')" title="ไปที่แท็บ Shipments">จัดรถแล้ว · ${esc(o.shipNo)}</span>`}</td>
      <td class="sub">${esc(fmtDT(o.receivedAt))}</td></tr>`;
   }).join('');
 }
@@ -283,9 +295,9 @@ function renderInbox(orders,ships){
   const stat=(k,n,l)=>`<div class="stat${filter===k?' active':''}" onclick="setFilter('${k}')"><div class="n">${n}</div><div class="l">${l}</div></div>`;
   const th=(k,label,cls)=>`<th class="srt-h ${cls||''}" onclick="setSort('${k}')">${label} ${arrow(k)}</th>`;
   const fl=(k,ph)=>`<th class="flt"><input placeholder="${ph}" value="${esc(colFilter[k])}" oninput="onColFilter('${k}',this.value)"></th>`;
-  return `${eventsHtml()}
+  return `${flashHtml()}${eventsHtml()}
    <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn secondary small" onclick="syncFromV2()" title="ดึง Picking Slip ที่มีอยู่แล้วใน V2 แต่ยังไม่อยู่ใน TMS">🔄 ดึง Picking Slip เดิมจาก V2</button></div>
-   <div class="cards">${stat('open',open.length,'รอจัดรถ')}${stat('assigned',asg.length,'จัดรถแล้ว')}${stat('all',orders.length,'ทั้งหมดที่รับเข้า')}</div>
+   <div class="cards"><div class="stat active" style="cursor:default"><div class="n">${open.length}</div><div class="l">รอจัดรถ</div></div><div class="stat" onclick="setTab('ship')" title="ไปที่แท็บ Shipments"><div class="n">${ships.length}</div><div class="l">Shipments ที่จัดแล้ว (ดูที่แท็บ Shipments)</div></div></div>
    <div class="panel"><table class="tms">
     <thead>
      <tr><th class="c">Select</th>${th('map','Map','c')}${th('psNo','Picking No.')}${th('sold','Sold to')}${th('ship','Ship to')}${th('district','District')}${th('province','Province')}${th('weight','Weight','n-r')}${th('date','กำหนดส่ง')}${th('status','สถานะ')}<th>รับเข้าเมื่อ</th></tr>
@@ -293,7 +305,8 @@ function renderInbox(orders,ships){
     </thead>
     <tbody id="inboxBody"></tbody></table></div>
    <div class="sub" style="margin:8px 2px" id="inboxCount"></div>
-   ${filter==='open'?`<div class="bar" id="selBar"><span id="selTxt"></span><button class="btn" id="selBtn" onclick="openShipDialog()">สร้าง Shipment →</button></div>`:''}`;
+   <div id="seqPanel" style="margin-top:-2px"></div>
+   ${filter!=='assigned'?`<div class="bar" id="selBar"><span id="selTxt"></span><button class="btn" id="selBtn" onclick="openShipDialog()">สร้าง Shipment →</button></div>`:''}`;
 }
 let drawerOpen=true;
 function openDrawer(){ drawerOpen=true; syncDrawer(); }
@@ -313,7 +326,7 @@ function syncDrawer(){
       +'<iframe loading="lazy" src="presale-configurator-v2.html?viewPS='+encodeURIComponent(psNo)+'&tms=1&conds=1&dept=Transport&embed=1"></iframe>';
     body.appendChild(sec);
   });
-  sel.forEach((psNo,i)=>{ const el=body.querySelector('[data-ps="'+psNo+'"] .dr-no'); if(el) el.textContent=(i+1); });
+  sel.forEach((psNo,i)=>{ const sec=body.querySelector('[data-ps="'+psNo+'"]'); if(!sec) return; sec.style.order=i; const el=sec.querySelector('.dr-no'); if(el) el.textContent=(i+1); });
   document.getElementById('drSub').textContent=sel.length+' ใบ · รวม '+num(orders.filter(o=>selected.has(o.psNo)).reduce((t,o)=>t+o.summary.kg,0))+' kg';
   document.getElementById('drCnt').textContent=sel.length;
   dr.classList.toggle('hidden',!drawerOpen); btn.classList.toggle('hidden',drawerOpen);
@@ -330,8 +343,48 @@ function updateBar(){
   const kg=orders.reduce((s,o)=>s+o.summary.kg,0);
   t.textContent=orders.length?`เลือก ${orders.length} Picking Slip · ${num(kg)} kg`:'ติ๊กเลือก Picking Slip ได้หลายใบ เพื่อขึ้นรถคันเดียวกัน (1 Shipment)';
   document.getElementById('selBtn').disabled=!orders.length;
+  renderSeq();
 }
 
+/* ===== สรุปใบที่ติ๊ก + ลากขึ้น/ลงเพื่อกำหนดลำดับการส่ง (ใช้เป็นลำดับจุดส่งของ Shipment) ===== */
+let dragPs=null;
+function renderSeq(){
+  const box=document.getElementById('seqPanel'); if(!box) return;
+  const orders=get(K.orders,[]);
+  const list=[...selected].map(n=>orders.find(o=>o.psNo===n)).filter(Boolean);
+  if(!list.length){ box.innerHTML=''; return; }
+  const kg=list.reduce((s,o)=>s+o.summary.kg,0);
+  box.innerHTML=`<div class="seq"><div class="seq-h"><b>ลำดับการส่งสินค้า</b> · ${list.length} Picking Slip · ${kgFmt(kg)} kg
+    <span class="sub"> — ลากแถวขึ้น/ลงเพื่อสลับลำดับ (1 = จุดส่งแรก) หรือกดลูกศร</span></div>
+   <ol class="seq-l">${list.map((o,i)=>{ const s=o.summary; return `<li draggable="true" data-ps="${esc(o.psNo)}" ondragstart="seqDragStart(event)" ondragover="seqDragOver(event)" ondragleave="seqDragLeave(event)" ondrop="seqDrop(event)" ondragend="seqDragEnd(event)">
+     <span class="grip" title="ลากเพื่อสลับลำดับ">⠿</span><span class="no">${i+1}</span>
+     <div class="seq-m"><b>${esc(o.psNo)}</b> · ${esc(s.customer)}<div class="sub">Ship to: ${esc(s.shipName||'-')}${s.district||s.province?' · '+esc([s.district,s.province].filter(Boolean).join(' ')):''} · ${kgFmt(s.kg)} kg · กำหนดส่ง ${esc(fmtDate(s.deliveryDate))}</div></div>
+     <span class="seq-b"><button class="btn secondary small" onclick="seqMove('${esc(o.psNo)}',-1)" ${i===0?'disabled':''} title="เลื่อนขึ้น">▲</button><button class="btn secondary small" onclick="seqMove('${esc(o.psNo)}',1)" ${i===list.length-1?'disabled':''} title="เลื่อนลง">▼</button><button class="btn danger small" onclick="seqRemove('${esc(o.psNo)}')" title="เอาออกจากรายการที่เลือก">✕</button></span></li>`; }).join('')}</ol></div>`;
+}
+function seqApply(arr){ selected=new Set(arr); renderInboxRows(); updateBar(); syncDrawer(); }
+function seqMove(psNo,delta){
+  const arr=[...selected], i=arr.indexOf(psNo), j=i+delta;
+  if(i<0||j<0||j>=arr.length) return;
+  arr.splice(i,1); arr.splice(j,0,psNo); seqApply(arr);
+}
+function seqRemove(psNo){ selected.delete(psNo); renderInboxRows(); updateBar(); syncDrawer(); }
+function seqDragStart(e){ dragPs=e.currentTarget.dataset.ps; e.dataTransfer.effectAllowed='move'; try{ e.dataTransfer.setData('text/plain',dragPs); }catch(x){} e.currentTarget.classList.add('dragging'); }
+function seqDragOver(e){
+  e.preventDefault(); e.dataTransfer.dropEffect='move';
+  const li=e.currentTarget, r=li.getBoundingClientRect(), top=(e.clientY-r.top)<r.height/2;
+  li.classList.toggle('over-top',top); li.classList.toggle('over-bottom',!top);
+}
+function seqDragLeave(e){ e.currentTarget.classList.remove('over-top','over-bottom'); }
+function seqDrop(e){
+  e.preventDefault();
+  const li=e.currentTarget, target=li.dataset.ps, r=li.getBoundingClientRect(), after=(e.clientY-r.top)>=r.height/2;
+  li.classList.remove('over-top','over-bottom');
+  if(!dragPs||dragPs===target){ dragPs=null; return; }
+  const arr=[...selected].filter(n=>n!==dragPs);
+  let idx=arr.indexOf(target); if(after) idx++;
+  arr.splice(idx,0,dragPs); dragPs=null; seqApply(arr);
+}
+function seqDragEnd(e){ dragPs=null; document.querySelectorAll('.seq-l li').forEach(li=>li.classList.remove('dragging','over-top','over-bottom')); }
 function renderShips(orders,ships){
   const list=ships.slice().sort((a,b)=>(a.tripDate||'9999')<(b.tripDate||'9999')?-1:1);
   const html=list.map(s=>{
@@ -398,7 +451,7 @@ function createShipment(){
   ships.push({shipNo,psNos:picks.map(o=>o.psNo),plate,driver,tripDate:document.getElementById('shDate').value,note:document.getElementById('shNote').value.trim(),createdAt:new Date().toISOString(),createdBy:sessionUser,status:'planned'});
   orders=orders.map(o=>picks.some(p=>p.psNo===o.psNo)?{...o,status:'assigned',shipNo}:o);
   set(K.orders,orders); set(K.ships,ships);
-  selected=new Set(); closeModal(); tab='ship'; render();
+  selected=new Set(); closeModal(); filter='open'; flash=`✅ สร้าง Shipment ${shipNo} แล้ว (${picks.length} Picking Slip · รถ ${plate}) — ใบที่จัดรถแล้วย้ายไปอยู่ที่แท็บ Shipments`; render();
 }
 function openShipEdit(shipNo){
   const s=get(K.ships,[]).find(x=>x.shipNo===shipNo); if(!s) return;

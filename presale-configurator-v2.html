@@ -2665,6 +2665,10 @@ function doFmtDot(d){
 // ป้ายใต้หัวข้อ: ส่วนงานที่ดูแล + ฟิลด์ใน Handover ที่เกี่ยวข้อง (อ้างอิง owner ของแต่ละฟิลด์ใน Handover)
 // ส่วนงานที่ใช้ใบ Picking Slip — ข้อมูลตาม Handover บนใบแสดงเฉพาะที่ 4 ส่วนงานนี้ดูแล (ส่วนงานอื่นไม่แสดง)
 const PS_DEPTS=['Service','Warehouse','Billing','Transport'];
+function psOwnStatic(owners){
+ const icon=k=>(HO_DEPTS.find(d=>d.k===k)||{}).icon||'';
+ return `<div class="do-own"><span class="do-own-k">ดูแลโดย:</span> <b>${owners.map(o=>`${icon(o)} ${esc(o)}`).join(' · ')}</b></div>`;
+}
 function psOwnTag(ids,fams,only){   // only = จำกัดเฉพาะส่วนงานที่ระบุ (เช่น หัวข้อ Packing แสดงเฉพาะ Warehouse)
  const owners=[], labels=[];
  Object.keys(productFieldDefs).filter(k=>!fams||!fams.length||fams.includes(k)).forEach(k=>productFieldDefs[k].forEach(f=>{
@@ -2764,7 +2768,7 @@ const doSummary=[...new Set((ps.doNos&&ps.doNos.length?ps.doNos:(ps.lines||[]).m
    </table>
    <div class="do-note"><div><span class="do-k">ข้อควรระวัง</span> ${esc(caution)}${own(['cert','tubeCert'])}</div><div style="margin-top:12px"><span class="do-k">Packing</span> ${esc(packing)}${own(['packing','tubePackingType','tubeStrap','sticker','tubeSticker','bundle','tubePcsPack','tubePcsPackExtra'],['Warehouse'])}</div></div>
    <div class="do-cond">
-    <div><span class="do-k">รูปแบบการชั่ง</span> ชั่งรวม PC/KG</div>
+    <div><span class="do-k">รูปแบบการชั่ง</span>${psOwnStatic(['Billing'])} ชั่งรวม PC/KG</div>
     <div><span class="do-k">รูปแบบการส่งสินค้า</span>${own(['delivery','tubeDelivery'])} จัดส่งให้ลูกค้า</div>
     <div><span class="do-k">อุปกรณ์ลงของของลูกค้า</span>${own(['unloading','tubeUnloading'])} ${esc(fsText('unloading','tubeUnloading',''))}</div>
     <div><span class="do-k">แนบใบ Cert.</span>${own(['cert','tubeCert'])} ${esc(certText)}</div>

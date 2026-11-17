@@ -469,6 +469,16 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .sap-dd-hist{margin-top:8px;font-size:11.5px;line-height:1.7;color:#12304A}
 @media(max-width:760px){.sap-grid{grid-template-columns:1fr}}
 </style>
+<div class="wp-overlay hidden" id="psDateOverlay" onclick="if(event.target===this) closePsDateDialog()">
+  <div class="wp-card" style="max-width:560px;width:96%">
+    <div class="wp-head">
+      <h3>เลือกวันส่งร่วมของ DO</h3>
+      <button class="wp-close" onclick="closePsDateDialog()">×</button>
+    </div>
+    <div style="padding:16px 22px 22px" id="psDateBody"></div>
+  </div>
+</div>
+
 <div class="wp-overlay hidden" id="doTransferOverlay" onclick="if(event.target===this) closeDoTransfer()">
   <div class="wp-card" style="max-width:980px;width:96%">
     <div class="wp-head">
@@ -1210,6 +1220,42 @@ function updateServiceDoBar(){
  bar.querySelector('.alv-bar-txt').textContent=dos.length?`เลือก ${dos.length} DO · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`:'ติ๊กเลือก DO ที่ต้องการรวมเป็น Picking Slip';
  bar.querySelector('button').disabled=!dos.length;
 }
+function updateDODate(d,nd){
+ const old=d.deliveryDate||'';
+ if(old===nd) return false;
+ d.deliveryDate=nd;
+ d.deliveryDateHistory=(d.deliveryDateHistory||[]).concat([{from:old,to:nd,by:TMTStore.session.getUser()||'Service',at:new Date().toISOString()}]);
+ return TMTStore.deliveryOrders.upsert(d);
+}
+function setServiceDODate(doNo,v){
+ const d=TMTStore.deliveryOrders.get(doNo); if(!d) return;
+ if(psOfDO(doNo)){ alert(`แก้วันส่งไม่ได้ — DO ${doNo} ถูกรวมอยู่ใน Picking Slip แล้ว`); renderServiceDashboard(); return; }
+ if(!v){ alert('กรุณาเลือกวันที่ส่ง'); renderServiceDashboard(); return; }
+ updateDODate(d,v);
+ renderServiceDashboard();
+}
+// DO ที่เลือกมีลูกค้า/สถานที่ส่งเดียวกันแต่วันส่งไม่ตรงกัน → ให้เลือกวันส่งร่วมแล้วปรับทุกใบให้ตรงกัน ก่อนสร้าง Picking Slip
+function openPsDateDialog(dos){
+ const dates=dos.map(d=>d.deliveryDate).filter(Boolean).sort();
+ document.getElementById('psDateBody').innerHTML=`
+  <div style="font-size:12.5px;line-height:1.8;margin-bottom:10px">DO ที่เลือกมีวันส่งไม่ตรงกัน — เลือกวันส่งร่วมเพื่อรวมเป็น Picking Slip ใบเดียว ระบบจะปรับวันส่งของ DO ทุกใบให้เป็นวันที่เลือก</div>
+  <table class="price-table" style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:12px"><thead><tr><th>DO No.</th><th>S/O</th><th>วันส่งเดิม</th></tr></thead><tbody>${dos.map(d=>`<tr><td><strong>${esc(d.doNo)}</strong></td><td>${esc(doSoNos(d).join(', '))}</td><td>${d.deliveryDate?esc(sapDate(d.deliveryDate)):'-'}</td></tr>`).join('')}</tbody></table>
+  <div style="margin-bottom:14px"><label><strong>วันส่งร่วม</strong> <input type="date" id="psCommonDate" value="${esc(dates[0]||'')}" style="margin-left:8px;padding:6px 8px;border:1px solid var(--border,#C9D6E2);border-radius:6px"></label>
+   <span style="font-size:11.5px;color:var(--muted);margin-left:8px">ค่าเริ่มต้น = วันที่เร็วที่สุดในกลุ่ม</span></div>
+  <div style="display:flex;justify-content:flex-end;gap:10px">
+   <button class="ql-btn" onclick="closePsDateDialog()">ยกเลิก</button>
+   <button class="ql-btn transfer" onclick="applyPsCommonDate()">ตกลง — ปรับวันส่งและสร้าง Picking Slip</button>
+  </div>`;
+ document.getElementById('psDateOverlay').classList.remove('hidden');
+}
+function closePsDateDialog(){ document.getElementById('psDateOverlay').classList.add('hidden'); }
+function applyPsCommonDate(){
+ const nd=document.getElementById('psCommonDate').value;
+ if(!nd){ alert('กรุณาเลือกวันส่งร่วม'); return; }
+ TMTStore.deliveryOrders.list().filter(d=>serviceDoSel.has(d.doNo)&&!psOfDO(d.doNo)).forEach(d=>updateDODate(d,nd));
+ closePsDateDialog();
+ serviceCreatePS();
+}
 function deleteServicePS(psNo){
  const p=TMTStore.pickingSlips.get(psNo); if(!p) return;
  const dos=(p.doNos||[]).join(', ');
@@ -1241,6 +1287,7 @@ function serviceCreatePS(){
   if(new Set(dos.map(d=>d.soldToCode||d.customer)).size>1) diff.push('ลูกค้า');
   if(new Set(dos.map(doShipTo)).size>1) diff.push('สถานที่ส่ง');
   if(new Set(dos.map(d=>d.deliveryDate)).size>1) diff.push('วันส่ง');
+  if(diff.length===1&&diff[0]==='วันส่ง'){ openPsDateDialog(dos); return; }
   alert(`รวมเป็น Picking Slip ใบเดียวไม่ได้ — DO ที่เลือกต้องเป็น ลูกค้า สถานที่ส่ง และวันส่งเดียวกัน\n(ที่ไม่ตรงกัน: ${diff.join(', ')})`);
   return;
  }
@@ -1281,7 +1328,7 @@ function renderServiceDOTab(){
    <td><input type="checkbox" ${serviceDoSel.has(d.doNo)?'checked':''} onchange="toggleServiceDo('${esc(d.doNo)}',this.checked);this.closest('tr').classList.toggle('sel',this.checked)"></td>
    <td><button class="ql-btn" style="padding:2px 8px;border-color:#E3B1AC;color:#B42318" onclick="deleteServiceDO('${esc(d.doNo)}')" title="ลบ DO — รายการกลับเข้า S/O">🗑 ลบ</button></td>
    <td><strong>${esc(d.doNo)}</strong></td><td>${esc(doSoNos(d).join(', '))}</td><td>${esc(d.customer||'-')}</td><td>${esc(doShipTo(d).split(' ต.')[0]||'-')}</td>
-   <td>${d.deliveryDate?esc(sapDate(d.deliveryDate)):'-'}</td><td class="alv-n">${(d.lines||[]).length}</td>
+   <td><input type="date" value="${esc(d.deliveryDate||'')}" onchange="setServiceDODate('${esc(d.doNo)}',this.value)" title="แก้วันส่งของ DO ให้ตรงกันเพื่อรวมเป็น Picking Slip" style="padding:3px 6px;border:1px solid #C9D6E2;border-radius:6px;font-size:12px;font-family:inherit"></td><td class="alv-n">${(d.lines||[]).length}</td>
    <td class="alv-n">${x.pcs.toLocaleString()}</td><td class="alv-n">${Math.round(x.kg).toLocaleString()}</td>
    <td><span class="appr-delivery-badge pending">รอรวม Picking Slip</span></td></tr>`;
  });
@@ -1290,7 +1337,7 @@ function renderServiceDOTab(){
   <thead><tr><th></th><th></th><th>DO No.</th><th>S/O No.</th><th>Sold to (name)</th><th>Ship to (name)</th><th>กำหนดส่ง</th><th class="alv-n">รายการ</th><th class="alv-n">pcs</th><th class="alv-n">น้ำหนัก (kg)</th><th>สถานะ</th></tr></thead>
   <tbody>${body}</tbody></table></div>
   <div class="alv-bar" id="serviceDoBar"><span class="alv-bar-txt"></span><button class="ql-btn transfer" onclick="serviceCreatePS()">สร้าง Picking Slip →</button></div>
-  <div style="font-size:11.5px;color:var(--muted);margin-top:8px">เลือกได้เฉพาะ DO ที่ลูกค้า สถานที่ส่ง และวันส่งเดียวกัน · DO ที่ออกหลังจากสร้าง Picking Slip แล้วจะไปอยู่ใน Picking Slip ใบใหม่</div>`
+  <div style="font-size:11.5px;color:var(--muted);margin-top:8px">เลือกได้เฉพาะ DO ที่ลูกค้าและสถานที่ส่งเดียวกัน · วันส่งไม่ตรงกันแก้ได้ที่ช่องวันที่ในตาราง หรือกดสร้างแล้วเลือกวันส่งร่วม · DO ที่ออกหลังจากสร้าง Picking Slip แล้วจะไปอยู่ใน Picking Slip ใบใหม่</div>`
   :`<div class="appr-empty">ไม่มี DO ที่รอรวม Picking Slip</div>`;
  const sweptHtml=swept.length?`<div style="margin-top:22px"><div class="sap-items-title">DO ที่รวมเป็น Picking Slip แล้ว (${swept.length})</div><div class="alv-wrap" style="border-radius:0 0 8px 8px"><table class="alv"><tbody>${swept.map(x=>`<tr class="alv-row blocked"><td><strong>${esc(x.d.doNo)}</strong></td><td>${esc(doSoNos(x.d).join(', '))}</td><td>${esc(x.d.customer||'-')}</td><td>${x.d.deliveryDate?esc(sapDate(x.d.deliveryDate)):'-'}</td><td class="alv-n">${x.pcs.toLocaleString()} pcs</td><td>อยู่ใน Picking Slip <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(x.ps.psNo)}">${esc(x.ps.psNo)}</a></td></tr>`).join('')}</tbody></table></div></div>`:'';
  return `${table}${sweptHtml}`;

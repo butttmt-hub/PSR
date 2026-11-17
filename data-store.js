@@ -22,12 +22,13 @@
 (function(global){
   'use strict';
 
-  var COLLECTIONS = ['quotations', 'salesOrders', 'discountApprovals'];
+  var COLLECTIONS = ['quotations', 'salesOrders', 'discountApprovals', 'deliveryOrders'];
 
   var KEYS = {
     quotations: 'tmt_saved_quotations',
     salesOrders: 'tmt_sales_orders',
     discountApprovals: 'tmt_discount_approvals',
+    deliveryOrders: 'tmt_delivery_orders',
     widgets: 'tmt_dashboard_widgets',
     theme: 'tmt_theme',
     sessionUser: 'tmt_sales_portal_user',
@@ -37,7 +38,8 @@
   var ID_FIELD = {
     quotations: 'quotationNo',
     salesOrders: 'soNo',
-    discountApprovals: 'quotationNo'
+    discountApprovals: 'quotationNo',
+    deliveryOrders: 'doNo'
   };
 
   function isThenable(x){ return x && typeof x.then === 'function'; }
@@ -295,6 +297,7 @@
     quotations: makeCollection('quotations'),
     salesOrders: makeCollection('salesOrders'),
     discountApprovals: makeCollection('discountApprovals'),
+    deliveryOrders: makeCollection('deliveryOrders'),
     numbering: numbering,
     prefs: prefs,
     session: session,

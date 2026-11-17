@@ -33,7 +33,7 @@ if (store && store.backend() === 'firestore') {
   const db = getFirestore(app);
   const auth = getAuth(app);
 
-  const COLLECTIONS = ['quotations', 'salesOrders', 'discountApprovals'];
+  const COLLECTIONS = ['quotations', 'salesOrders', 'discountApprovals', 'deliveryOrders'];
   const MAX_DOC_BYTES = window.TMT_MAX_DOC_BYTES || 900000;
   const enc = new TextEncoder();
 
@@ -94,11 +94,11 @@ if (store && store.backend() === 'firestore') {
     };
   }
 
-  // role ของผู้ใช้เก็บที่ users/{uid} = { username, role } (role: sales | mgr01 | approval | planning)
+  // role ของผู้ใช้เก็บที่ users/{uid} = { username, role } (role: sales | mgr01 | approval | planning | service)
   async function loadProfile(user) {
     const snap = await getDoc(doc(db, 'users', user.uid));
     const p = snap.exists() ? snap.data() : null;
-    if (!p || !['sales', 'mgr01', 'approval', 'planning'].includes(p.role)) {
+    if (!p || !['sales', 'mgr01', 'approval', 'planning', 'service'].includes(p.role)) {
       const err = new Error('no role');
       err.code = 'no-role';
       throw err;

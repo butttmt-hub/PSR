@@ -352,7 +352,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       </div>
       <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
       <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Planning: <b>Plan</b> / <b>P123</b></div>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Planning: <b>Plan</b> / <b>P123</b> &nbsp;·&nbsp; Service: <b>Service</b> / <b>SV123</b></div>
     </div>
   </div>
 </div>
@@ -386,6 +386,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
     <div id="mgr01DashboardView" class="hidden"></div>
     <div id="approvalDashboardView" class="hidden"></div>
     <div id="planningDashboardView" class="hidden"></div>
+    <div id="serviceDashboardView" class="hidden"></div>
   </main>
 </div>
 
@@ -426,6 +427,35 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
   </div>
 </div>
 
+<style>
+.alv-filter{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;margin:0 0 12px;font-size:12px}
+.alv-filter label{display:flex;flex-direction:column;gap:3px;font-weight:700;color:var(--muted)}
+.alv-filter input,.alv-filter select{padding:6px 8px;border:1px solid #C9D6E2;border-radius:6px;font-size:12px;font-family:inherit;background:#fff;color:#12304A}
+.alv-wrap{overflow:auto;border:1px solid #C9D6E2;border-radius:8px;max-height:62vh;background:#fff}
+.alv{border-collapse:collapse;width:100%;font-size:12px;color:#12304A}
+.alv th{position:sticky;top:0;background:#E8EEF4;border-bottom:1px solid #C9D6E2;padding:6px 8px;text-align:left;white-space:nowrap;z-index:1}
+.alv td{padding:5px 8px;border-bottom:1px solid #E6EDF3;white-space:nowrap}
+.alv tr.alv-row:nth-child(even) td{background:#F4F8FB}
+.alv tr.alv-row.sel td{background:#DCEBFA}
+.alv tr.alv-row.blocked td{background:#F2F2F2;color:#8A8A8A}
+.alv tr.alv-sub td{background:#FFF9C4;font-weight:700;border-bottom:1px solid #E6D96B}
+.alv .alv-n{text-align:right}
+.alv td.alv-urgent{color:#B42318;font-weight:700}
+.alv-short{color:#B42318;font-size:11px;font-weight:700;margin-left:6px}
+.alv-part{background:#EAF3FA;color:#0B5C8E;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700}
+.alv-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;padding:10px 14px;border-radius:10px;background:#EAF3FA;color:#0B5C8E;font-weight:700;font-size:13px}
+.alv-bar button:disabled{opacity:.45;cursor:not-allowed}
+</style>
+<div class="wp-overlay hidden" id="doTransferOverlay" onclick="if(event.target===this) closeDoTransfer()">
+  <div class="wp-card" style="max-width:980px;width:96%">
+    <div class="wp-head">
+      <h3>Transfer S/O → DO (Picking Slip)</h3>
+      <button class="wp-close" onclick="closeDoTransfer()">×</button>
+    </div>
+    <div style="padding:16px 22px 22px" id="doTransferBody"></div>
+  </div>
+</div>
+
 <script src="firebase-config.js"></script>
 <script src="data-store.js"></script>
 <script type="module" src="firebase-adapter.js"></script>
@@ -448,7 +478,8 @@ const CREDENTIALS_LIST = [
  { username: 'Sale01', password: 'S123', role: 'sales' },
  { username: 'Mgr01', password: 'M123', role: 'mgr01' },
  { username: 'Apv01', password: 'A123', role: 'approval' },
- { username: 'Plan', password: 'P123', role: 'planning' },
+  { username: 'Plan', password: 'P123', role: 'planning' },
+ { username: 'Service', password: 'SV123', role: 'service' },
 ];
 async function attemptLoginFirestore(u, p, errEl){
  const btn = document.querySelector('.login-btn');
@@ -484,7 +515,8 @@ const DASHBOARD_BRAND_BY_ROLE = {
  sales: 'Sales Performance Dashboard',
  mgr01: 'Approval Dashboard (Mgr01)',
  approval: 'S/O Approval Dashboard',
- planning: 'Planning Dashboard',
+  planning: 'Planning Dashboard',
+ service: 'Service Dashboard (Transfer to DO)',
 };
 function showDashboard(user, role){
  document.getElementById('loginScreen').classList.add('hidden');
@@ -499,11 +531,13 @@ function showDashboard(user, role){
  document.getElementById('salesDashboardView').classList.toggle('hidden', role!=='sales');
  document.getElementById('mgr01DashboardView').classList.toggle('hidden', role!=='mgr01');
  document.getElementById('approvalDashboardView').classList.toggle('hidden', role!=='approval');
- document.getElementById('planningDashboardView').classList.toggle('hidden', role!=='planning');
- document.getElementById('salesDashboardView').classList.toggle('hidden', role==='mgr01'||role==='approval'||role==='planning');
+  document.getElementById('planningDashboardView').classList.toggle('hidden', role!=='planning');
+ document.getElementById('serviceDashboardView').classList.toggle('hidden', role!=='service');
+ document.getElementById('salesDashboardView').classList.toggle('hidden', role==='mgr01'||role==='approval'||role==='planning'||role==='service');
  if(role==='mgr01') renderMgr01Dashboard();
  else if(role==='approval') renderApprovalDashboard();
- else if(role==='planning') renderPlanningDashboard();
+  else if(role==='planning') renderPlanningDashboard();
+ else if(role==='service') renderServiceDashboard();
  else renderWidgetGrid();
 }
 
@@ -910,6 +944,294 @@ function renderPlanningDashboard(){
   <div class="appr-content">${summary}<div class="appr-list">${rows}</div></div>
  </div>`;
 }
+// ---------- Service Dashboard: Sales Order Outstanding → Transfer to DO (Picking Slip) ----------
+// หน้าตาคล้ายรายงาน SAP "Sales Order Outstanding": แถวละ 1 รายการสินค้าที่ยังไม่ออก DO เรียงตามกำหนดส่ง
+// Service ติ๊กเลือกรายการ (ข้าม S/O ได้) แล้วกด Transfer — ระบบออก DO แยกตาม S/O
+// ถึงเวลา Transfer = ก่อนกำหนดส่งประมาณ 1-2 วัน (เลยกำหนดก็นับ) · ยอดคงเหลือคำนวณจาก DO ที่ออกไปแล้ว ไม่แก้ตัว S/O
+const SERVICE_TRANSFER_DAYS=2;
+function doQtyMap(soNo){
+ const m={};
+ TMTStore.deliveryOrders.list().filter(d=>d.soNo===soNo).forEach(d=>(d.lines||[]).forEach(l=>{ m[l.itemId]=(m[l.itemId]||0)+l.qty; }));
+ return m;
+}
+function itemStockShort(i,qty){
+ const remain=Number.isFinite(i.remain)?i.remain:null;
+ if(i.type!=='Stock'||remain===null) return qty;
+ return Math.max(qty-Math.max(remain,0),0);
+}
+function sapDate(v){
+ const d=new Date(v); if(isNaN(d)) return '';
+ return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+}
+function serviceShipTo(rec){ const t=(rec.quoteExtra&&rec.quoteExtra.deliveryPlace)||''; return t.split(' ต.')[0].split(' อ.')[0]||rec.customer||'-'; }
+function serviceLines(){
+ const out=[];
+ loadSalesOrders().filter(s=>s.status==='approved').forEach(rec=>{
+  const done=doQtyMap(rec.soNo);
+  (rec.cart||[]).forEach(i=>{
+   const left=Math.max(i.qty-(done[i.id]||0),0);
+   if(left>0) out.push({key:`${rec.soNo}|${i.id}`,rec,i,left,kg:left*i.weight,days:approvalUrgencyDays(rec),short:itemStockShort(i,left),blocked:!!rec.blocked});
+  });
+ });
+ return out;
+}
+let serviceTab='queue';
+let serviceGroup='date';                         // 'date' = เรียงตามกำหนดส่ง · 'customer' = จัดกลุ่มตามลูกค้าแบบ SAP
+let serviceFilter={quick:null,from:'',to:'',q:''};
+let serviceSel=new Set();
+let serviceGroupKeys=[];
+function setServiceTab(t){ serviceTab=t; renderServiceDashboard(); }
+function setServiceQuick(k){ serviceFilter.quick=(serviceFilter.quick===k||k===null)?null:k; renderServiceDashboard(); }
+function setServiceGroup(g){ serviceGroup=g; renderServiceDashboard(); }
+function setServiceFilterField(f,v){ serviceFilter[f]=v; renderServiceDashboard(); }
+function serviceVisibleLines(all){
+ const f=serviceFilter, q=f.q.trim().toLowerCase();
+ return all.filter(x=>{
+  if(f.quick==='due'&&!(x.days!==null&&x.days<=SERVICE_TRANSFER_DAYS)) return false;
+  if(f.quick==='later'&&!(x.days!==null&&x.days>SERVICE_TRANSFER_DAYS)) return false;
+  if(f.quick==='noDate'&&x.days!==null) return false;
+  if(f.from&&!(x.rec.deliveryDate&&x.rec.deliveryDate>=f.from)) return false;
+  if(f.to&&!(x.rec.deliveryDate&&x.rec.deliveryDate<=f.to)) return false;
+  if(q&&!`${x.rec.soNo} ${x.rec.customer} ${x.rec.poNo||''} ${x.i.code} ${x.i.desc}`.toLowerCase().includes(q)) return false;
+  return true;
+ });
+}
+function serviceSortKey(x){
+ const date=x.rec.deliveryDate||'9999-12-31';
+ return serviceGroup==='customer'?`${x.rec.customer||''}|${date}|${x.rec.soNo}|${String(x.i.id).padStart(4,'0')}`:`${date}|${x.rec.soNo}|${String(x.i.id).padStart(4,'0')}`;
+}
+function toggleServiceLine(key,on){ if(on) serviceSel.add(key); else serviceSel.delete(key); updateServiceBar(); }
+function toggleServiceAll(on){
+ serviceVisibleLines(serviceLines()).filter(x=>!x.blocked).forEach(x=>{ if(on) serviceSel.add(x.key); else serviceSel.delete(x.key); });
+ renderServiceDashboard();
+}
+function toggleServiceGroup(idx,on){
+ (serviceGroupKeys[idx]||[]).forEach(k=>{ if(on) serviceSel.add(k); else serviceSel.delete(k); });
+ renderServiceDashboard();
+}
+function updateServiceBar(){
+ const lines=serviceLines().filter(x=>serviceSel.has(x.key));
+ const kg=lines.reduce((s,x)=>s+x.kg,0);
+ const sos=new Set(lines.map(x=>x.rec.soNo)).size;
+ const bar=document.getElementById('serviceSelBar'); if(!bar) return;
+ bar.querySelector('.alv-bar-txt').textContent=lines.length?`เลือก ${lines.length} รายการ · ${sos} S/O · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`:'ติ๊กเลือกรายการที่ต้องการเปิด DO';
+ bar.querySelector('button').disabled=!lines.length;
+}
+function serviceOpenTransferSelected(){
+ const keys=[...serviceSel];
+ if(!keys.length) return;
+ openDoTransfer(keys);
+}
+function renderServiceDashboard(){
+ const el=document.getElementById('serviceDashboardView'); if(!el) return;
+ const allDO=TMTStore.deliveryOrders.list().slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+ const all=serviceLines();
+ // ตัดรายการที่เลือกไว้แต่ไม่มีในคิวแล้ว (เช่น เพิ่ง Transfer ไป)
+ const valid=new Set(all.filter(x=>!x.blocked).map(x=>x.key));
+ serviceSel=new Set([...serviceSel].filter(k=>valid.has(k)));
+ const soCount=new Set(all.map(x=>x.rec.soNo)).size;
+ const nav=`<aside class="appr-sidebar">
+   <div class="appr-sidebar-head"><span>📦 Service</span></div>
+   <nav class="appr-nav">
+    <button class="appr-nav-item${serviceTab==='queue'?' active':''}" onclick="setServiceTab('queue')"><span>Sales Order Outstanding</span><span class="appr-nav-badge${all.length?'':' zero'}">${all.length}</span></button>
+    <button class="appr-nav-item${serviceTab==='done'?' active':''}" onclick="setServiceTab('done')"><span>ออก DO แล้ว</span><span class="appr-nav-badge${allDO.length?'':' zero'}">${allDO.length}</span></button>
+   </nav>
+  </aside>`;
+ let content;
+ if(serviceTab==='done'){
+  content=`<div class="appr-list">${allDO.length?allDO.map(d=>{
+   const kg=(d.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0);
+   const created=esc(new Date(d.createdAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+   const dl=d.deliveryDate?esc(new Date(d.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})):'-';
+   return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewDO=${encodeURIComponent(d.doNo)}">
+    <div class="appr-avatar">${esc((d.customer||'?').charAt(0))}</div>
+    <div class="appr-main">
+     <div class="appr-subject">Picking Slip <strong>${esc(d.doNo)}</strong> <span style="font-weight:400;color:var(--muted)">(S/O ${esc(d.soNo)})</span></div>
+     <div class="appr-snippet">${esc(d.customer||'-')} · ${(d.lines||[]).length} รายการ · ${Math.round(kg).toLocaleString()} kg · ผู้จัดทำ: ${esc(d.createdBy||'-')}</div>
+     <div class="appr-delivery-row"><span class="appr-delivery-badge">🚚 กำหนดส่ง ${dl}</span></div>
+    </div>
+    <div class="appr-time">${created}</div>
+   </a>`;
+  }).join(''):`<div class="appr-empty">ยังไม่มี DO ที่ออก</div>`}</div>`;
+ } else {
+  const cnt=k=>all.filter(x=>k==='due'?(x.days!==null&&x.days<=SERVICE_TRANSFER_DAYS):k==='later'?(x.days!==null&&x.days>SERVICE_TRANSFER_DAYS):x.days===null).length;
+  const act=k=>serviceFilter.quick===k?' active':'';
+  const summary=`<div class="appr-summary">
+   <div class="appr-stat${serviceFilter.quick===null?' active':''}" onclick="setServiceQuick(null)"><div class="appr-stat-num">${all.length}</div><div class="appr-stat-lbl">รายการค้างทั้งหมด (${soCount} S/O)</div></div>
+   <div class="appr-stat${cnt('due')>0?' urgent':''}${act('due')}" onclick="setServiceQuick('due')"><div class="appr-stat-num">${cnt('due')}</div><div class="appr-stat-lbl">ถึงเวลา Transfer (≤ ${SERVICE_TRANSFER_DAYS} วัน / เลยกำหนด)</div></div>
+   <div class="appr-stat${act('later')}" onclick="setServiceQuick('later')"><div class="appr-stat-num">${cnt('later')}</div><div class="appr-stat-lbl">ยังไม่ถึงเวลา</div></div>
+   <div class="appr-stat${act('noDate')}" onclick="setServiceQuick('noDate')"><div class="appr-stat-num">${cnt('noDate')}</div><div class="appr-stat-lbl">รอแจ้งวันส่ง</div></div>
+  </div>`;
+  const filters=`<div class="alv-filter">
+   <label>กำหนดส่งจาก <input type="date" value="${esc(serviceFilter.from)}" onchange="setServiceFilterField('from',this.value)"></label>
+   <label>ถึง <input type="date" value="${esc(serviceFilter.to)}" onchange="setServiceFilterField('to',this.value)"></label>
+   <label>ค้นหา <input type="text" id="serviceSearch" placeholder="S/O, ลูกค้า, PO, รหัสสินค้า" value="${esc(serviceFilter.q)}" onchange="setServiceFilterField('q',this.value)"></label>
+   <label>มุมมอง <select onchange="setServiceGroup(this.value)"><option value="date"${serviceGroup==='date'?' selected':''}>เรียงตามกำหนดส่ง</option><option value="customer"${serviceGroup==='customer'?' selected':''}>จัดกลุ่มตามลูกค้า (แบบ SAP)</option></select></label>
+  </div>`;
+  const vis=serviceVisibleLines(all).sort((a,b)=>serviceSortKey(a)<serviceSortKey(b)?-1:1);
+  const groupOf=x=>serviceGroup==='customer'?(x.rec.customer||'-'):(x.rec.deliveryDate?sapDate(x.rec.deliveryDate):'รอแจ้งวันส่ง');
+  serviceGroupKeys=[];
+  let body='', cur=null, buf=[];
+  const flush=()=>{
+   if(cur===null) return;
+   const gi=serviceGroupKeys.push(buf.filter(x=>!x.blocked).map(x=>x.key))-1;
+   const qty=buf.reduce((s,x)=>s+x.left,0), kg=buf.reduce((s,x)=>s+x.kg,0);
+   const allSel=serviceGroupKeys[gi].length>0&&serviceGroupKeys[gi].every(k=>serviceSel.has(k));
+   body+=`<tr class="alv-sub"><td><input type="checkbox" ${allSel?'checked':''} ${serviceGroupKeys[gi].length?'':'disabled'} onchange="toggleServiceGroup(${gi},this.checked)" title="เลือกทั้งกลุ่ม"></td><td colspan="9">${serviceGroup==='customer'?'':'กำหนดส่ง '}${esc(cur)} <span style="font-weight:400">(${buf.length} รายการ)</span></td><td class="alv-n">${qty.toLocaleString()}</td><td class="alv-n">${Math.round(kg).toLocaleString()}</td><td></td></tr>`;
+  };
+  vis.forEach(x=>{
+   const g=groupOf(x);
+   if(g!==cur){ flush(); cur=g; buf=[]; }
+   buf.push(x);
+   const urgent=x.days!==null&&x.days<=SERVICE_TRANSFER_DAYS;
+   body+=`<tr class="alv-row${x.blocked?' blocked':''}${serviceSel.has(x.key)?' sel':''}">
+    <td><input type="checkbox" ${serviceSel.has(x.key)?'checked':''} ${x.blocked?'disabled title="S/O ถูก Block — ออก DO ไม่ได้"':''} onchange="toggleServiceLine('${x.key}',this.checked);this.closest('tr').classList.toggle('sel',this.checked)"></td>
+    <td class="alv-n">${esc(x.rec.sales||'-')}</td>
+    <td><a href="presale-configurator-v2.html?viewSO=${encodeURIComponent(x.rec.soNo)}">${esc(x.rec.soNo)}</a></td>
+    <td>${x.blocked?'<span style="color:#B42318;font-weight:700">Blocked</span>':''}</td>
+    <td>${esc(x.rec.poNo||'')}</td>
+    <td>${esc(x.rec.customer||'-')}</td>
+    <td>${esc(sapDate(x.rec.createdAt))}</td>
+    <td class="${urgent?'alv-urgent':''}">${x.rec.deliveryDate?esc(sapDate(x.rec.deliveryDate)):'<span style="color:var(--muted)">รอแจ้ง</span>'}${urgent?' ⏰':''}</td>
+    <td>${esc(serviceShipTo(x.rec))}</td>
+    <td>${esc(x.i.code)}</td>
+    <td>${esc(x.i.desc)}${x.short>0?` <span class="alv-short" title="สต็อกไม่พอ ${x.short.toLocaleString()} pcs">⚠️ สต็อกไม่พอ ${x.short.toLocaleString()}</span>`:''}</td>
+    <td class="alv-n">${x.left.toLocaleString()}</td>
+    <td class="alv-n">${Math.round(x.kg).toLocaleString()}</td>
+    <td class="alv-n">${x.left<x.i.qty?`<span class="alv-part" title="ออก DO แล้ว ${(x.i.qty-x.left).toLocaleString()} จาก ${x.i.qty.toLocaleString()} pcs">${(x.i.qty-x.left).toLocaleString()}/${x.i.qty.toLocaleString()}</span>`:''}</td>
+   </tr>`;
+  });
+  flush();
+  const selectable=vis.filter(x=>!x.blocked);
+  const allChecked=selectable.length>0&&selectable.every(x=>serviceSel.has(x.key));
+  const table=vis.length?`<div class="alv-wrap"><table class="alv">
+   <thead><tr><th><input type="checkbox" ${allChecked?'checked':''} onchange="toggleServiceAll(this.checked)" title="เลือกทั้งหมดที่แสดง"></th><th>ID พนักงานขาย</th><th>S/O No.</th><th>Overall blocked status</th><th>เลขที่ PO</th><th>Sold to (name)</th><th>S/O Date</th><th>กำหนดส่ง</th><th>Ship to (name)</th><th>รหัสสินค้า</th><th>รายการสินค้า</th><th class="alv-n">คงเหลือ (pcs)</th><th class="alv-n">น้ำหนัก (kg)</th><th class="alv-n">ออก DO แล้ว</th></tr></thead>
+   <tbody>${body}</tbody></table></div>`:`<div class="appr-empty">${all.length?'ไม่พบรายการตามเงื่อนไขที่เลือก':'ไม่มีรายการค้างออก DO'}</div>`;
+  const bar=`<div class="alv-bar" id="serviceSelBar"><span class="alv-bar-txt"></span><button class="ql-btn transfer" onclick="serviceOpenTransferSelected()">Transfer to DO →</button></div>`;
+  content=`${summary}${filters}${table}${bar}`;
+ }
+ el.innerHTML=`<div class="appr-shell">${nav}<div class="appr-content">${content}</div></div>`;
+ if(serviceTab==='queue') updateServiceBar();
+}
+
+// ---- หน้า Transfer: ยืนยันรายการที่เลือก (แยกส่วนตาม S/O → ออก DO ใบละ S/O) ----
+let doTransferKeys=null;
+function openDoTransfer(keys){
+ doTransferKeys=keys;
+ const bySo=new Map();
+ keys.forEach(k=>{ const [soNo,id]=k.split('|'); if(!bySo.has(soNo)) bySo.set(soNo,[]); bySo.get(soNo).push(+id); });
+ const planHref=(i)=>`${encodeURI('แผนผลิตตัดม้วน Sep - 2026 (Demo).html')}?material=${encodeURIComponent(i.code)}&thk=${i.thickness}&wid=${i.width}`;
+ let sections='';
+ bySo.forEach((ids,soNo)=>{
+  const rec=loadSalesOrders().find(s=>s.soNo===soNo); if(!rec) return;
+  const done=doQtyMap(soNo), days=approvalUrgencyDays(rec), qe=rec.quoteExtra||{};
+  const lines=(rec.cart||[]).filter(i=>ids.includes(i.id)).map(i=>({i,done:done[i.id]||0,left:Math.max(i.qty-(done[i.id]||0),0)})).filter(x=>x.left>0);
+  const rows=lines.map(({i,left,done})=>{
+   const short=itemStockShort(i,left);
+   const stock=short>0?`<span class="appr-delivery-badge urgent">ไม่พอ ${short.toLocaleString()}</span>`:`<span class="appr-delivery-badge">พอ</span>`;
+   const plan=(short>0&&i.family==='Cut Sheet'&&i.thickness!==undefined)?`<a href="${planHref(i)}" target="_blank">🔍 แผนผลิต</a>`:'-';
+   return `<tr class="do-row">
+    <td style="text-align:center"><input type="checkbox" class="do-sel" data-so="${esc(soNo)}" data-item="${i.id}" checked onchange="updateDoSel()"></td>
+    <td><strong>${esc(i.code)}</strong><div style="color:var(--muted)">${esc(i.desc)} · Plant ${esc(i.plant||'1200')}</div></td>
+    <td style="text-align:right">${i.qty.toLocaleString()}</td>
+    <td style="text-align:right">${done.toLocaleString()}</td>
+    <td style="text-align:right">${left.toLocaleString()}</td>
+    <td style="text-align:right">${Number.isFinite(i.remain)?i.remain.toLocaleString():'-'}</td>
+    <td>${stock}</td><td>${plan}</td>
+    <td><input type="number" class="do-qty" data-so="${esc(soNo)}" data-item="${i.id}" data-left="${left}" data-weight="${i.weight}" min="0" max="${left}" value="${left}" oninput="updateDoSel()" style="width:84px;padding:6px 8px;border:1px solid var(--border,#C9D6E2);border-radius:6px"></td>
+   </tr>`;
+  }).join('');
+  sections+=`<div class="do-sec" data-so="${esc(soNo)}" style="margin-bottom:18px">
+   <div style="font-size:12.5px;line-height:1.8;margin-bottom:8px">
+    <div><strong>S/O ${esc(soNo)}</strong> · ${esc(rec.customer||'-')} · PO: ${esc(rec.poNo||'-')}</div>
+    <div>สถานที่ส่ง: ${esc(qe.deliveryPlace||'-')} · ชำระเงิน: ${esc(qe.paymentTerm||'-')} · กำหนดส่งตาม S/O: ${serviceDeliveryBadge(rec,days)}</div>
+    <div><label><strong>กำหนดส่งสินค้าของ DO นี้</strong> <input type="date" class="do-date" data-so="${esc(soNo)}" value="${esc(rec.deliveryDate||'')}" style="margin-left:8px;padding:6px 8px;border:1px solid var(--border,#C9D6E2);border-radius:6px"></label></div>
+   </div>
+   <div style="overflow:auto"><table class="price-table" style="width:100%;font-size:12px;border-collapse:collapse">
+    <thead><tr><th></th><th>รายการ</th><th style="text-align:right">สั่งทั้งหมด</th><th style="text-align:right">ออก DO แล้ว</th><th style="text-align:right">คงเหลือ</th><th style="text-align:right">สต็อก</th><th>ตรวจสต็อก</th><th>แผนผลิต</th><th>จำนวนที่ Transfer</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+  </div>`;
+ });
+ document.getElementById('doTransferBody').innerHTML=`${sections}
+  <div id="doSelSummary" style="margin-top:4px;padding:8px 12px;border-radius:8px;background:#EAF3FA;color:#0B5C8E;font-size:12.5px;font-weight:700"></div>
+  <div style="font-size:11px;color:var(--muted);margin:8px 0 14px">* ออก DO ใบละ 1 S/O · เอาติ๊กออกเพื่อตัดรายการ หรือใส่จำนวนน้อยกว่าคงเหลือเพื่อแยกส่งบางส่วน · สต็อกเป็นค่า ณ วันที่ออกใบเสนอราคา ให้ตรวจกับสต็อกและแผนผลิต/แผนส่งจริงก่อน Transfer</div>
+  <div style="display:flex;justify-content:flex-end;gap:10px">
+   <button class="ql-btn" onclick="closeDoTransfer()">ยกเลิก</button>
+   <button class="ql-btn transfer" onclick="confirmDoTransfer()">Transfer to DO</button>
+  </div>`;
+ document.getElementById('doTransferOverlay').classList.remove('hidden');
+ updateDoSel();
+}
+function updateDoSel(){
+ let n=0,pcs=0,kg=0; const sos=new Set();
+ document.querySelectorAll('#doTransferBody .do-sel').forEach(c=>{
+  const row=c.closest('tr'), inp=row.querySelector('.do-qty');
+  inp.disabled=!c.checked;
+  row.style.opacity=c.checked?'1':'.45';
+  if(!c.checked) return;
+  const qty=Math.min(Math.max(parseInt(inp.value)||0,0),+inp.dataset.left);
+  if(qty>0){ n++; pcs+=qty; kg+=qty*(+inp.dataset.weight||0); sos.add(c.dataset.so); }
+ });
+ const el=document.getElementById('doSelSummary');
+ if(el) el.textContent=`จะออก DO ${sos.size} ใบ · ${n} รายการ · ${pcs.toLocaleString()} pcs · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`;
+}
+function closeDoTransfer(){
+ doTransferKeys=null;
+ document.getElementById('doTransferOverlay').classList.add('hidden');
+}
+function genDoNo(){
+ let no;
+ do{ no='000'+String(Math.floor(Math.random()*1e7)).padStart(7,'0'); }while(TMTStore.deliveryOrders.get(no));
+ return no;
+}
+function confirmDoTransfer(){
+ const today=new Date(); today.setHours(0,0,0,0);
+ const drafts=[]; const shortMsg=[]; const earlyMsg=[];
+ let missingDate=null;
+ document.querySelectorAll('#doTransferBody .do-sec').forEach(sec=>{
+  const soNo=sec.dataset.so;
+  const rec=loadSalesOrders().find(s=>s.soNo===soNo); if(!rec) return;
+  const lines=[];
+  sec.querySelectorAll('.do-qty').forEach(inp=>{
+   const sel=sec.querySelector(`.do-sel[data-item="${inp.dataset.item}"]`);
+   if(sel&&!sel.checked) return;
+   const left=+inp.dataset.left, qty=Math.min(Math.max(parseInt(inp.value)||0,0),left);
+   if(qty<=0) return;
+   const i=(rec.cart||[]).find(x=>x.id===+inp.dataset.item); if(!i) return;
+   const sk=itemStockShort(i,qty);
+   if(sk>0) shortMsg.push(`S/O ${soNo} · ${i.code}: สต็อกไม่พอ ${sk.toLocaleString()} pcs`);
+   lines.push({itemId:i.id,code:i.code,desc:i.desc,plant:i.plant||'1200',qty,weight:i.weight});
+  });
+  if(!lines.length) return;
+  const date=sec.querySelector('.do-date').value;
+  if(!date){ missingDate=missingDate||soNo; return; }
+  const dts=Math.round((new Date(date+'T00:00:00')-today)/86400000);
+  if(dts>SERVICE_TRANSFER_DAYS) earlyMsg.push(`S/O ${soNo}: กำหนดส่งอีก ${dts} วัน`);
+  drafts.push({rec,date,lines});
+ });
+ if(missingDate){ alert(`กรุณาระบุกำหนดส่งสินค้าของ DO (S/O ${missingDate})`); return; }
+ if(!drafts.length){ alert('กรุณาติ๊กเลือกรายการและระบุจำนวนที่ต้องการ Transfer อย่างน้อย 1 รายการ'); return; }
+ if(shortMsg.length && !confirm('พบรายการที่สต็อกไม่พอ:\n'+shortMsg.join('\n')+'\n\nต้องการ Transfer ต่อหรือไม่?')) return;
+ if(earlyMsg.length && !confirm(`ยังไม่ถึงช่วง Transfer (ก่อนส่ง ${SERVICE_TRANSFER_DAYS} วัน):\n`+earlyMsg.join('\n')+'\n\nต้องการ Transfer ก่อนกำหนดหรือไม่?')) return;
+ for(const {rec,date,lines} of drafts){
+  const d={
+   doNo:genDoNo(), soNo:rec.soNo, quotationNo:rec.quotationNo||'', customer:rec.customer||'', soldToCode:rec.soldToCode||'',
+   createdAt:new Date().toISOString(), createdBy:TMTStore.session.getUser()||'Service',
+   deliveryDate:date, lines, status:'issued'
+  };
+  if(!TMTStore.deliveryOrders.upsert(d)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
+ }
+ serviceSel=new Set();
+ closeDoTransfer();
+ serviceTab='done';
+ renderServiceDashboard();
+}
+function serviceDeliveryBadge(rec,days){
+ if(days===null) return `<span class="appr-delivery-badge pending">🕒 รอแจ้งวันที่ส่ง</span>`;
+ const dLabel=esc(new Date(rec.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
+ const diff=days<0?`เลยกำหนด ${Math.abs(days)} วัน`:days===0?'ส่งวันนี้':`อีก ${days} วัน`;
+ return `<span class="appr-delivery-badge${days<=SERVICE_TRANSFER_DAYS?' urgent':''}">📅 ${dLabel} (${diff})</span>`;
+}
 let lastSOListFilter;
 function openSOList(statusFilter){
  lastSOListFilter = statusFilter;
@@ -1178,7 +1500,8 @@ function refreshLiveViews(){
  const role = TMTStore.session.getRole() || 'sales';
  if(role==='mgr01') renderMgr01Dashboard();
  else if(role==='approval') renderApprovalDashboard();
- else if(role==='planning') renderPlanningDashboard();
+  else if(role==='planning') renderPlanningDashboard();
+ else if(role==='service') renderServiceDashboard();
  else if(!cardDrag) renderWidgetGrid();
  if(!document.getElementById('quotationListOverlay').classList.contains('hidden')) openQuotationList();
  if(!document.getElementById('soListOverlay').classList.contains('hidden')) openSOList(lastSOListFilter);

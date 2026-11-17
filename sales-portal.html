@@ -1150,7 +1150,7 @@ function renderServiceSODetail(soNo){
  }).join('');
  const selectable=cart.filter(i=>Math.max(i.qty-(done[i.id]||0),0)>0&&!rec.blocked);
  const allChecked=selectable.length>0&&selectable.every(i=>serviceSel.has(sel(i)));
- const doList=myDOs.length?`<div class="sap-dos"><strong>DO ที่ออกแล้วจาก S/O นี้:</strong> ${myDOs.map(d=>{ const p=psOfDO(d.doNo); return `<strong>${esc(d.doNo)}</strong> <span style="color:var(--muted)">(${(d.lines||[]).reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${esc(sapDate(d.deliveryDate))}${p?` · อยู่ใน PS <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">${esc(p.psNo)}</a>`:' · รอรวม PS'})</span>`; }).join('<br>')}</div>`:'';
+ const doList=myDOs.length?`<div class="sap-dos"><strong>DO ที่ออกแล้วจาก S/O นี้:</strong> ${myDOs.map(d=>{ const p=psOfDO(d.doNo); return `<strong>${esc(d.doNo)}</strong> <span style="color:var(--muted)">(${(d.lines||[]).reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${esc(sapDate(d.deliveryDate))}${p?` · อยู่ใน PS <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">${esc(p.psNo)}</a>`:' · รอรวม PS'})</span>${p?'':` <a href="#" onclick="event.preventDefault();deleteServiceDO('${esc(d.doNo)}')" style="color:#B42318">🗑 ลบ DO</a>`}`; }).join('<br>')}</div>`:'';
  const allDone=selectable.length===0&&!rec.blocked;
  const hist=(rec.deliveryDateHistory||[]).slice(-5).reverse();
  const isPending=!(rec.deliveryDateType==='scheduled'&&rec.deliveryDate);
@@ -1205,6 +1205,16 @@ function updateServiceDoBar(){
  bar.querySelector('.alv-bar-txt').textContent=dos.length?`เลือก ${dos.length} DO · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`:'ติ๊กเลือก DO ที่ต้องการรวมเป็น Picking Slip';
  bar.querySelector('button').disabled=!dos.length;
 }
+function deleteServiceDO(doNo){
+ const d=TMTStore.deliveryOrders.get(doNo); if(!d) return;
+ const ps=psOfDO(doNo);
+ if(ps){ alert(`ลบ DO ${doNo} ไม่ได้ — DO นี้ถูกรวมอยู่ใน Picking Slip ${ps.psNo} แล้ว`); return; }
+ const pcs=(d.lines||[]).reduce((s,l)=>s+l.qty,0);
+ if(!confirm(`ลบ DO ${doNo} (S/O ${d.soNo}) ?\n\nรายการ ${(d.lines||[]).length} รายการ · ${pcs.toLocaleString()} pcs จะกลับเข้า S/O เหมือนเดิม`)) return;
+ if(!TMTStore.deliveryOrders.remove(doNo)){ alert('ลบไม่สำเร็จ'); return; }
+ serviceDoSel.delete(doNo);
+ renderServiceDashboard();
+}
 function genPsNo(){
  let no;
  do{ no='000'+String(Math.floor(Math.random()*1e7)).padStart(7,'0'); }while(TMTStore.pickingSlips.get(no));
@@ -1248,7 +1258,7 @@ function renderServiceDOTab(){
   const allSel=buf.every(x=>serviceDoSel.has(x.d.doNo));
   const kg=buf.reduce((s,x)=>s+x.kg,0), pcs=buf.reduce((s,x)=>s+x.pcs,0);
   const date=buf[0].d.deliveryDate;
-  body+=`<tr class="alv-sub"><td><input type="checkbox" ${allSel?'checked':''} onchange="toggleServiceDoGroup(${gi},this.checked)" title="เลือกทั้งกลุ่ม (ลูกค้า/สถานที่ส่ง/วันส่งเดียวกัน)"></td><td colspan="6">${esc(buf[0].d.customer||'-')} · ส่ง ${esc(date?sapDate(date):'-')} <span style="font-weight:400">(${buf.length} DO · รวมเป็น Picking Slip ใบเดียวได้)</span></td><td class="alv-n">${pcs.toLocaleString()}</td><td class="alv-n">${Math.round(kg).toLocaleString()}</td><td></td></tr>`;
+  body+=`<tr class="alv-sub"><td><input type="checkbox" ${allSel?'checked':''} onchange="toggleServiceDoGroup(${gi},this.checked)" title="เลือกทั้งกลุ่ม (ลูกค้า/สถานที่ส่ง/วันส่งเดียวกัน)"></td><td colspan="6">${esc(buf[0].d.customer||'-')} · ส่ง ${esc(date?sapDate(date):'-')} <span style="font-weight:400">(${buf.length} DO · รวมเป็น Picking Slip ใบเดียวได้)</span></td><td class="alv-n">${pcs.toLocaleString()}</td><td class="alv-n">${Math.round(kg).toLocaleString()}</td><td></td><td></td></tr>`;
  };
  open.forEach(x=>{
   const k=psGroupKey(x.d);
@@ -1260,11 +1270,12 @@ function renderServiceDOTab(){
    <td><strong>${esc(d.doNo)}</strong></td><td>${esc(d.soNo)}</td><td>${esc(d.customer||'-')}</td><td>${esc(doShipTo(d).split(' ต.')[0]||'-')}</td>
    <td>${d.deliveryDate?esc(sapDate(d.deliveryDate)):'-'}</td><td class="alv-n">${(d.lines||[]).length}</td>
    <td class="alv-n">${x.pcs.toLocaleString()}</td><td class="alv-n">${Math.round(x.kg).toLocaleString()}</td>
-   <td><span class="appr-delivery-badge pending">รอรวม Picking Slip</span></td></tr>`;
+   <td><span class="appr-delivery-badge pending">รอรวม Picking Slip</span></td>
+   <td><button class="ql-btn" onclick="deleteServiceDO('${esc(d.doNo)}')" title="ลบ DO — รายการกลับเข้า S/O">🗑 ลบ</button></td></tr>`;
  });
  flush();
  const table=open.length?`<div class="alv-wrap"><table class="alv">
-  <thead><tr><th></th><th>DO No.</th><th>S/O No.</th><th>Sold to (name)</th><th>Ship to (name)</th><th>กำหนดส่ง</th><th class="alv-n">รายการ</th><th class="alv-n">pcs</th><th class="alv-n">น้ำหนัก (kg)</th><th>สถานะ</th></tr></thead>
+  <thead><tr><th></th><th>DO No.</th><th>S/O No.</th><th>Sold to (name)</th><th>Ship to (name)</th><th>กำหนดส่ง</th><th class="alv-n">รายการ</th><th class="alv-n">pcs</th><th class="alv-n">น้ำหนัก (kg)</th><th>สถานะ</th><th></th></tr></thead>
   <tbody>${body}</tbody></table></div>
   <div class="alv-bar" id="serviceDoBar"><span class="alv-bar-txt"></span><button class="ql-btn transfer" onclick="serviceCreatePS()">สร้าง Picking Slip →</button></div>
   <div style="font-size:11.5px;color:var(--muted);margin-top:8px">เลือกได้เฉพาะ DO ที่ลูกค้า สถานที่ส่ง และวันส่งเดียวกัน · DO ที่ออกหลังจากสร้าง Picking Slip แล้วจะไปอยู่ใน Picking Slip ใบใหม่</div>`

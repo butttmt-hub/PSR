@@ -41,7 +41,11 @@ service cloud.firestore {
     match /salesOrders/{id} {
       allow read: if hasRole();
       allow create: if hasRole() && role() == 'sales';
-      allow update: if hasRole() && (role() == 'sales' || role() == 'approval');
+      // Service แก้ได้เฉพาะกำหนดส่ง (วันที่/สถานะวันส่ง/ประวัติการเปลี่ยน) โดยไม่ต้องผ่านการอนุมัติ
+      allow update: if hasRole() && (role() == 'sales' || role() == 'approval'
+        || (role() == 'service'
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['deliveryDate', 'deliveryDateType', 'deliveryDateHistory'])));
       allow delete: if hasRole() && role() == 'sales';
     }
 

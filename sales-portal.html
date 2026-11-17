@@ -462,6 +462,10 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 .sap-items-title{font-weight:700;background:#E8EEF4;padding:6px 12px;border:1px solid #C9D6E2;border-bottom:0;border-radius:6px 6px 0 0;font-size:12.5px}
 .sap-items-title+.alv-wrap,.sap-items-title+div+.alv-wrap{border-radius:0 0 8px 8px}
 .sap-dos{margin-top:10px;font-size:12.5px}
+.sap-dd{margin-top:14px;border:1px solid #C9D6E2;border-left:4px solid #0B5C8E;border-radius:8px;padding:10px 14px;background:#F4F9FD}
+.sap-dd-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;font-size:12.5px}
+.sap-dd input[type=date],.sap-dd input[type=text]{padding:6px 8px;border:1px solid #C9D6E2;border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;color:#12304A}
+.sap-dd-hist{margin-top:8px;font-size:11.5px;line-height:1.7;color:#12304A}
 @media(max-width:760px){.sap-grid{grid-template-columns:1fr}}
 </style>
 <div class="wp-overlay hidden" id="doTransferOverlay" onclick="if(event.target===this) closeDoTransfer()">
@@ -999,7 +1003,7 @@ function serviceLines(){
 }
 let serviceTab='queue';
 let serviceGroup='date';                         // 'date' = เรียงตามกำหนดส่ง · 'customer' = จัดกลุ่มตามลูกค้าแบบ SAP
-let serviceFilter={quick:null,from:'',to:'',q:''};
+let serviceFilter={quick:null,from:'',to:'',incNoDate:false,q:''};   // quick = สถานะกำหนดส่ง · incNoDate = เลือกช่วงวันที่แล้วให้รวม S/O ที่รอแจ้งวันส่งด้วย
 let serviceSel=new Set();                        // รายการที่ติ๊กเลือกในหน้า S/O (key = soNo|itemId)
 let serviceOpenSO=null;                          // เปิดดูข้างใน S/O ใบไหนอยู่
 let serviceDetailTab='sales';
@@ -1023,15 +1027,27 @@ function serviceSOList(){
 function serviceFilterSO(list){
  const f=serviceFilter, q=f.q.trim().toLowerCase();
  return list.filter(g=>{
-  if(f.quick==='due'&&!(g.days!==null&&g.days<=SERVICE_TRANSFER_DAYS)) return false;
-  if(f.quick==='later'&&!(g.days!==null&&g.days>SERVICE_TRANSFER_DAYS)) return false;
-  if(f.quick==='noDate'&&g.days!==null) return false;
-  if(f.from&&!(g.rec.deliveryDate&&g.rec.deliveryDate>=f.from)) return false;
-  if(f.to&&!(g.rec.deliveryDate&&g.rec.deliveryDate<=f.to)) return false;
+  const d=g.days, dt=g.rec.deliveryDate;
+  if(f.quick){
+   const ok=f.quick==='due'?(d!==null&&d<=SERVICE_TRANSFER_DAYS)
+    :f.quick==='later'?(d!==null&&d>SERVICE_TRANSFER_DAYS)
+    :f.quick==='noDate'?d===null
+    :f.quick==='late'?(d!==null&&d<0)
+    :f.quick==='today'?d===0
+    :f.quick==='tomorrow'?d===1
+    :f.quick==='week'?(d!==null&&d>=0&&d<=7)
+    :true;
+   if(!ok) return false;
+  }
+  if(f.from||f.to){
+   const inRange=!!dt&&(!f.from||dt>=f.from)&&(!f.to||dt<=f.to);
+   if(!inRange&&!(f.incNoDate&&!dt)) return false;
+  }
   if(q&&!`${g.rec.soNo} ${g.rec.customer} ${g.rec.poNo||''} ${g.lines.map(x=>x.i.code+' '+x.i.desc).join(' ')}`.toLowerCase().includes(q)) return false;
   return true;
  });
 }
+function clearServiceFilter(){ serviceFilter={quick:null,from:'',to:'',incNoDate:false,q:''}; renderServiceDashboard(); }
 function serviceSOSortKey(g){
  const date=g.rec.deliveryDate||'9999-12-31';
  return serviceGroup==='customer'?`${g.rec.customer||''}|${date}|${g.rec.soNo}`:`${date}|${g.rec.soNo}`;
@@ -1064,6 +1080,21 @@ function svcFs(rec,id){ const fs=rec.fieldState||{}; return fs[id]||fs['tube'+id
 function svcFsText(rec,id,std){
  const f=svcFs(rec,id); if(!f) return std;
  return f.status==='STD'?std:(f.detail?`${f.value} — ${f.detail}`:f.value);
+}
+function saveServiceDeliveryDate(soNo){
+ const rec=TMTStore.salesOrders.get(soNo); if(!rec) return;
+ const nd=document.getElementById('svcNewDate').value;
+ const reason=(document.getElementById('svcDateReason').value||'').trim();
+ if(!nd){ alert('กรุณาเลือกวันที่ส่งก่อนบันทึก'); return; }
+ const old=(rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?rec.deliveryDate:'';
+ if(nd===old){ alert('วันที่ส่งไม่มีการเปลี่ยนแปลง'); return; }
+ const today=new Date(); today.setHours(0,0,0,0);
+ if(new Date(nd+'T00:00:00')<today && !confirm('วันที่ที่เลือกเป็นวันที่ผ่านมาแล้ว ต้องการบันทึกหรือไม่?')) return;
+ rec.deliveryDateType='scheduled';
+ rec.deliveryDate=nd;
+ rec.deliveryDateHistory=(rec.deliveryDateHistory||[]).concat([{from:old,to:nd,by:TMTStore.session.getUser()||'Service',at:new Date().toISOString(),reason}]);
+ if(!TMTStore.salesOrders.upsert(rec)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
+ renderServiceDashboard();
 }
 function renderServiceSODetail(soNo){
  const rec=loadSalesOrders().find(s=>s.soNo===soNo);
@@ -1121,6 +1152,18 @@ function renderServiceSODetail(soNo){
  const allChecked=selectable.length>0&&selectable.every(i=>serviceSel.has(sel(i)));
  const doList=myDOs.length?`<div class="sap-dos"><strong>DO ที่ออกแล้วจาก S/O นี้:</strong> ${myDOs.map(d=>{ const p=psOfDO(d.doNo); return `<strong>${esc(d.doNo)}</strong> <span style="color:var(--muted)">(${(d.lines||[]).reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${esc(sapDate(d.deliveryDate))}${p?` · อยู่ใน PS <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">${esc(p.psNo)}</a>`:' · รอรวม PS'})</span>`; }).join('<br>')}</div>`:'';
  const allDone=selectable.length===0&&!rec.blocked;
+ const hist=(rec.deliveryDateHistory||[]).slice(-5).reverse();
+ const isPending=!(rec.deliveryDateType==='scheduled'&&rec.deliveryDate);
+ const ddBar=`<div class="sap-dd">
+   <div class="sap-dd-row">
+    <strong>${isPending?'กำหนดวันส่ง (ยังรอแจ้ง)':'เปลี่ยน / เลื่อนวันส่ง'}</strong>
+    <span class="sap-d">D</span><input type="date" id="svcNewDate" value="${esc(rec.deliveryDate||'')}">
+    <input type="text" id="svcDateReason" placeholder="เหตุผล (ไม่บังคับ) เช่น ลูกค้าขอเลื่อน" style="flex:1;min-width:200px">
+    <button class="ql-btn transfer" onclick="saveServiceDeliveryDate('${esc(rec.soNo)}')">${isPending?'บันทึกวันส่ง':'บันทึกวันที่ใหม่'}</button>
+   </div>
+   <div style="font-size:11.5px;color:var(--muted);margin-top:6px">Service แก้ไขได้เอง ไม่ต้องผ่านการอนุมัติ · DO ที่ออกไปแล้วยังคงใช้วันส่งเดิมของตัวเอง</div>
+   ${hist.length?`<div class="sap-dd-hist"><strong>ประวัติการเปลี่ยนวันส่ง</strong><br>${hist.map(x=>`${x.from?esc(sapDate(x.from)):'รอแจ้ง'} → <strong>${esc(sapDate(x.to))}</strong> · ${esc(x.by||'-')} · ${esc(new Date(x.at).toLocaleString('th-TH'))}${x.reason?` · ${esc(x.reason)}`:''}`).join('<br>')}</div>`:''}
+  </div>`;
  return `<div class="sap-title">Display TMT Sales Order ${esc(rec.soNo)}: Overview</div>
   <div class="sap-box">
    <div style="margin-bottom:10px"><button class="ql-btn" onclick="closeServiceSO()">← กลับไปรายการ S/O</button> <a href="presale-configurator-v2.html?viewSO=${encodeURIComponent(rec.soNo)}" style="margin-left:10px;font-size:12px">ดูเอกสาร S/O</a></div>
@@ -1129,6 +1172,7 @@ function renderServiceSODetail(soNo){
     ${hf('Sold-to party',`${esc(rec.soldToCode||'-')} &nbsp; ${esc(rec.customer||'-')}`)}${hf('PO Number',esc(rec.poNo||'-'))}
     ${hf('Ship-to party',esc(serviceShipTo(rec)))}${hf('กำหนดส่ง',serviceDeliveryBadge(rec,days))}
    </div>
+   ${ddBar}
    <div class="sap-tabs">${tabBtn('sales','Sales')}${tabBtn('shipping','Shipping')}${tabBtn('texts','Texts')}</div>
    <div class="sap-tabbody">${tabBody}</div>
    <div class="sap-items-title">All items</div>
@@ -1276,10 +1320,13 @@ function renderServiceDashboard(){
    <div class="appr-stat${act('noDate')}" onclick="setServiceQuick('noDate')"><div class="appr-stat-num">${cnt('noDate')}</div><div class="appr-stat-lbl">รอแจ้งวันส่ง</div></div>
   </div>`;
   const filters=`<div class="alv-filter">
-   <label>กำหนดส่งจาก <input type="date" value="${esc(serviceFilter.from)}" onchange="setServiceFilterField('from',this.value)"></label>
+   <label>กำหนดส่ง <select onchange="setServiceFilterField('quick',this.value||null)"><option value=""${!serviceFilter.quick?' selected':''}>ทั้งหมด</option><option value="late"${serviceFilter.quick==='late'?' selected':''}>เลยกำหนดส่ง</option><option value="today"${serviceFilter.quick==='today'?' selected':''}>ส่งวันนี้</option><option value="tomorrow"${serviceFilter.quick==='tomorrow'?' selected':''}>ส่งพรุ่งนี้</option><option value="week"${serviceFilter.quick==='week'?' selected':''}>ภายใน 7 วัน</option><option value="due"${serviceFilter.quick==='due'?' selected':''}>ถึงเวลา Transfer (≤ ${SERVICE_TRANSFER_DAYS} วัน / เลยกำหนด)</option><option value="later"${serviceFilter.quick==='later'?' selected':''}>ยังไม่ถึงเวลา</option><option value="noDate"${serviceFilter.quick==='noDate'?' selected':''}>รอแจ้งวันส่ง</option></select></label>
+   <label>วันที่ส่งจาก <input type="date" value="${esc(serviceFilter.from)}" onchange="setServiceFilterField('from',this.value)"></label>
    <label>ถึง <input type="date" value="${esc(serviceFilter.to)}" onchange="setServiceFilterField('to',this.value)"></label>
+   <label style="flex-direction:row;align-items:center;gap:6px;font-weight:600" title="ใช้คู่กับการเลือกช่วงวันที่"><input type="checkbox" ${serviceFilter.incNoDate?'checked':''} onchange="setServiceFilterField('incNoDate',this.checked)"> รวมที่รอแจ้งวันส่งด้วย</label>
    <label>ค้นหา <input type="text" id="serviceSearch" placeholder="S/O, ลูกค้า, PO, รหัสสินค้า" value="${esc(serviceFilter.q)}" onchange="setServiceFilterField('q',this.value)"></label>
    <label>มุมมอง <select onchange="setServiceGroup(this.value)"><option value="date"${serviceGroup==='date'?' selected':''}>เรียงตามกำหนดส่ง</option><option value="customer"${serviceGroup==='customer'?' selected':''}>จัดกลุ่มตามลูกค้า (แบบ SAP)</option></select></label>
+   <button class="ql-btn" onclick="clearServiceFilter()">ล้างตัวกรอง</button>
   </div>`;
   const vis=serviceFilterSO(all).sort((a,b)=>serviceSOSortKey(a)<serviceSOSortKey(b)?-1:1);
   const groupOf=g=>serviceGroup==='customer'?(g.rec.customer||'-'):(g.rec.deliveryDate?sapDate(g.rec.deliveryDate):'รอแจ้งวันส่ง');

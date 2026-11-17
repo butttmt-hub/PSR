@@ -91,7 +91,7 @@ details.dr-sec{background:#fff;border:1px solid var(--line);border-radius:10px;m
 details.dr-sec>summary{padding:10px 12px;cursor:pointer;background:var(--brand2);color:var(--brand);font-size:13px;list-style:none}
 details.dr-sec>summary::-webkit-details-marker{display:none}
 details.dr-sec>summary .sm{display:block;color:var(--muted);font-size:11.5px;font-weight:400;margin-top:2px}
-.dr-sec iframe{width:100%;height:600px;border:0;background:#fff;display:block}
+.dr-sec iframe{width:100%;height:300px;border:0;background:#fff;display:block}
 .dr-no{display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;margin-right:8px}
 .dr-open{position:fixed;right:18px;bottom:18px;z-index:29;box-shadow:0 6px 18px rgba(20,38,59,.3);border-radius:999px;padding:10px 18px}
 .md-b input{width:100%}
@@ -125,7 +125,7 @@ iframe{border:0;width:100%;height:100%;background:#fff}
 </div>
 
 <aside id="drawer" class="drawer hidden">
-  <div class="dr-h"><div><b>Handover ของ Picking Slip ที่เลือก</b><small id="drSub"></small></div><button class="btn small" onclick="closeDrawer()" title="ซ่อนแผง">✕</button></div>
+  <div class="dr-h"><div><b>Handover ของ Picking Slip ที่เลือก</b><small id="drSub"></small><small>เฉพาะข้อมูลที่เกี่ยวข้องกับ Transport</small></div><button class="btn small" onclick="closeDrawer()" title="ซ่อนแผง">✕</button></div>
   <div class="dr-b" id="drBody"></div>
 </aside>
 <button id="drOpenBtn" class="btn dr-open hidden" onclick="openDrawer()">📋 Handover (<span id="drCnt">0</span>)</button>
@@ -310,7 +310,7 @@ function syncDrawer(){
     const s=o.summary, sec=document.createElement('details');
     sec.className='dr-sec'; sec.dataset.ps=psNo; sec.open=true;
     sec.innerHTML='<summary><span class="dr-no"></span><b>Picking Slip '+esc(psNo)+'</b><span class="sm">'+esc(s.shipName||s.customer)+(s.district?' · '+esc(s.district):'')+' · '+kgFmt(s.kg)+' kg · กำหนดส่ง '+esc(fmtDate(s.deliveryDate))+'</span></summary>'
-      +'<iframe loading="lazy" src="presale-configurator-v2.html?viewPS='+encodeURIComponent(psNo)+'&tms=1&dept=Transport&embed=1"></iframe>';
+      +'<iframe loading="lazy" src="presale-configurator-v2.html?viewPS='+encodeURIComponent(psNo)+'&tms=1&conds=1&dept=Transport&embed=1"></iframe>';
     body.appendChild(sec);
   });
   sel.forEach((psNo,i)=>{ const el=body.querySelector('[data-ps="'+psNo+'"] .dr-no'); if(el) el.textContent=(i+1); });
@@ -319,6 +319,10 @@ function syncDrawer(){
   dr.classList.toggle('hidden',!drawerOpen); btn.classList.toggle('hidden',drawerOpen);
   document.body.classList.toggle('with-drawer',drawerOpen);
 }
+window.addEventListener('message',e=>{
+  const d=e.data; if(!d||d.type!=='tms-frame-height') return;
+  const fr=document.querySelector('.dr-sec[data-ps="'+d.psNo+'"] iframe'); if(fr) fr.style.height=(d.height+6)+'px';
+});
 function toggleSel(psNo,on,el){ if(on) selected.add(psNo); else selected.delete(psNo); if(el&&el.closest('tr')) el.closest('tr').classList.toggle('sel',on); updateBar(); drawerOpen=true; syncDrawer(); }
 function updateBar(){
   const t=document.getElementById('selTxt'); if(!t) return;

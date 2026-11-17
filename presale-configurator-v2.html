@@ -181,6 +181,10 @@ body.embed-view .panel-body{padding:10px!important}
 body.embed-view .handover{border:0;background:#fff;padding:4px}
 body.embed-view .ho-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
 body.embed-view .ho-info,body.embed-view .ho-fgrid{grid-template-columns:1fr}
+.ps-conds{padding:6px}
+.ps-cond{border:1px solid #D5E0EB;border-radius:9px;padding:9px 13px;margin-bottom:9px;font-size:13.5px;background:#fff;color:#14263B}
+.ps-cond .do-k{display:block;min-width:0;font-size:14px;margin-bottom:2px}
+.ps-cond-empty{padding:18px;text-align:center;color:#5B7083;font-size:13px}
 .do-docno{font-size:13px;font-weight:600}.do-sub{font-size:10.5px;color:#444;margin-top:2px}
 .do-note{border:1.5px solid #111;border-top:0;padding:8px 10px;font-size:12.5px}
 .do-cond{border:1.5px solid #111;border-top:0;padding:8px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 14px;font-size:12px}
@@ -2821,6 +2825,15 @@ function loadPSHandoverView(ps,dept){
  }
  return true;
 }
+// โหมดฝัง: แสดงเฉพาะบล็อกข้อกำหนดท้ายใบ Picking Slip (ข้อควรระวัง/Packing/เงื่อนไขต่างๆ) ที่ส่วนงานนั้นเป็นผู้ดูแล — ใช้บล็อกจริงจากใบ จึงหน้าตาและข้อมูลตรงกับใบเสมอ
+function psCondsOnly(dept){
+ const doc=document.querySelector('.do-doc'); if(!doc) return;
+ const blocks=[...doc.querySelectorAll('.do-note > div, .do-cond > div')].filter(b=>{ const own=b.querySelector('.do-own b'); return own && own.innerText.indexOf(dept)>=0; });
+ const wrap=document.createElement('div'); wrap.className='ps-conds';
+ blocks.forEach(b=>{ b.classList.add('ps-cond'); wrap.appendChild(b); });
+ if(!blocks.length) wrap.innerHTML='<div class="ps-cond-empty">ไม่มีข้อกำหนดที่เกี่ยวข้องกับ '+esc(dept)+'</div>';
+ const app=document.querySelector('.app'); app.innerHTML=''; app.appendChild(wrap);
+}
 function tryLoadPSViewMode(){
  const params=new URLSearchParams(window.location.search);
  const psNo=params.get('viewPS');
@@ -2837,6 +2850,13 @@ function tryLoadPSViewMode(){
  if(params.get('embed')==='1') document.body.classList.add('embed-view');
  if(!rec){
   app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Picking Slip เลขที่ ${esc(psNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
+  return true;
+ }
+ if(params.get('conds')==='1'){
+  app.innerHTML=renderPickingSlipDoc(rec);
+  psCondsOnly(params.get('dept')||'Transport');
+  // แจ้งความสูงให้หน้าที่ฝังกรอบนี้ปรับขนาดตามเนื้อหา
+  if(window.parent!==window) setTimeout(()=>{ try{ window.parent.postMessage({type:'tms-frame-height',psNo:rec.psNo,height:document.documentElement.scrollHeight},'*'); }catch(e){} },60);
   return true;
  }
  if(params.get('dept')) return loadPSHandoverView(rec,params.get('dept'));

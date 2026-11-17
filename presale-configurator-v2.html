@@ -169,6 +169,7 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .do-table .do-fill td{height:260px}
 .do-c-c{text-align:center}.do-c-n{text-align:right;white-space:nowrap}.do-c-doc{font-size:11px}.do-c-code{word-break:break-all;max-width:110px}
 .do-bar{margin-top:6px}
+.do-own{font-size:9.5px;color:#555;font-weight:400;line-height:1.4;margin:1px 0 4px}
 .do-docno{font-size:13px;font-weight:600}.do-sub{font-size:10.5px;color:#444;margin-top:2px}
 .do-note{border:1.5px solid #111;border-top:0;padding:8px 10px;font-size:12.5px}
 .do-cond{border:1.5px solid #111;border-top:0;padding:8px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 14px;font-size:12px}
@@ -2636,6 +2637,19 @@ function doFmtDot(d){
  const x=new Date(d+'T00:00:00'); if(isNaN(x)) return '-';
  return `${String(x.getDate()).padStart(2,'0')}.${String(x.getMonth()+1).padStart(2,'0')}.${x.getFullYear()}`;
 }
+// ป้ายใต้หัวข้อ: ส่วนงานที่ดูแล + ฟิลด์ใน Handover ที่เกี่ยวข้อง (อ้างอิง owner ของแต่ละฟิลด์ใน Handover)
+function psOwnTag(ids,fams){
+ const owners=[], labels=[];
+ Object.keys(productFieldDefs).filter(k=>!fams||!fams.length||fams.includes(k)).forEach(k=>productFieldDefs[k].forEach(f=>{
+  if(!ids.includes(f.id)) return;
+  f.owner.split(' / ').map(o=>o.trim()).forEach(o=>{ if(!owners.includes(o)) owners.push(o); });
+  const l=f.label.replace(/\s*\/\s*[^\/]*[\u0E00-\u0E7F][^\/]*$/,'').trim();
+  if(!labels.includes(l)) labels.push(l);
+ }));
+ if(!owners.length) return '';
+ const icon=k=>(HO_DEPTS.find(d=>d.k===k)||{}).icon||'';
+ return `<div class="do-own">ดูแลโดย: ${owners.map(o=>`${icon(o)} ${esc(o)}`).join(' · ')}<br>เกี่ยวข้อง: ${labels.map(esc).join(' · ')}</div>`;
+}
 function psSalesOrders(ps){
  return [...new Set((ps.lines||[]).map(l=>l.soNo))].map(n=>loadSalesOrders().find(s=>s.soNo===n)).filter(Boolean);
 }
@@ -2655,6 +2669,8 @@ function renderPickingSlipDoc(ps){
  };
  const created=new Date(ps.createdAt||Date.now());
  const lines=(ps.lines||[]).map(l=>({l,item:psItemOf(l)}));
+ const fams=[...new Set(lines.map(x=>x.item.family).filter(Boolean))];
+ const own=ids=>psOwnTag(ids,fams);
  const totalKg=+(ps.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0).toFixed(2);
  const packing=soItemSummary(lines.map(x=>x.item),i=>{
   if(!i.specState||!i.family) return null;
@@ -2715,14 +2731,14 @@ function renderPickingSlipDoc(ps){
     <thead><tr><th>Document<br>No.</th><th>ลำดับที่<br>Item No.</th><th>รหัสสินค้า<br>Material Code</th><th>รายการ<br>Description</th><th>จำนวนชิ้น<br>PCS.</th><th>น้ำหนัก<br>Kgs.(Spec)</th><th>หน่วย<br>Unit</th></tr></thead>
     <tbody>${rows}<tr class="do-fill"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>
    </table>
-   <div class="do-note"><div><span class="do-k">ข้อควรระวัง</span> ${esc(caution)}</div><div style="margin-top:14px"><span class="do-k">Packing</span> ${esc(packing)}</div></div>
+   <div class="do-note"><div><span class="do-k">ข้อควรระวัง</span> ${esc(caution)}${own(['cert','tubeCert'])}</div><div style="margin-top:12px"><span class="do-k">Packing</span> ${esc(packing)}${own(['packing','tubePackingType','tubeStrap','sticker','tubeSticker','bundle','tubePcsPack','tubePcsPackExtra'])}</div></div>
    <div class="do-cond">
     <div><span class="do-k">รูปแบบการชั่ง</span> ชั่งรวม PC/KG</div>
-    <div><span class="do-k">รูปแบบการส่งสินค้า</span> จัดส่งให้ลูกค้า</div>
-    <div><span class="do-k">อุปกรณ์ลงของของลูกค้า</span> ${esc(fsText('unloading','tubeUnloading',''))}</div>
-    <div><span class="do-k">แนบใบ Cert.</span> ${esc(certText)}</div>
-    <div><span class="do-k">เงื่อนไขของรถขนส่ง</span> ${esc(vehicleText)}</div>
-    <div><span class="do-k">รูปแบบใบส่งสินค้า</span> ${esc(fsText('deliveryDoc','tubeDeliveryDoc','ปกติ'))}</div>
+    <div><span class="do-k">รูปแบบการส่งสินค้า</span>${own(['delivery','tubeDelivery'])} จัดส่งให้ลูกค้า</div>
+    <div><span class="do-k">อุปกรณ์ลงของของลูกค้า</span>${own(['unloading','tubeUnloading'])} ${esc(fsText('unloading','tubeUnloading',''))}</div>
+    <div><span class="do-k">แนบใบ Cert.</span>${own(['cert','tubeCert'])} ${esc(certText)}</div>
+    <div><span class="do-k">เงื่อนไขของรถขนส่ง</span>${own(['vehicle','tubeVehicle','delivery','tubeDelivery'])} ${esc(vehicleText)}</div>
+    <div><span class="do-k">รูปแบบใบส่งสินค้า</span>${own(['deliveryDoc','tubeDeliveryDoc'])} ${esc(fsText('deliveryDoc','tubeDeliveryDoc','ปกติ'))}</div>
    </div>
    <div class="do-foot">
     <div><span class="do-k">ผู้จัดทำเอกสาร</span> ${esc(ps.createdBy||'-')}</div>

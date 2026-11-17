@@ -868,6 +868,13 @@ function getCustomerDefaultEntries(code,family,fieldId){
 }
 function findOptIndexByLabel(f,label){ return f.opts.findIndex(o=>o[0]===label); }
 function currentSoldToCode(){ const el=document.getElementById('soldTo'); return el?el.value:''; }
+// Ship To ที่เลือกใน Step 1 (รหัส + ชื่อ + ข้อความ Ship To Text) — เก็บลงใบเสนอราคา/S/O/DO/Picking Slip
+function currentShipTo(){
+ const code=(document.getElementById('shipTo')||{}).value||'';
+ const c=soldToMasterData.find(x=>x.code===currentSoldToCode());
+ const s=c&&c.shipTos.find(x=>x.code===code);
+ return {code, name:s?s.name:'', text:((document.getElementById('shipToText')||{}).value||'').trim()};
+}
 
 let currentProduct='Cut Sheet';
 let fieldDefs = productFieldDefs[currentProduct];
@@ -1554,6 +1561,7 @@ function hoCtx(){
  const delivery=(rec&&rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?soFmtDate(rec.deliveryDate+'T00:00:00'):(qe.deliveryDate||'รอแจ้งวันส่ง');
  return {rec,qe,items,totalW,totalQty,subtotal,disc,net,vat,total:+(net+vat).toFixed(2),delivery:handoverDO?soFmtDate(handoverDO.deliveryDate+'T00:00:00'):delivery,deliveryISO:handoverDO?handoverDO.deliveryDate:((rec&&rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?rec.deliveryDate:null),
   plants:[...new Set(items.map(x=>x.item.plant||'1200'))],
+  shipTo:(handoverDO&&handoverDO.shipToName)?`${handoverDO.shipToCode||''} ${handoverDO.shipToName}`.trim():((rec&&rec.shipToName)?`${rec.shipToCode||''} ${rec.shipToName}`.trim():''),
   customer:document.getElementById('customer').value||'-',
   sales:document.getElementById('sales').value||'-',
   project:document.getElementById('project').value||'-',
@@ -1720,7 +1728,7 @@ const HO_VIEWS={
   const byPlant=hoGroupBy(c,({item})=>item.plant||'1200');
   const qe=c.qe;
   return hoKpis([['วันส่งมอบ',esc(c.delivery),/รอแจ้ง/.test(c.delivery)?'warn':''],['น้ำหนักรวม (kg)',hoNum(c.totalW)],['จำนวนรวม (pcs)',c.totalQty.toLocaleString()],['ต้นทาง (Plant)',esc(c.plants.join(', ')||'-')]])
-  +hoInfo([['ลูกค้า',esc(c.customer)],['สถานที่ส่ง',esc(qe.deliveryPlace||'-')],['ผู้ติดต่อ',esc(qe.attention||'-')],['โทร',esc(qe.tel||'-')]])
+  +hoInfo([['ลูกค้า',esc(c.customer)],['Ship-to',esc(c.shipTo||qe.deliveryPlace||'-')],['ผู้ติดต่อ',esc(qe.attention||'-')],['โทร',esc(qe.tel||'-')]])
   +hoAttention(c,'Transport')
   +hoSec('น้ำหนักที่ต้องขนส่งแยกตาม Plant',hoTable(['Plant ต้นทาง','จำนวนรายการ','จำนวน (pcs)','น้ำหนัก (kg)'],byPlant.map(([p,g])=>[esc(p),g.rows.length,g.qty.toLocaleString(),hoNum(g.w)]),null,[1,2,3]))
   +hoSharedBlock('Transport','เงื่อนไขรถและการส่งของ')
@@ -1936,6 +1944,7 @@ function buildSalesOrderRecord(qRec,soNo){
   createdAtDisplay:now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}),
   createdTimeDisplay:now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
   project:qRec.project, refNo:qRec.refNo, customer:qRec.customer, sales:qRec.sales, soldToCode:qRec.soldToCode,
+  shipToCode:qRec.shipToCode||'', shipToName:qRec.shipToName||'', shipToText:qRec.shipToText||'',
   currentProduct:qRec.currentProduct, cart:qRec.cart, fieldState:qRec.fieldState, quoteExtra:qRec.quoteExtra, grandTotal:qRec.grandTotal,
  };
 }
@@ -1953,6 +1962,7 @@ function snapshotCurrentQuotation(qNo){
   customer:document.getElementById('customer').value,
   sales:document.getElementById('sales').value,
   soldToCode:document.getElementById('soldTo').value,
+  shipToCode:currentShipTo().code, shipToName:currentShipTo().name, shipToText:currentShipTo().text,
   grandTotal:grand,
   itemCount:productCart.length,
   currentProduct:currentProduct,
@@ -2718,14 +2728,14 @@ const doSummary=[...new Set((ps.doNos&&ps.doNos.length?ps.doNos:(ps.lines||[]).m
     <div class="do-formno">W-FM-LG-21 R02<div class="do-copy">ต้นฉบับ<br>หน้า 1 / 1</div></div>
    </div>
    <div class="do-ship">
-    <div><span class="do-k">สถานที่ส่งสินค้า</span> ${esc(ps.soldToCode||'-')} ${esc(ps.customer||'-')}<div class="do-ind">${esc(ps.shipTo||qe.deliveryPlace||'-')}</div></div>
+    <div><span class="do-k">สถานที่ส่งสินค้า</span> ${esc(ps.shipToCode||ps.soldToCode||'-')} ${esc(ps.shipToName||ps.shipTo||ps.customer||'-')}<div class="do-ind">${esc([first.shipToText,qe.deliveryPlace].filter(Boolean).join(' · '))}</div></div>
     <div><span class="do-k">น้ำหนักรวม</span> ${(totalKg/1000).toFixed(2)} TONS</div>
    </div>
    <div class="do-box">
     <div class="do-box-l">
      <div><span class="do-k">รหัสลูกค้า</span> ${esc(ps.soldToCode||'-')} <span class="do-k" style="margin-left:24px">ประเภทธุรกิจ:</span> ${esc(cust?cust.custGroup:'-')}</div>
      <div><span class="do-k">ชื่อลูกค้า</span> ${esc(ps.customer||'-')}</div>
-     <div><span class="do-k">ที่อยู่</span> ${esc(ps.shipTo||qe.deliveryPlace||'-')}</div>
+     <div><span class="do-k">ที่อยู่</span> ${esc((cust&&cust.address)||'-')}</div>
     </div>
     <div class="do-box-r">
      <div><span class="do-k">วันที่</span> ${soFmtDate(created)}</div>

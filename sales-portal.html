@@ -1003,7 +1003,7 @@ function sapDate(v){
  const d=new Date(v); if(isNaN(d)) return '';
  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
 }
-function serviceShipTo(rec){ const t=(rec.quoteExtra&&rec.quoteExtra.deliveryPlace)||''; return t.split(' ต.')[0].split(' อ.')[0]||rec.customer||'-'; }
+function serviceShipTo(rec){ if(rec.shipToName) return rec.shipToName; const t=(rec.quoteExtra&&rec.quoteExtra.deliveryPlace)||''; return t.split(' ต.')[0].split(' อ.')[0]||rec.customer||'-'; }
 function serviceLines(){
  const out=[];
  loadSalesOrders().filter(s=>s.status==='approved').forEach(rec=>{
@@ -1124,7 +1124,7 @@ function renderServiceSODetail(soNo){
  if(serviceDetailTab==='shipping'){
   const plants=[...new Set(cart.map(i=>i.plant||'1200'))].join(', ');
   tabBody=`<div class="sap-grid">
-   ${hf('Ship-to place',esc(qe.deliveryPlace||'-'))}${hf('Deliver.Plant',esc(plants))}
+   ${hf('Ship-to',esc((rec.shipToCode?rec.shipToCode+' ':'')+serviceShipTo(rec)+(rec.shipToText?' — '+rec.shipToText:'')+(qe.deliveryPlace?' · '+qe.deliveryPlace:'')))}${hf('Deliver.Plant',esc(plants))}
    ${hf('Vehicle',esc(svcFsText(rec,'vehicle','ปกติ')))}${hf('Delivery Condition',esc(svcFsText(rec,'delivery','ปกติ')))}
    ${hf('Unloading Equipment',esc(svcFsText(rec,'unloading','-')))}${hf('Loading',esc(svcFsText(rec,'loading','ปกติ')))}
    ${hf('Document / Certificate',esc(svcFsText(rec,'cert',"Mill's Cert.")))}${hf('Delivery Documents',esc(svcFsText(rec,'deliveryDoc','ปกติ')))}
@@ -1184,7 +1184,7 @@ function renderServiceSODetail(soNo){
    <div class="sap-grid">
     ${hf('TMT Sales Order',esc(rec.soNo))}${hf('Net value',`${fmtBaht(rec.grandTotal||0)} THB`)}
     ${hf('Sold-to party',`${esc(rec.soldToCode||'-')} &nbsp; ${esc(rec.customer||'-')}`)}${hf('PO Number',esc(rec.poNo||'-'))}
-    ${hf('Ship-to party',esc(serviceShipTo(rec)))}${hf('กำหนดส่ง',serviceDeliveryBadge(rec,days))}
+    ${hf('Ship-to party',`${rec.shipToCode?esc(rec.shipToCode)+' &nbsp; ':''}${esc(serviceShipTo(rec))}`)}${hf('กำหนดส่ง',serviceDeliveryBadge(rec,days))}
    </div>
    ${ddBar}
    <div class="sap-tabs">${tabBtn('sales','Sales')}${tabBtn('shipping','Shipping')}${tabBtn('texts','Texts')}</div>
@@ -1206,11 +1206,12 @@ let serviceDoGroupKeys=[];
 function doSoNos(d){ return [...new Set((d.lines||[]).map(l=>l.soNo||d.soNo))]; }
 function psOfDO(doNo){ return TMTStore.pickingSlips.list().find(p=>(p.doNos||[]).includes(doNo)); }
 function doShipTo(d){
+ if(d.shipToName) return d.shipToName;
  if(d.shipTo) return d.shipTo;
  const so=loadSalesOrders().find(s=>s.soNo===d.soNo);
  return (so&&so.quoteExtra&&so.quoteExtra.deliveryPlace)||'';
 }
-function psGroupKey(d){ return `${d.soldToCode||d.customer||''}|${doShipTo(d)}|${d.deliveryDate||''}`; }
+function psGroupKey(d){ return `${d.soldToCode||d.customer||''}|${d.shipToCode||doShipTo(d)}|${d.deliveryDate||''}`; }
 function toggleServiceDo(doNo,on){ if(on) serviceDoSel.add(doNo); else serviceDoSel.delete(doNo); updateServiceDoBar(); }
 function toggleServiceDoGroup(idx,on){ (serviceDoGroupKeys[idx]||[]).forEach(n=>{ if(on) serviceDoSel.add(n); else serviceDoSel.delete(n); }); renderServiceDashboard(); }
 function updateServiceDoBar(){
@@ -1285,7 +1286,7 @@ function serviceCreatePS(){
  if(keys.size>1){
   const diff=[];
   if(new Set(dos.map(d=>d.soldToCode||d.customer)).size>1) diff.push('ลูกค้า');
-  if(new Set(dos.map(doShipTo)).size>1) diff.push('สถานที่ส่ง');
+  if(new Set(dos.map(d=>d.shipToCode||doShipTo(d))).size>1) diff.push('Ship-to');
   if(new Set(dos.map(d=>d.deliveryDate)).size>1) diff.push('วันส่ง');
   if(diff.length===1&&diff[0]==='วันส่ง'){ openPsDateDialog(dos); return; }
   alert(`รวมเป็น Picking Slip ใบเดียวไม่ได้ — DO ที่เลือกต้องเป็น ลูกค้า สถานที่ส่ง และวันส่งเดียวกัน\n(ที่ไม่ตรงกัน: ${diff.join(', ')})`);
@@ -1295,7 +1296,7 @@ function serviceCreatePS(){
  const lines=[];
  dos.forEach(d=>(d.lines||[]).forEach(l=>lines.push({doNo:d.doNo,soNo:l.soNo||d.soNo,itemId:l.itemId,code:l.code,desc:l.desc,plant:l.plant||'1200',qty:l.qty,weight:l.weight})));
  const first=dos[0];
- const ps={psNo:genPsNo(),doNos:dos.map(d=>d.doNo),customer:first.customer||'',soldToCode:first.soldToCode||'',shipTo:doShipTo(first),deliveryDate:first.deliveryDate||'',
+ const ps={psNo:genPsNo(),doNos:dos.map(d=>d.doNo),customer:first.customer||'',soldToCode:first.soldToCode||'',shipTo:doShipTo(first),shipToCode:first.shipToCode||'',shipToName:first.shipToName||'',shipToText:first.shipToText||'',deliveryDate:first.deliveryDate||'',
   createdAt:new Date().toISOString(),createdBy:TMTStore.session.getUser()||'Service',truckPlate:'',lines,status:'issued'};
  if(!TMTStore.pickingSlips.upsert(ps)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
  serviceDoSel=new Set();
@@ -1471,7 +1472,7 @@ function renderServiceDashboard(){
 // กติกาการออก DO: Sold-to + Ship-to เดียวกัน → รวมเป็น DO ใบเดียว (แม้คนละ S/O / คนละกำหนดส่ง) · Sold-to เดียวกันแต่คนละ Ship-to → แยกเป็นคนละ DO
 let doTransferKeys=null;
 let doGroupDates={};
-function doGroupKeyOfRec(rec){ return `${rec.soldToCode||rec.customer||''}|${(rec.quoteExtra&&rec.quoteExtra.deliveryPlace)||''}`; }
+function doGroupKeyOfRec(rec){ return `${rec.soldToCode||rec.customer||''}|${rec.shipToCode||(rec.quoteExtra&&rec.quoteExtra.deliveryPlace)||''}`; }
 function doGroupDefaultDate(recs){
  const ds=recs.map(r=>(r.deliveryDateType==='scheduled'&&r.deliveryDate)?r.deliveryDate:'').filter(Boolean).sort();
  return ds[0]||'';
@@ -1562,7 +1563,7 @@ function updateDoSel(){
    const dateVal=doGroupDates[g.key]!==undefined?doGroupDates[g.key]:doGroupDefaultDate(g.recs);
    const soDates=g.recs.map(r=>`${esc(r.soNo)} (${r.deliveryDateType==='scheduled'&&r.deliveryDate?esc(sapDate(r.deliveryDate)):'รอแจ้ง'})`).join(' · ');
    return `<div style="padding:8px 0;${idx?'border-top:1px dashed #C9D6E2;':''}font-size:12.5px;line-height:1.8">
-    <div><strong>DO ใบที่ ${idx+1}</strong> · ${esc(first.customer||'-')} · Ship-to: ${esc((qe.deliveryPlace||'-').split(' ต.')[0])}</div>
+    <div><strong>DO ใบที่ ${idx+1}</strong> · ${esc(first.customer||'-')} · Ship-to: ${esc((first.shipToCode?first.shipToCode+' ':'')+serviceShipTo(first))}</div>
     <div>S/O: ${g.recs.map(r=>esc(r.soNo)).join(', ')} · ${g.lines.length} รายการ · ${g.lines.reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${Math.round(gkg).toLocaleString()} kg</div>
     ${g.recs.length>1?`<div style="color:var(--muted)">กำหนดส่งตาม S/O: ${soDates}</div>`:''}
     <div><label><strong>กำหนดส่งของ DO ใบนี้</strong> <input type="date" value="${esc(dateVal)}" onchange="setDoGroupDate(${idx},this.value)" style="margin-left:8px;padding:6px 8px;border:1px solid var(--border,#C9D6E2);border-radius:6px"></label></div>
@@ -1601,7 +1602,7 @@ function confirmDoTransfer(){
   const d={
    doNo:genDoNo(), soNo:first.soNo, soNos:g.recs.map(r=>r.soNo), quotationNo:first.quotationNo||'', customer:first.customer||'', soldToCode:first.soldToCode||'',
    createdAt:new Date().toISOString(), createdBy:TMTStore.session.getUser()||'Service',
-   shipTo:(first.quoteExtra&&first.quoteExtra.deliveryPlace)||'', deliveryDate:g.date,
+   shipTo:serviceShipTo(first), shipToCode:first.shipToCode||'', shipToName:first.shipToName||'', shipToText:first.shipToText||'', deliveryDate:g.date,
    lines:g.lines.map(l=>({soNo:l.soNo,itemId:l.itemId,code:l.code,desc:l.desc,plant:l.plant,qty:l.qty,weight:l.weight})), status:'issued'
   };
   if(!TMTStore.deliveryOrders.upsert(d)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
@@ -1714,6 +1715,7 @@ function transferQuotationToSO(qNo){
   createdAtDisplay:now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}),
   createdTimeDisplay:now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
   project:qRec.project, refNo:qRec.refNo, customer:qRec.customer, sales:qRec.sales, soldToCode:qRec.soldToCode,
+  shipToCode:qRec.shipToCode||'', shipToName:qRec.shipToName||'', shipToText:qRec.shipToText||'',
   currentProduct:qRec.currentProduct, cart:qRec.cart, fieldState:qRec.fieldState, quoteExtra:qRec.quoteExtra, grandTotal:qRec.grandTotal,
  };
  if(!TMTStore.salesOrders.upsert(soRec)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }

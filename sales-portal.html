@@ -1352,7 +1352,7 @@ function renderServicePSTab(){
    <div class="appr-avatar">${esc((p.customer||'?').charAt(0))}</div>
    <div class="appr-main">
     <div class="appr-subject">Picking Slip <strong>${esc(p.psNo)}</strong> <span style="font-weight:400;color:var(--muted)">(${(p.doNos||[]).length} DO: ${esc((p.doNos||[]).join(', '))})</span></div>
-    <div class="appr-snippet">${esc(p.customer||'-')} · ${(p.lines||[]).length} รายการ · ${Math.round(kg).toLocaleString()} kg · ผู้จัดทำ: ${esc(p.createdBy||'-')}</div>
+    <div class="appr-snippet">${esc(p.customer||'-')} · Ship-to: <strong>${esc((p.shipToCode?p.shipToCode+' ':'')+(p.shipToName||String(p.shipTo||'-').split(' ต.')[0]))}</strong> · ${(p.lines||[]).length} รายการ · ${Math.round(kg).toLocaleString()} kg · ผู้จัดทำ: ${esc(p.createdBy||'-')}</div>
     <div class="appr-delivery-row"><span class="appr-delivery-badge">🚚 กำหนดส่ง ${dl}</span></div>
    </div>
    <div class="appr-time">${esc(sapDate(p.createdAt))}</div>

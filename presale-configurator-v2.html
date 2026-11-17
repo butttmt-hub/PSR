@@ -172,7 +172,7 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .do-own{font-size:13px;color:#222;font-weight:400;line-height:1.55;margin:3px 0 7px}
 .do-own b{font-size:14px;color:#0B3C5D}
 .do-own-k{color:#555;font-weight:600}
-.do-dosum{word-break:break-all;line-height:1.4}.do-dosum .do-k{vertical-align:top}
+.do-sumrow td{font-weight:600;font-size:13px;padding:6px 8px;border-bottom:1px solid #111;word-break:break-all}
 .do-docno{font-size:13px;font-weight:600}.do-sub{font-size:10.5px;color:#444;margin-top:2px}
 .do-note{border:1.5px solid #111;border-top:0;padding:8px 10px;font-size:12.5px}
 .do-cond{border:1.5px solid #111;border-top:0;padding:8px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 14px;font-size:12px}
@@ -2688,7 +2688,7 @@ function renderPickingSlipDoc(ps){
  const certText=fsText('cert','tubeCert',"Mill's Cert.");
  const caution=`ต้องนำเอกสาร ${certText} ไปพร้อมกับรถที่ส่งสินค้าทุกครั้ง`;
  const vehicleText=[fsText('vehicle','tubeVehicle','ปกติ'),sos.some(so=>{const f=(so.fieldState||{}).delivery||(so.fieldState||{}).tubeDelivery;return f&&f.status!=='STD';})?fsText('delivery','tubeDelivery',''):''].filter(Boolean).join(' · ');
-const doSummary=[...new Set((ps.doNos&&ps.doNos.length?ps.doNos:(ps.lines||[]).map(l=>l.doNo)))].join('/');
+const doSummary=[...new Set((ps.doNos&&ps.doNos.length?ps.doNos:(ps.lines||[]).map(l=>l.doNo)))].join(',');
  const payTerms=[...new Set(sos.map(so=>(so.quoteExtra||{}).paymentTerm).filter(Boolean))].join(' / ')||'-';
  const rows=lines.map(({l,item},idx)=>{
   const notes=(item.specState?soItemNotes(item):[]).map(t=>`<div>${esc(t)}</div>`).join('');
@@ -2731,14 +2731,13 @@ const doSummary=[...new Set((ps.doNos&&ps.doNos.length?ps.doNos:(ps.lines||[]).m
      <div><span class="do-k">วันที่</span> ${soFmtDate(created)}</div>
      <div><span class="do-k">เวลาที่เปิดเอกสาร</span> ${created.toLocaleTimeString('en-GB')}</div>
      <div><span class="do-k">Picking Slip No.</span> ${esc(ps.psNo)}</div>
-     <div class="do-dosum"><span class="do-k">DO No.</span> ${esc(doSummary)}</div>
      <div><span class="do-k">ทะเบียนรถ</span> ${esc(ps.truckPlate||'')}</div>
     </div>
    </div>
    <div class="do-pay"><span class="do-k">ชำระเงินโดย</span> ${esc(payTerms)}</div>
    <table class="do-table">
     <thead><tr><th>Document<br>No.</th><th>ลำดับที่<br>Item No.</th><th>รหัสสินค้า<br>Material Code</th><th>รายการ<br>Description</th><th>จำนวนชิ้น<br>PCS.</th><th>น้ำหนัก<br>Kgs.(Spec)</th><th>หน่วย<br>Unit</th></tr></thead>
-    <tbody>${rows}<tr class="do-fill"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>
+    <tbody><tr class="do-sumrow"><td colspan="7">${esc(doSummary)}</td></tr>${rows}<tr class="do-fill"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>
    </table>
    <div class="do-note"><div><span class="do-k">ข้อควรระวัง</span> ${esc(caution)}${own(['cert','tubeCert'])}</div><div style="margin-top:12px"><span class="do-k">Packing</span> ${esc(packing)}${own(['packing','tubePackingType','tubeStrap','sticker','tubeSticker','bundle','tubePcsPack','tubePcsPackExtra'],['Warehouse'])}</div></div>
    <div class="do-cond">

@@ -1307,7 +1307,7 @@ function serviceCreatePS(){
  const lines=[];
  dos.forEach(d=>(d.lines||[]).forEach(l=>lines.push({doNo:d.doNo,soNo:l.soNo||d.soNo,itemId:l.itemId,code:l.code,desc:l.desc,plant:l.plant||'1200',qty:l.qty,weight:l.weight})));
  const first=dos[0];
- const ps={psNo:genPsNo(),doNos:dos.map(d=>d.doNo),customer:first.customer||'',soldToCode:first.soldToCode||'',shipTo:doShipTo(first),shipToCode:first.shipToCode||'',shipToName:first.shipToName||'',shipToText:first.shipToText||'',deliveryDate:first.deliveryDate||'',
+ const ps={psNo:genPsNo(),doNos:dos.map(d=>d.doNo),customer:first.customer||'',soldToCode:first.soldToCode||'',shipTo:doShipTo(first),shipToCode:first.shipToCode||'',shipToName:first.shipToName||'',shipToText:first.shipToText||'',shipToDistrict:first.shipToDistrict||'',shipToProvince:first.shipToProvince||'',deliveryDate:first.deliveryDate||'',
   createdAt:new Date().toISOString(),createdBy:TMTStore.session.getUser()||'Service',truckPlate:'',lines,status:'issued'};
  if(!TMTStore.pickingSlips.upsert(ps)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
  TMSIF.send('PS_CREATE',buildTmsPayload(ps),ps.createdBy);   // ส่งเข้า TMS อัตโนมัติ
@@ -1614,7 +1614,7 @@ function confirmDoTransfer(){
   const d={
    doNo:genDoNo(), soNo:first.soNo, soNos:g.recs.map(r=>r.soNo), quotationNo:first.quotationNo||'', customer:first.customer||'', soldToCode:first.soldToCode||'',
    createdAt:new Date().toISOString(), createdBy:TMTStore.session.getUser()||'Service',
-   shipTo:serviceShipTo(first), shipToCode:first.shipToCode||'', shipToName:first.shipToName||'', shipToText:first.shipToText||'', deliveryDate:g.date,
+   shipTo:serviceShipTo(first), shipToCode:first.shipToCode||'', shipToName:first.shipToName||'', shipToText:first.shipToText||'', shipToDistrict:first.shipToDistrict||'', shipToProvince:first.shipToProvince||'', deliveryDate:g.date,
    lines:g.lines.map(l=>({soNo:l.soNo,itemId:l.itemId,code:l.code,desc:l.desc,plant:l.plant,qty:l.qty,weight:l.weight})), status:'issued'
   };
   if(!TMTStore.deliveryOrders.upsert(d)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
@@ -1727,7 +1727,7 @@ function transferQuotationToSO(qNo){
   createdAtDisplay:now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}),
   createdTimeDisplay:now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
   project:qRec.project, refNo:qRec.refNo, customer:qRec.customer, sales:qRec.sales, soldToCode:qRec.soldToCode,
-  shipToCode:qRec.shipToCode||'', shipToName:qRec.shipToName||'', shipToText:qRec.shipToText||'',
+  shipToCode:qRec.shipToCode||'', shipToName:qRec.shipToName||'', shipToText:qRec.shipToText||'', shipToDistrict:qRec.shipToDistrict||'', shipToProvince:qRec.shipToProvince||'',
   currentProduct:qRec.currentProduct, cart:qRec.cart, fieldState:qRec.fieldState, quoteExtra:qRec.quoteExtra, grandTotal:qRec.grandTotal,
  };
  if(!TMTStore.salesOrders.upsert(soRec)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }

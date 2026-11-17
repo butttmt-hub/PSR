@@ -54,6 +54,18 @@ tr.sel td{background:#E3EEFB}
 .events{margin-bottom:14px}
 .event{display:flex;justify-content:space-between;gap:10px;background:var(--warnbg);color:#7A4A06;border:1px solid #F3D3A4;border-radius:9px;padding:8px 12px;margin-bottom:6px;font-size:12.5px}
 .empty{padding:34px;text-align:center;color:var(--muted)}
+table.tms th{background:#EDEDED;color:#222;font-size:13.5px;padding:12px 12px;border-bottom:1px solid #D4D4D4}
+table.tms th.c,table.tms td.c{text-align:center}
+table.tms th.srt-h{cursor:pointer;user-select:none}
+table.tms th.srt-h:hover{background:#E3E3E3}
+table.tms .srt{color:#9A9A9A;font-size:11px;margin-left:6px}
+table.tms tr.frow th{background:#F2F2F2;padding:8px 10px;border-bottom:2px solid #D4D4D4}
+table.tms tr.frow input{width:100%;min-width:92px;padding:7px 9px;border:1px solid #CFCFCF;border-radius:3px;background:#fff;font-size:13px}
+table.tms td{padding:11px 12px;font-size:13.5px}
+table.tms a.plink{color:#F08A00;font-weight:600;text-decoration:none}
+table.tms a.plink:hover{text-decoration:underline}
+table.tms .sub{color:var(--muted);font-size:11.5px}
+.sub{color:var(--muted);font-size:12px}
 .ship{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:12px;padding:14px 16px;margin-bottom:12px}
 .ship h3{margin:0;font-size:15px;color:var(--brand)}
 .ship .meta{display:flex;flex-wrap:wrap;gap:6px 22px;margin:8px 0;color:var(--muted);font-size:12.5px}
@@ -125,6 +137,7 @@ try{ sessionUser=sessionStorage.getItem(K.user); }catch(e){}
 function summarize(ps){
   const kg=(ps.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0), pcs=(ps.lines||[]).reduce((s,l)=>s+l.qty,0);
   return {customer:ps.customer||'-',shipTo:`${ps.shipToCode?ps.shipToCode+' ':''}${ps.shipToName||String(ps.shipTo||'-').split(' ต.')[0]}`,
+    shipName:ps.shipToName||'',district:ps.shipToDistrict||'',province:ps.shipToProvince||'',
     deliveryDate:ps.deliveryDate||'',doNos:(ps.doNos||[]).slice(),lines:(ps.lines||[]).length,pcs,kg};
 }
 function addEvent(text){ const ev=get(K.events,[]); ev.unshift({at:new Date().toISOString(),text,read:false}); set(K.events,ev.slice(0,50)); }
@@ -186,7 +199,7 @@ function render(){
   document.getElementById('navInbox').classList.toggle('active',tab==='inbox');
   document.getElementById('navShip').classList.toggle('active',tab==='ship');
   document.getElementById('main').innerHTML=(tab==='inbox'?renderInbox(orders,ships):renderShips(orders,ships));
-  if(tab==='inbox') updateBar();
+  if(tab==='inbox'){ renderInboxRows(); updateBar(); }
 }
 function eventsHtml(){
   const ev=get(K.events,[]).filter(e=>!e.read);
@@ -194,27 +207,70 @@ function eventsHtml(){
   return `<div class="events">${ev.map((e,i)=>`<div class="event"><span>🔔 ${esc(e.text)} <small style="opacity:.7">· ${esc(fmtDT(e.at))}</small></span><button class="btn secondary small" onclick="dismissEvent('${esc(e.at)}')">รับทราบ</button></div>`).join('')}</div>`;
 }
 function dismissEvent(at){ set(K.events,get(K.events,[]).map(e=>e.at===at?{...e,read:true}:e)); render(); }
-function renderInbox(orders,ships){
-  const open=orders.filter(o=>o.status==='open'), asg=orders.filter(o=>o.status==='assigned');
-  const list=(filter==='open'?open:filter==='assigned'?asg:orders).slice().sort((a,b)=>(a.summary.deliveryDate||'9999')<(b.summary.deliveryDate||'9999')?-1:1);
-  const stat=(k,n,l)=>`<div class="stat${filter===k?' active':''}" onclick="setFilter('${k}')"><div class="n">${n}</div><div class="l">${l}</div></div>`;
-  const rows=list.map(o=>{
+/* ===== Picking Slip ที่รับเข้า — ตารางตามหน้าตา TMS จริง: Select · Map · Picking No. · Sold to · Ship to · District · Province · Weight
+   มีช่องกรองใต้หัวคอลัมน์ และกดหัวคอลัมน์เพื่อเรียงลำดับ ===== */
+let sortKey='date', sortDir=1;
+const colFilter={psNo:'',sold:'',ship:'',district:'',province:'',weight:''};
+const MAP_SVG='<svg width="19" height="16" viewBox="0 0 19 16" fill="none"><rect x="1" y="1" width="17" height="14" rx="2" stroke="#F08A00" stroke-width="1.7"/><circle cx="6" cy="6" r="1.9" fill="#F08A00"/><path d="M2 13l4.2-4.2 3 3 3.2-4.2L17 13" stroke="#F08A00" stroke-width="1.7" fill="none"/></svg>';
+const kgFmt=n=>(+n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function colVal(o,k){
+  const s=o.summary;
+  return k==='psNo'?o.psNo:k==='sold'?s.customer:k==='ship'?(s.shipName||s.shipTo):k==='district'?(s.district||''):k==='province'?(s.province||''):
+    k==='weight'?s.kg:k==='date'?(s.deliveryDate||''):k==='status'?o.status:k==='map'?`${s.province||''} ${s.district||''}`:'';
+}
+function inboxList(orders){
+  let list=filter==='open'?orders.filter(o=>o.status==='open'):filter==='assigned'?orders.filter(o=>o.status==='assigned'):orders.slice();
+  Object.keys(colFilter).forEach(k=>{
+    const q=colFilter[k].trim().toLowerCase(); if(!q) return;
+    list=list.filter(o=>{ const v=colVal(o,k); return (k==='weight'?kgFmt(v):String(v)).toLowerCase().includes(q); });
+  });
+  list.sort((a,b)=>{
+    const x=colVal(a,sortKey), y=colVal(b,sortKey);
+    const c=(typeof x==='number'&&typeof y==='number')?x-y:String(x||'~').localeCompare(String(y||'~'),'th');
+    return c*sortDir;
+  });
+  return list;
+}
+function mapUrl(s){ return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([s.shipName||s.shipTo,s.district,s.province].filter(x=>x&&x!=='-').join(' ')); }
+function inboxRowsHtml(list){
+  if(!list.length) return `<tr><td colspan="12" class="empty">ไม่พบรายการ</td></tr>`;
+  return list.map(o=>{
     const s=o.summary, isOpen=o.status==='open';
     return `<tr class="${selected.has(o.psNo)?'sel':''}">
-     <td>${isOpen?`<input type="checkbox" ${selected.has(o.psNo)?'checked':''} onchange="toggleSel('${esc(o.psNo)}',this.checked,this)">`:''}</td>
-     <td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(s.doNos.join(', '))}</div></td>
-     <td>${esc(s.customer)}</td><td>${esc(s.shipTo)}</td>
+     <td class="c">${isOpen?`<input type="checkbox" ${selected.has(o.psNo)?'checked':''} onchange="toggleSel('${esc(o.psNo)}',this.checked,this)">`:''}</td>
+     <td class="c"><a href="${esc(mapUrl(s))}" target="_blank" rel="noopener" title="เปิดแผนที่">${MAP_SVG}</a></td>
+     <td><a class="plink" href="#" onclick="event.preventDefault();viewPS('${esc(o.psNo)}')">${esc(o.psNo)}</a><div class="sub">DO: ${esc(s.doNos.join(', '))}</div></td>
+     <td>${esc(s.customer)}</td><td>${esc(s.shipName||s.shipTo)}</td><td>${esc(s.district||'-')}</td><td>${esc(s.province||'-')}</td>
+     <td class="n-r">${kgFmt(s.kg)}</td>
      <td>${esc(fmtDate(s.deliveryDate))}</td>
-     <td class="n-r">${s.lines}</td><td class="n-r">${num(s.kg)}</td>
      <td>${isOpen?'<span class="badge open">รอจัดรถ</span>':`<span class="badge done">จัดรถแล้ว · ${esc(o.shipNo)}</span>`}</td>
-     <td style="color:var(--muted);font-size:12px">${esc(fmtDT(o.receivedAt))}</td>
-     <td><button class="btn secondary small" onclick="viewPS('${esc(o.psNo)}')">📄 ดูใบ</button></td></tr>`;
+     <td class="sub">${esc(fmtDT(o.receivedAt))}</td></tr>`;
   }).join('');
+}
+function renderInboxRows(){
+  const body=document.getElementById('inboxBody'); if(!body) return;
+  const list=inboxList(get(K.orders,[]));
+  body.innerHTML=inboxRowsHtml(list);
+  const c=document.getElementById('inboxCount'); if(c) c.textContent=`แสดง ${list.length} รายการ`;
+}
+function setSort(k){ if(sortKey===k) sortDir=-sortDir; else { sortKey=k; sortDir=1; } render(); }
+function onColFilter(k,v){ colFilter[k]=v; renderInboxRows(); }
+function arrow(k){ return `<span class="srt">${sortKey===k?(sortDir>0?'▲':'▼'):'⇅'}</span>`; }
+function renderInbox(orders,ships){
+  const open=orders.filter(o=>o.status==='open'), asg=orders.filter(o=>o.status==='assigned');
+  const stat=(k,n,l)=>`<div class="stat${filter===k?' active':''}" onclick="setFilter('${k}')"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  const th=(k,label,cls)=>`<th class="srt-h ${cls||''}" onclick="setSort('${k}')">${label} ${arrow(k)}</th>`;
+  const fl=(k,ph)=>`<th class="flt"><input placeholder="${ph}" value="${esc(colFilter[k])}" oninput="onColFilter('${k}',this.value)"></th>`;
   return `${eventsHtml()}
    <div class="cards">${stat('open',open.length,'รอจัดรถ')}${stat('assigned',asg.length,'จัดรถแล้ว')}${stat('all',orders.length,'ทั้งหมดที่รับเข้า')}</div>
-   <div class="panel">${list.length?`<table><thead><tr><th></th><th>Picking Slip / DO</th><th>ลูกค้า</th><th>Ship-to</th><th>กำหนดส่ง</th><th class="n-r">รายการ</th><th class="n-r">น้ำหนัก (kg)</th><th>สถานะ</th><th>รับเข้าเมื่อ</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
-     :`<div class="empty">${orders.length?'ไม่มีรายการในหมวดนี้':'ยังไม่มี Picking Slip ที่รับจาก V2 — เมื่อ Service สร้าง Picking Slip ใบจะถูกส่งเข้ามาที่นี่อัตโนมัติ'}</div>`}</div>
-   ${filter==='open'&&list.length?`<div class="bar" id="selBar"><span id="selTxt"></span><button class="btn" id="selBtn" onclick="openShipDialog()">สร้าง Shipment →</button></div>`:''}`;
+   <div class="panel"><table class="tms">
+    <thead>
+     <tr><th class="c">Select</th>${th('map','Map','c')}${th('psNo','Picking No.')}${th('sold','Sold to')}${th('ship','Ship to')}${th('district','District')}${th('province','Province')}${th('weight','Weight','n-r')}${th('date','กำหนดส่ง')}${th('status','สถานะ')}<th>รับเข้าเมื่อ</th></tr>
+     <tr class="frow"><th></th><th></th>${fl('psNo','Picking No.')}${fl('sold','Sold to')}${fl('ship','Ship to')}${fl('district','District')}${fl('province','Province')}${fl('weight','Weight')}<th></th><th></th><th></th></tr>
+    </thead>
+    <tbody id="inboxBody"></tbody></table></div>
+   <div class="sub" style="margin:8px 2px" id="inboxCount"></div>
+   ${filter==='open'?`<div class="bar" id="selBar"><span id="selTxt"></span><button class="btn" id="selBtn" onclick="openShipDialog()">สร้าง Shipment →</button></div>`:''}`;
 }
 function toggleSel(psNo,on,el){ if(on) selected.add(psNo); else selected.delete(psNo); if(el&&el.closest('tr')) el.closest('tr').classList.toggle('sel',on); updateBar(); }
 function updateBar(){
@@ -224,6 +280,7 @@ function updateBar(){
   t.textContent=orders.length?`เลือก ${orders.length} Picking Slip · ${num(kg)} kg`:'ติ๊กเลือก Picking Slip ได้หลายใบ เพื่อขึ้นรถคันเดียวกัน (1 Shipment)';
   document.getElementById('selBtn').disabled=!orders.length;
 }
+
 function renderShips(orders,ships){
   const list=ships.slice().sort((a,b)=>(a.tripDate||'9999')<(b.tripDate||'9999')?-1:1);
   const html=list.map(s=>{
@@ -233,8 +290,8 @@ function renderShips(orders,ships){
       <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3>🚚 Shipment ${esc(s.shipNo)}</h3>
        <div><button class="btn secondary small" onclick="openShipEdit('${esc(s.shipNo)}')">แก้ไขรถ/คนขับ</button> <button class="btn danger small" onclick="deleteShip('${esc(s.shipNo)}')">🗑 ลบ Shipment</button></div></div>
       <div class="meta"><span>ทะเบียนรถ: <b>${esc(s.plate)}</b></span><span>คนขับ: <b>${esc(s.driver)}</b></span><span>วันที่วิ่ง: <b>${esc(fmtDate(s.tripDate))}</b></span><span>น้ำหนักรวม: <b>${num(kg)} kg</b></span><span>${ps.length} Picking Slip</span>${s.note?`<span>หมายเหตุ: ${esc(s.note)}</span>`:''}<span>สร้างโดย ${esc(s.createdBy||'-')} · ${esc(fmtDT(s.createdAt))}</span></div>
-      <table><thead><tr><th>ลำดับจุดส่ง</th><th>Picking Slip / DO</th><th>ลูกค้า</th><th>Ship-to</th><th>กำหนดส่ง</th><th class="n-r">kg</th><th></th></tr></thead><tbody>
-      ${ps.map((o,i)=>`<tr><td>${i+1}</td><td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(o.summary.doNos.join(', '))}</div></td><td>${esc(o.summary.customer)}</td><td>${esc(o.summary.shipTo)}</td><td>${esc(fmtDate(o.summary.deliveryDate))}</td><td class="n-r">${num(o.summary.kg)}</td>
+      <table><thead><tr><th>ลำดับจุดส่ง</th><th>Picking Slip / DO</th><th>ลูกค้า</th><th>Ship-to</th><th>District</th><th>Province</th><th>กำหนดส่ง</th><th class="n-r">kg</th><th></th></tr></thead><tbody>
+      ${ps.map((o,i)=>`<tr><td>${i+1}</td><td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(o.summary.doNos.join(', '))}</div></td><td>${esc(o.summary.customer)}</td><td>${esc(o.summary.shipTo)}</td><td>${esc(o.summary.district||'-')}</td><td>${esc(o.summary.province||'-')}</td><td>${esc(fmtDate(o.summary.deliveryDate))}</td><td class="n-r">${num(o.summary.kg)}</td>
         <td><button class="btn secondary small" onclick="viewPS('${esc(o.psNo)}')">📄 ดูใบ</button> <button class="btn danger small" onclick="removeFromShip('${esc(s.shipNo)}','${esc(o.psNo)}')" title="เอาใบนี้ออกจาก Shipment (กลับไปรอจัดรถ)">✕ เอาออก</button></td></tr>`).join('')}
       </tbody></table></div>`;
   }).join('');

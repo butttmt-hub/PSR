@@ -635,22 +635,22 @@ let current=1;
 const soldToMasterData=[
  {code:'0010001',name:'บริษัท เอบีซี สตีล จำกัด (ABC Steel Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:5000000,creditRemaining:3500000,pendingCollection:800000,collectedNotTransferred:250000,marginPct:19,
   address:'เลขที่ 88 ถนนสุขุมวิท แขวงคลองตัน เขตคลองเตย กรุงเทพมหานคร 10110',taxId:'0105561012345',branch:'สำนักงานใหญ่',businessType:'ค้าเหล็กและวัสดุก่อสร้าง',
-  shipTos:[{code:'0010001-01',name:'คลังสินค้าใหญ่ กรุงเทพฯ'},{code:'0010001-02',name:'สาขาสมุทรปราการ'}]},
+  shipTos:[{code:'0010001-01',name:'คลังสินค้าใหญ่ กรุงเทพฯ',district:'เขตคลองเตย',province:'จังหวัดกรุงเทพมหานคร'},{code:'0010001-02',name:'สาขาสมุทรปราการ',district:'อำเภอบางพลี',province:'จังหวัดสมุทรปราการ'}]},
  {code:'0010002',name:'บริษัท ไทย เมทัล เวิร์คส์ จำกัด (Thai Metal Works Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:3000000,creditRemaining:900000,pendingCollection:650000,collectedNotTransferred:120000,marginPct:14,
   address:'เลขที่ 45 ถนนพระราม 2 แขวงแสมดำ เขตบางขุนเทียน กรุงเทพมหานคร 10150',taxId:'0105551023456',branch:'สาขาพระราม 2',businessType:'งานตัดพับโลหะ',
-  shipTos:[{code:'0010002-01',name:'โรงงานพระราม 3'}]},
+  shipTos:[{code:'0010002-01',name:'โรงงานพระราม 3',district:'เขตบางคอแหลม',province:'จังหวัดกรุงเทพมหานคร'}]},
  {code:'0010003',name:'บริษัท โกลบอล คอนสตรัคชั่น จำกัด (Global Construction Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z3 - Contractor',creditLimit:8000000,creditRemaining:1200000,pendingCollection:2100000,collectedNotTransferred:340000,marginPct:22,
   address:'เลขที่ 120 นิคมอมตะซิตี้ ตำบลบ่อวิน อำเภอศรีราชา ชลบุรี 20230',taxId:'0105541034567',branch:'สาขาชลบุรี',businessType:'รับเหมาก่อสร้าง',
-  shipTos:[{code:'0010003-01',name:'ไซต์งานชลบุรี'}]},
+  shipTos:[{code:'0010003-01',name:'ไซต์งานชลบุรี',district:'อำเภอศรีราชา',province:'จังหวัดชลบุรี'}]},
  {code:'0010004',name:'บริษัท สยาม เอ็นจิเนียริ่ง จำกัด (Siam Engineering Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z1 - Wholesale',creditLimit:4000000,creditRemaining:3600000,pendingCollection:250000,collectedNotTransferred:80000,marginPct:16,
   address:'เลขที่ 9 ถนนบางนา-ตราด แขวงบางนา เขตบางนา กรุงเทพมหานคร 10260',taxId:'0105531045678',branch:'สำนักงานใหญ่',businessType:'งานวิศวกรรมโครงสร้าง',
-  shipTos:[{code:'0010004-01',name:'คลังบางนา'}]},
+  shipTos:[{code:'0010004-01',name:'คลังบางนา',district:'เขตบางนา',province:'จังหวัดกรุงเทพมหานคร'}]},
  {code:'0010005',name:'บริษัท นอร์ทเทิร์น แฟบริเคชั่น จำกัด (Northern Fabrication Co., Ltd.)',distChannel:'20 - Project Sales',custGroup:'Z2 - Fabricator',creditLimit:2000000,creditRemaining:500000,pendingCollection:480000,collectedNotTransferred:60000,marginPct:11,
   address:'เลขที่ 199 ถนนเชียงใหม่-ลำปาง ตำบลท่าศาลา อำเภอเมือง เชียงใหม่ 50000',taxId:'0105521056789',branch:'สาขาเชียงใหม่',businessType:'งานประกอบโครงเหล็ก',
-  shipTos:[{code:'0010005-01',name:'โรงงานเชียงใหม่'}]},
+  shipTos:[{code:'0010005-01',name:'โรงงานเชียงใหม่',district:'อำเภอเมืองเชียงใหม่',province:'จังหวัดเชียงใหม่'}]},
  {code:'0010006',name:'บริษัท เดลต้า ทูลส์ แอนด์ ไดส์ จำกัด (Delta Tools & Dies Co., Ltd.)',distChannel:'10 - Direct Sales',custGroup:'Z2 - Fabricator',creditLimit:1500000,creditRemaining:100000,pendingCollection:620000,collectedNotTransferred:45000,marginPct:24,
   address:'เลขที่ 77 นิคมอุตสาหกรรมแหลมฉบัง ตำบลทุ่งสุขลา อำเภอศรีราชา ชลบุรี 20230',taxId:'0105511067890',branch:'สาขาแหลมฉบัง',businessType:'ผลิตแม่พิมพ์และอุปกรณ์',
-  shipTos:[{code:'0010006-01',name:'นิคมแหลมฉบัง'}]},
+  shipTos:[{code:'0010006-01',name:'นิคมแหลมฉบัง',district:'อำเภอศรีราชา',province:'จังหวัดชลบุรี'}]},
 ];
 const salesEmployeeMasterData=[
  {code:'Sale01',name:'Sale01'},
@@ -873,7 +873,7 @@ function currentShipTo(){
  const code=(document.getElementById('shipTo')||{}).value||'';
  const c=soldToMasterData.find(x=>x.code===currentSoldToCode());
  const s=c&&c.shipTos.find(x=>x.code===code);
- return {code, name:s?s.name:'', text:((document.getElementById('shipToText')||{}).value||'').trim()};
+ return {code, name:s?s.name:'', district:s?(s.district||''):'', province:s?(s.province||''):'', text:((document.getElementById('shipToText')||{}).value||'').trim()};
 }
 
 let currentProduct='Cut Sheet';
@@ -1944,7 +1944,7 @@ function buildSalesOrderRecord(qRec,soNo){
   createdAtDisplay:now.toLocaleDateString('th-TH',{year:'numeric',month:'2-digit',day:'2-digit'}),
   createdTimeDisplay:now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
   project:qRec.project, refNo:qRec.refNo, customer:qRec.customer, sales:qRec.sales, soldToCode:qRec.soldToCode,
-  shipToCode:qRec.shipToCode||'', shipToName:qRec.shipToName||'', shipToText:qRec.shipToText||'',
+  shipToCode:qRec.shipToCode||'', shipToName:qRec.shipToName||'', shipToText:qRec.shipToText||'', shipToDistrict:qRec.shipToDistrict||'', shipToProvince:qRec.shipToProvince||'',
   currentProduct:qRec.currentProduct, cart:qRec.cart, fieldState:qRec.fieldState, quoteExtra:qRec.quoteExtra, grandTotal:qRec.grandTotal,
  };
 }
@@ -1962,7 +1962,7 @@ function snapshotCurrentQuotation(qNo){
   customer:document.getElementById('customer').value,
   sales:document.getElementById('sales').value,
   soldToCode:document.getElementById('soldTo').value,
-  shipToCode:currentShipTo().code, shipToName:currentShipTo().name, shipToText:currentShipTo().text,
+  shipToCode:currentShipTo().code, shipToName:currentShipTo().name, shipToText:currentShipTo().text, shipToDistrict:currentShipTo().district, shipToProvince:currentShipTo().province,
   grandTotal:grand,
   itemCount:productCart.length,
   currentProduct:currentProduct,

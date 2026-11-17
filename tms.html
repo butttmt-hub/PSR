@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TMS — Transport Management System (Prototype)</title>
+<style>
+:root{--bg:#F3F6FA;--card:#fff;--ink:#14263B;--muted:#5B7083;--line:#D5E0EB;--brand:#1D4F91;--brand2:#E8F0FA;--warn:#B45309;--warnbg:#FFF4E5;--bad:#B42318;--ok:#14632E;--okbg:#E7F6EC}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+/* login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 28px rgba(20,38,59,.08)}
+.login-card h1{margin:0 0 4px;font-size:22px;color:var(--brand)}
+.login-card p{margin:0 0 18px;color:var(--muted);font-size:12.5px}
+.login-card label{display:block;font-weight:600;font-size:12px;margin:12px 0 4px}
+.login-card input{width:100%}
+.btn{border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:8px;padding:8px 16px;font-weight:700;font-size:13px}
+.btn.secondary{background:#fff;color:var(--brand)}
+.btn.danger{background:#fff;color:var(--bad);border-color:#E3B1AC}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{padding:4px 10px;font-size:12px}
+.login-err{color:var(--bad);font-size:12px;margin-top:10px}
+.login-hint{margin-top:16px;font-size:11.5px;color:var(--muted);background:var(--brand2);border-radius:8px;padding:8px 10px}
+/* app */
+header{background:var(--brand);color:#fff;padding:12px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{margin:0;font-size:17px}
+header small{display:block;font-weight:400;font-size:11.5px;opacity:.85}
+header .who{display:flex;align-items:center;gap:12px;font-size:12.5px}
+header button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;padding:5px 12px}
+nav{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;display:flex;gap:4px}
+nav button{border:0;background:none;padding:12px 16px;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+nav button.active{color:var(--brand);border-bottom-color:var(--brand)}
+nav .cnt{display:inline-block;background:var(--brand2);color:var(--brand);border-radius:999px;font-size:11px;padding:1px 8px;margin-left:6px}
+main{padding:18px 22px;max-width:1280px;margin:0 auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.stat.active{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand2)}
+.stat .n{font-size:24px;font-weight:800;color:var(--brand)}
+.stat .l{font-size:11.5px;color:var(--muted)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto}
+table{border-collapse:collapse;width:100%}
+th{background:#EAF0F7;text-align:left;padding:8px 10px;font-size:12px;white-space:nowrap;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid #EAF0F7;vertical-align:top}
+tr.sel td{background:#E3EEFB}
+.n-r{text-align:right;white-space:nowrap}
+.badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:700}
+.badge.open{background:var(--warnbg);color:var(--warn)}
+.badge.done{background:var(--okbg);color:var(--ok)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;padding:10px 14px;background:var(--brand2);border-radius:10px;color:var(--brand);font-weight:700}
+.events{margin-bottom:14px}
+.event{display:flex;justify-content:space-between;gap:10px;background:var(--warnbg);color:#7A4A06;border:1px solid #F3D3A4;border-radius:9px;padding:8px 12px;margin-bottom:6px;font-size:12.5px}
+.empty{padding:34px;text-align:center;color:var(--muted)}
+.ship{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.ship h3{margin:0;font-size:15px;color:var(--brand)}
+.ship .meta{display:flex;flex-wrap:wrap;gap:6px 22px;margin:8px 0;color:var(--muted);font-size:12.5px}
+.ship .meta b{color:var(--ink)}
+.ship table{margin-top:6px}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+.md{background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column}
+.md.wide{max-width:1100px;height:92vh}
+.md-h{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.md-h h3{margin:0;font-size:15px}
+.md-b{padding:16px 18px;overflow:auto;flex:1}
+.md-f{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.md-b label{display:block;font-weight:600;font-size:12px;margin:10px 0 4px}
+.md-b input{width:100%}
+iframe{border:0;width:100%;height:100%;background:#fff}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <h1>TMS</h1>
+    <p>Transport Management System — ระบบจัดการขนส่ง (Prototype จำลองเป็นระบบแยกจาก V2)</p>
+    <label for="lgUser">Username</label><input id="lgUser" autocomplete="off">
+    <label for="lgPass">Password</label><input id="lgPass" type="password">
+    <div id="lgErr" class="login-err hidden">Username หรือ Password ไม่ถูกต้อง</div>
+    <p style="margin-top:16px"><button class="btn" style="width:100%" onclick="login()">เข้าสู่ระบบ</button></p>
+    <div class="login-hint">Prototype demo — ผู้ใช้ TMS: <b>Dispatch</b> / <b>D123</b></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <h1>TMS — Transport Management System<small>Prototype · รับ Picking Slip จากระบบ V2 · จัดรอบรถ</small></h1>
+    <div class="who"><span id="whoName"></span><button onclick="logout()">ออกจากระบบ</button></div>
+  </header>
+  <nav>
+    <button id="navInbox" onclick="setTab('inbox')">Picking Slip ที่รับเข้า <span class="cnt" id="cntInbox">0</span></button>
+    <button id="navShip" onclick="setTab('ship')">Shipments <span class="cnt" id="cntShip">0</span></button>
+  </nav>
+  <main id="main"></main>
+</div>
+
+<div id="overlay" class="ov hidden" onclick="if(event.target===this) closeModal()"><div class="md" id="modal"></div></div>
+
+<script src="tms-interface.js"></script>
+<script>
+/* ===== TMS — ที่เก็บข้อมูลของตัวเอง (แยกจาก V2) =====
+   tms_orders    : Picking Slip ที่รับเข้ามา (เก็บ payload ทั้งใบ เพื่อเปิดดูฟอร์มเหมือนที่ Service เห็น)
+   tms_shipments : Shipment (1 Shipment = รถ 1 คัน + หลาย Picking Slip)
+   tms_events    : แจ้งเตือน (เช่น ใบถูกยกเลิกจาก V2)
+   tms_processed : id ของข้อความจาก V2 ที่ประมวลผลแล้ว */
+const K={orders:'tms_orders',ships:'tms_shipments',events:'tms_events',done:'tms_processed',seq:'tms_seq',user:'tms_session_user'};
+const USERS=[{u:'Dispatch',p:'D123'}];
+const TRUCKS=['70-1234 กทม.','71-5566 กทม.','72-8890 สมุทรปราการ','81-4521 ชลบุรี','83-7712 ระยอง','70-9034 กทม.'];
+const DRIVERS=['สมชาย ใจดี','วิชัย มั่นคง','ประยุทธ์ รักงาน','สุรพล เร็วไว','อนันต์ ขยันยิ่ง'];
+const get=(k,d)=>{ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } };
+const set=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ alert('พื้นที่จัดเก็บข้อมูลเต็ม'); return false; } };
+const esc=x=>String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const fmtDate=d=>{ if(!d) return '-'; const x=new Date(d.length<=10?d+'T00:00:00':d); if(isNaN(x)) return '-'; return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`; };
+const fmtDT=d=>{ const x=new Date(d); return isNaN(x)?'-':x.toLocaleString('th-TH'); };
+const num=n=>(+n||0).toLocaleString('en-US',{maximumFractionDigits:0});
+
+let tab='inbox', filter='open', selected=new Set(), sessionUser=null;
+try{ sessionUser=sessionStorage.getItem(K.user); }catch(e){}
+
+/* ---------- รับข้อมูลจาก V2 (interface) ---------- */
+function summarize(ps){
+  const kg=(ps.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0), pcs=(ps.lines||[]).reduce((s,l)=>s+l.qty,0);
+  return {customer:ps.customer||'-',shipTo:`${ps.shipToCode?ps.shipToCode+' ':''}${ps.shipToName||String(ps.shipTo||'-').split(' ต.')[0]}`,
+    deliveryDate:ps.deliveryDate||'',doNos:(ps.doNos||[]).slice(),lines:(ps.lines||[]).length,pcs,kg};
+}
+function addEvent(text){ const ev=get(K.events,[]); ev.unshift({at:new Date().toISOString(),text,read:false}); set(K.events,ev.slice(0,50)); }
+function processInterface(){
+  const done=new Set(get(K.done,[]));
+  const msgs=TMSIF.list().filter(m=>!done.has(m.id));
+  if(!msgs.length) return false;
+  let orders=get(K.orders,[]), ships=get(K.ships,[]);
+  msgs.forEach(m=>{
+    if(m.type==='PS_CREATE' && m.payload && m.payload.ps){
+      const ps=m.payload.ps, old=orders.find(o=>o.psNo===ps.psNo);
+      const rec={psNo:ps.psNo,receivedAt:old?old.receivedAt:m.sentAt,sentBy:m.sentBy||ps.createdBy||'',payload:m.payload,summary:summarize(ps),status:old?old.status:'open',shipNo:old?old.shipNo:''};
+      if(old) orders=orders.map(o=>o.psNo===ps.psNo?rec:o); else orders.push(rec);
+    }
+    if(m.type==='PS_DELETE' && m.payload){
+      const psNo=m.payload.psNo, old=orders.find(o=>o.psNo===psNo);
+      if(old){
+        orders=orders.filter(o=>o.psNo!==psNo);
+        let note=`Picking Slip ${psNo} ถูกลบจากระบบ V2 → ลบออกจาก TMS แล้ว`;
+        ships=ships.map(s=>{
+          if(!s.psNos.includes(psNo)) return s;
+          note+=` (เคยอยู่ใน Shipment ${s.shipNo})`;
+          return {...s,psNos:s.psNos.filter(n=>n!==psNo)};
+        }).filter(s=>{ if(s.psNos.length) return true; note+=` · Shipment ${s.shipNo} ว่างจึงถูกลบ`; return false; });
+        addEvent(note);
+      }
+    }
+    done.add(m.id);
+  });
+  set(K.orders,orders); set(K.ships,ships); set(K.done,[...done].slice(-600));
+  return true;
+}
+
+/* ---------- login ---------- */
+function login(){
+  const u=document.getElementById('lgUser').value.trim(), p=document.getElementById('lgPass').value;
+  const ok=USERS.find(x=>x.u===u&&x.p===p);
+  if(!ok){ document.getElementById('lgErr').classList.remove('hidden'); return; }
+  sessionUser=ok.u; try{ sessionStorage.setItem(K.user,ok.u); }catch(e){}
+  showApp();
+}
+function logout(){ sessionUser=null; try{ sessionStorage.removeItem(K.user); }catch(e){} document.getElementById('app').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); }
+document.getElementById('lgPass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+document.getElementById('lgUser').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('lgPass').focus(); });
+function showApp(){
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('whoName').textContent='👤 '+sessionUser;
+  processInterface(); render();
+}
+function setTab(t){ tab=t; selected=new Set(); render(); }
+function setFilter(f){ filter=f; selected=new Set(); render(); }
+
+/* ---------- แสดงผล ---------- */
+function render(){
+  const orders=get(K.orders,[]), ships=get(K.ships,[]);
+  document.getElementById('cntInbox').textContent=orders.filter(o=>o.status==='open').length;
+  document.getElementById('cntShip').textContent=ships.length;
+  document.getElementById('navInbox').classList.toggle('active',tab==='inbox');
+  document.getElementById('navShip').classList.toggle('active',tab==='ship');
+  document.getElementById('main').innerHTML=(tab==='inbox'?renderInbox(orders,ships):renderShips(orders,ships));
+  if(tab==='inbox') updateBar();
+}
+function eventsHtml(){
+  const ev=get(K.events,[]).filter(e=>!e.read);
+  if(!ev.length) return '';
+  return `<div class="events">${ev.map((e,i)=>`<div class="event"><span>🔔 ${esc(e.text)} <small style="opacity:.7">· ${esc(fmtDT(e.at))}</small></span><button class="btn secondary small" onclick="dismissEvent('${esc(e.at)}')">รับทราบ</button></div>`).join('')}</div>`;
+}
+function dismissEvent(at){ set(K.events,get(K.events,[]).map(e=>e.at===at?{...e,read:true}:e)); render(); }
+function renderInbox(orders,ships){
+  const open=orders.filter(o=>o.status==='open'), asg=orders.filter(o=>o.status==='assigned');
+  const list=(filter==='open'?open:filter==='assigned'?asg:orders).slice().sort((a,b)=>(a.summary.deliveryDate||'9999')<(b.summary.deliveryDate||'9999')?-1:1);
+  const stat=(k,n,l)=>`<div class="stat${filter===k?' active':''}" onclick="setFilter('${k}')"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  const rows=list.map(o=>{
+    const s=o.summary, isOpen=o.status==='open';
+    return `<tr class="${selected.has(o.psNo)?'sel':''}">
+     <td>${isOpen?`<input type="checkbox" ${selected.has(o.psNo)?'checked':''} onchange="toggleSel('${esc(o.psNo)}',this.checked,this)">`:''}</td>
+     <td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(s.doNos.join(', '))}</div></td>
+     <td>${esc(s.customer)}</td><td>${esc(s.shipTo)}</td>
+     <td>${esc(fmtDate(s.deliveryDate))}</td>
+     <td class="n-r">${s.lines}</td><td class="n-r">${num(s.kg)}</td>
+     <td>${isOpen?'<span class="badge open">รอจัดรถ</span>':`<span class="badge done">จัดรถแล้ว · ${esc(o.shipNo)}</span>`}</td>
+     <td style="color:var(--muted);font-size:12px">${esc(fmtDT(o.receivedAt))}</td>
+     <td><button class="btn secondary small" onclick="viewPS('${esc(o.psNo)}')">📄 ดูใบ</button></td></tr>`;
+  }).join('');
+  return `${eventsHtml()}
+   <div class="cards">${stat('open',open.length,'รอจัดรถ')}${stat('assigned',asg.length,'จัดรถแล้ว')}${stat('all',orders.length,'ทั้งหมดที่รับเข้า')}</div>
+   <div class="panel">${list.length?`<table><thead><tr><th></th><th>Picking Slip / DO</th><th>ลูกค้า</th><th>Ship-to</th><th>กำหนดส่ง</th><th class="n-r">รายการ</th><th class="n-r">น้ำหนัก (kg)</th><th>สถานะ</th><th>รับเข้าเมื่อ</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+     :`<div class="empty">${orders.length?'ไม่มีรายการในหมวดนี้':'ยังไม่มี Picking Slip ที่รับจาก V2 — เมื่อ Service สร้าง Picking Slip ใบจะถูกส่งเข้ามาที่นี่อัตโนมัติ'}</div>`}</div>
+   ${filter==='open'&&list.length?`<div class="bar" id="selBar"><span id="selTxt"></span><button class="btn" id="selBtn" onclick="openShipDialog()">สร้าง Shipment →</button></div>`:''}`;
+}
+function toggleSel(psNo,on,el){ if(on) selected.add(psNo); else selected.delete(psNo); if(el&&el.closest('tr')) el.closest('tr').classList.toggle('sel',on); updateBar(); }
+function updateBar(){
+  const t=document.getElementById('selTxt'); if(!t) return;
+  const orders=get(K.orders,[]).filter(o=>selected.has(o.psNo));
+  const kg=orders.reduce((s,o)=>s+o.summary.kg,0);
+  t.textContent=orders.length?`เลือก ${orders.length} Picking Slip · ${num(kg)} kg`:'ติ๊กเลือก Picking Slip ได้หลายใบ เพื่อขึ้นรถคันเดียวกัน (1 Shipment)';
+  document.getElementById('selBtn').disabled=!orders.length;
+}
+function renderShips(orders,ships){
+  const list=ships.slice().sort((a,b)=>(a.tripDate||'9999')<(b.tripDate||'9999')?-1:1);
+  const html=list.map(s=>{
+    const ps=s.psNos.map(n=>orders.find(o=>o.psNo===n)).filter(Boolean);
+    const kg=ps.reduce((t,o)=>t+o.summary.kg,0);
+    return `<div class="ship">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3>🚚 Shipment ${esc(s.shipNo)}</h3>
+       <div><button class="btn secondary small" onclick="openShipEdit('${esc(s.shipNo)}')">แก้ไขรถ/คนขับ</button> <button class="btn danger small" onclick="deleteShip('${esc(s.shipNo)}')">🗑 ลบ Shipment</button></div></div>
+      <div class="meta"><span>ทะเบียนรถ: <b>${esc(s.plate)}</b></span><span>คนขับ: <b>${esc(s.driver)}</b></span><span>วันที่วิ่ง: <b>${esc(fmtDate(s.tripDate))}</b></span><span>น้ำหนักรวม: <b>${num(kg)} kg</b></span><span>${ps.length} Picking Slip</span>${s.note?`<span>หมายเหตุ: ${esc(s.note)}</span>`:''}<span>สร้างโดย ${esc(s.createdBy||'-')} · ${esc(fmtDT(s.createdAt))}</span></div>
+      <table><thead><tr><th>ลำดับจุดส่ง</th><th>Picking Slip / DO</th><th>ลูกค้า</th><th>Ship-to</th><th>กำหนดส่ง</th><th class="n-r">kg</th><th></th></tr></thead><tbody>
+      ${ps.map((o,i)=>`<tr><td>${i+1}</td><td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(o.summary.doNos.join(', '))}</div></td><td>${esc(o.summary.customer)}</td><td>${esc(o.summary.shipTo)}</td><td>${esc(fmtDate(o.summary.deliveryDate))}</td><td class="n-r">${num(o.summary.kg)}</td>
+        <td><button class="btn secondary small" onclick="viewPS('${esc(o.psNo)}')">📄 ดูใบ</button> <button class="btn danger small" onclick="removeFromShip('${esc(s.shipNo)}','${esc(o.psNo)}')" title="เอาใบนี้ออกจาก Shipment (กลับไปรอจัดรถ)">✕ เอาออก</button></td></tr>`).join('')}
+      </tbody></table></div>`;
+  }).join('');
+  return `${eventsHtml()}${list.length?html:`<div class="panel"><div class="empty">ยังไม่มี Shipment — ไปที่แท็บ "Picking Slip ที่รับเข้า" เลือกใบแล้วกด "สร้าง Shipment"</div></div>`}`;
+}
+
+/* ---------- ดูใบ Picking Slip (หน้าเดียวกับที่ Service เห็น — อ่านจากข้อมูลที่ TMS รับเข้ามา) ---------- */
+function viewPS(psNo){
+  document.getElementById('modal').className='md wide';
+  document.getElementById('modal').innerHTML=`<div class="md-h"><h3>Picking Slip ${esc(psNo)} (ข้อมูลที่รับจาก V2)</h3><button class="btn secondary small" onclick="closeModal()">✕ ปิด</button></div>
+   <div class="md-b" style="padding:0"><iframe src="presale-configurator-v2.html?viewPS=${encodeURIComponent(psNo)}&tms=1"></iframe></div>`;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function closeModal(){ document.getElementById('overlay').classList.add('hidden'); document.getElementById('modal').innerHTML=''; }
+
+/* ---------- สร้าง / แก้ไข Shipment ---------- */
+function nextShipNo(){
+  const d=new Date(), p=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  const seq=get(K.seq,{}); const n=(seq[p]||0)+1; seq[p]=n; set(K.seq,seq);
+  return `SH${p}-${String(n).padStart(3,'0')}`;
+}
+function listOpts(id,arr){ return `<datalist id="${id}">${arr.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`; }
+function openShipDialog(){
+  const orders=get(K.orders,[]).filter(o=>selected.has(o.psNo)&&o.status==='open');
+  if(!orders.length) return;
+  const kg=orders.reduce((s,o)=>s+o.summary.kg,0);
+  const dates=orders.map(o=>o.summary.deliveryDate).filter(Boolean).sort();
+  const custs=new Set(orders.map(o=>o.summary.customer)), diffDate=new Set(orders.map(o=>o.summary.deliveryDate)).size>1;
+  document.getElementById('modal').className='md';
+  document.getElementById('modal').innerHTML=`<div class="md-h"><h3>สร้าง Shipment</h3><button class="btn secondary small" onclick="closeModal()">✕</button></div>
+   <div class="md-b">
+    <div style="font-size:12.5px;line-height:1.7;background:var(--brand2);border-radius:9px;padding:9px 12px">
+     <b>${orders.length} Picking Slip</b> · ${num(kg)} kg<br>${orders.map(o=>`${esc(o.psNo)} (${esc(o.summary.shipTo)})`).join('<br>')}
+     ${custs.size>1?'<br><span style="color:var(--warn)">ℹ️ หลายลูกค้าในรถคันเดียว (วิ่งหลายจุดส่ง)</span>':''}${diffDate?'<br><span style="color:var(--warn)">ℹ️ กำหนดส่งของใบที่เลือกไม่ตรงกัน — ตรวจสอบวันที่วิ่ง</span>':''}
+    </div>
+    <label>ทะเบียนรถ *</label><input id="shPlate" list="dlTrucks" placeholder="เลือกหรือพิมพ์ทะเบียน">${listOpts('dlTrucks',TRUCKS)}
+    <label>คนขับ *</label><input id="shDriver" list="dlDrivers" placeholder="เลือกหรือพิมพ์ชื่อคนขับ">${listOpts('dlDrivers',DRIVERS)}
+    <label>วันที่วิ่ง</label><input id="shDate" type="date" value="${esc(dates[0]||'')}">
+    <label>หมายเหตุ</label><input id="shNote" placeholder="ไม่บังคับ">
+   </div>
+   <div class="md-f"><button class="btn secondary" onclick="closeModal()">ยกเลิก</button><button class="btn" onclick="createShipment()">สร้าง Shipment</button></div>`;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function createShipment(){
+  const plate=document.getElementById('shPlate').value.trim(), driver=document.getElementById('shDriver').value.trim();
+  if(!plate||!driver){ alert('กรุณาระบุทะเบียนรถและคนขับ'); return; }
+  const sel=[...selected];
+  let orders=get(K.orders,[]), ships=get(K.ships,[]);
+  const picks=orders.filter(o=>sel.includes(o.psNo)&&o.status==='open');
+  if(!picks.length){ closeModal(); return; }
+  const shipNo=nextShipNo();
+  ships.push({shipNo,psNos:picks.map(o=>o.psNo),plate,driver,tripDate:document.getElementById('shDate').value,note:document.getElementById('shNote').value.trim(),createdAt:new Date().toISOString(),createdBy:sessionUser,status:'planned'});
+  orders=orders.map(o=>picks.some(p=>p.psNo===o.psNo)?{...o,status:'assigned',shipNo}:o);
+  set(K.orders,orders); set(K.ships,ships);
+  selected=new Set(); closeModal(); tab='ship'; render();
+}
+function openShipEdit(shipNo){
+  const s=get(K.ships,[]).find(x=>x.shipNo===shipNo); if(!s) return;
+  document.getElementById('modal').className='md';
+  document.getElementById('modal').innerHTML=`<div class="md-h"><h3>แก้ไข Shipment ${esc(shipNo)}</h3><button class="btn secondary small" onclick="closeModal()">✕</button></div>
+   <div class="md-b">
+    <label>ทะเบียนรถ *</label><input id="shPlate" list="dlTrucks" value="${esc(s.plate)}">${listOpts('dlTrucks',TRUCKS)}
+    <label>คนขับ *</label><input id="shDriver" list="dlDrivers" value="${esc(s.driver)}">${listOpts('dlDrivers',DRIVERS)}
+    <label>วันที่วิ่ง</label><input id="shDate" type="date" value="${esc(s.tripDate||'')}">
+    <label>หมายเหตุ</label><input id="shNote" value="${esc(s.note||'')}">
+   </div>
+   <div class="md-f"><button class="btn secondary" onclick="closeModal()">ยกเลิก</button><button class="btn" onclick="saveShipEdit('${esc(shipNo)}')">บันทึก</button></div>`;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function saveShipEdit(shipNo){
+  const plate=document.getElementById('shPlate').value.trim(), driver=document.getElementById('shDriver').value.trim();
+  if(!plate||!driver){ alert('กรุณาระบุทะเบียนรถและคนขับ'); return; }
+  set(K.ships,get(K.ships,[]).map(s=>s.shipNo===shipNo?{...s,plate,driver,tripDate:document.getElementById('shDate').value,note:document.getElementById('shNote').value.trim()}:s));
+  closeModal(); render();
+}
+function releaseOrders(psNos){
+  set(K.orders,get(K.orders,[]).map(o=>psNos.includes(o.psNo)?{...o,status:'open',shipNo:''}:o));
+}
+function removeFromShip(shipNo,psNo){
+  if(!confirm(`เอา Picking Slip ${psNo} ออกจาก Shipment ${shipNo} ?\nใบนี้จะกลับไปอยู่สถานะ "รอจัดรถ"`)) return;
+  let ships=get(K.ships,[]);
+  ships=ships.map(s=>s.shipNo===shipNo?{...s,psNos:s.psNos.filter(n=>n!==psNo)}:s).filter(s=>s.psNos.length);
+  set(K.ships,ships); releaseOrders([psNo]); render();
+}
+function deleteShip(shipNo){
+  const s=get(K.ships,[]).find(x=>x.shipNo===shipNo); if(!s) return;
+  if(!confirm(`ลบ Shipment ${shipNo} ?\nPicking Slip ทั้ง ${s.psNos.length} ใบจะกลับไปอยู่สถานะ "รอจัดรถ"`)) return;
+  set(K.ships,get(K.ships,[]).filter(x=>x.shipNo!==shipNo)); releaseOrders(s.psNos); render();
+}
+
+/* ---------- เริ่มระบบ + ฟังข้อความใหม่จาก V2 ---------- */
+TMSIF.onChange(()=>{ if(!sessionUser) return; processInterface(); render(); });
+window.addEventListener('storage',e=>{ if(sessionUser&&(e.key===K.orders||e.key===K.ships||e.key===K.events)) render(); });
+if(sessionUser) showApp();
+</script>
+</body>
+</html>

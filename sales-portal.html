@@ -492,6 +492,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
 <script src="firebase-config.js"></script>
 <script src="data-store.js"></script>
 <script type="module" src="firebase-adapter.js"></script>
+<script src="tms-interface.js"></script>
 <script>
 TMTStore.onError(function(e){ alert(TMTStore.describeError(e.error)); });
 function applyTheme(theme){
@@ -1257,11 +1258,21 @@ function applyPsCommonDate(){
  closePsDateDialog();
  serviceCreatePS();
 }
+function buildTmsPayload(ps){
+ const soNos=[...new Set((ps.lines||[]).map(l=>l.soNo))];
+ const sos=soNos.map(n=>loadSalesOrders().find(s=>s.soNo===n)).filter(Boolean).map(s=>{
+  const c=JSON.parse(JSON.stringify(s));
+  if(c.poAttachment) c.poAttachment={name:c.poAttachment.name,type:c.poAttachment.type,size:c.poAttachment.size};
+  return c;
+ });
+ return {ps:JSON.parse(JSON.stringify(ps)),salesOrders:sos};
+}
 function deleteServicePS(psNo){
  const p=TMTStore.pickingSlips.get(psNo); if(!p) return;
  const dos=(p.doNos||[]).join(', ');
  if(!confirm(`ลบ Picking Slip ${psNo} ?\n\nDO ที่รวมอยู่ (${dos}) จะกลับไปอยู่ในสถานะ "รอรวม" เหมือนเดิม\nWarehouse / Transport / Billing จะไม่เห็นใบนี้อีก`)) return;
  if(!TMTStore.pickingSlips.remove(psNo)){ alert('ลบไม่สำเร็จ'); return; }
+ TMSIF.send('PS_DELETE',{psNo},TMTStore.session.getUser()||'Service');   // ลบใน TMS ด้วย
  renderServiceDashboard();
 }
 function deleteServiceDO(doNo){
@@ -1299,6 +1310,7 @@ function serviceCreatePS(){
  const ps={psNo:genPsNo(),doNos:dos.map(d=>d.doNo),customer:first.customer||'',soldToCode:first.soldToCode||'',shipTo:doShipTo(first),shipToCode:first.shipToCode||'',shipToName:first.shipToName||'',shipToText:first.shipToText||'',deliveryDate:first.deliveryDate||'',
   createdAt:new Date().toISOString(),createdBy:TMTStore.session.getUser()||'Service',truckPlate:'',lines,status:'issued'};
  if(!TMTStore.pickingSlips.upsert(ps)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
+ TMSIF.send('PS_CREATE',buildTmsPayload(ps),ps.createdBy);   // ส่งเข้า TMS อัตโนมัติ
  serviceDoSel=new Set();
  serviceTab='ps';
  renderServiceDashboard();
@@ -1353,7 +1365,7 @@ function renderServicePSTab(){
    <div class="appr-main">
     <div class="appr-subject">Picking Slip <strong>${esc(p.psNo)}</strong> <span style="font-weight:400;color:var(--muted)">(${(p.doNos||[]).length} DO: ${esc((p.doNos||[]).join(', '))})</span></div>
     <div class="appr-snippet">${esc(p.customer||'-')} · Ship-to: <strong>${esc((p.shipToCode?p.shipToCode+' ':'')+(p.shipToName||String(p.shipTo||'-').split(' ต.')[0]))}</strong> · ${(p.lines||[]).length} รายการ · ${Math.round(kg).toLocaleString()} kg · ผู้จัดทำ: ${esc(p.createdBy||'-')}</div>
-    <div class="appr-delivery-row"><span class="appr-delivery-badge">🚚 กำหนดส่ง ${dl}</span></div>
+    <div class="appr-delivery-row"><span class="appr-delivery-badge">🚚 กำหนดส่ง ${dl}</span>${TMSIF.isSent(p.psNo)?' <span class="appr-delivery-badge" title="ส่งข้อมูลเข้าระบบ TMS แล้ว">📡 ส่ง TMS แล้ว</span>':''}</div>
    </div>
    <div class="appr-time">${esc(sapDate(p.createdAt))}</div>
   </a></div>`;

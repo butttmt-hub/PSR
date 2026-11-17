@@ -2667,11 +2667,12 @@ function psOwnTag(ids,fams,only){   // only = จำกัดเฉพาะส�
  const icon=k=>(HO_DEPTS.find(d=>d.k===k)||{}).icon||'';
  return `<div class="do-own"><span class="do-own-k">ดูแลโดย:</span> <b>${owners.map(o=>`${icon(o)} ${esc(o)}`).join(' · ')}</b><br><span class="do-own-k">เกี่ยวข้อง:</span> ${labels.map(esc).join(' · ')}</div>`;
 }
+// โหมด TMS (window.__TMS_SO): อ่าน S/O จากข้อมูลที่ TMS รับมาพร้อมใบ ไม่อ่านจากฐานข้อมูล V2
 function psSalesOrders(ps){
- return [...new Set((ps.lines||[]).map(l=>l.soNo))].map(n=>loadSalesOrders().find(s=>s.soNo===n)).filter(Boolean);
+ return [...new Set((ps.lines||[]).map(l=>l.soNo))].map(n=>window.__TMS_SO?window.__TMS_SO[n]:loadSalesOrders().find(s=>s.soNo===n)).filter(Boolean);
 }
 function psItemOf(l){
- const so=loadSalesOrders().find(s=>s.soNo===l.soNo);
+ const so=window.__TMS_SO?window.__TMS_SO[l.soNo]:loadSalesOrders().find(s=>s.soNo===l.soNo);
  return so?((so.cart||[]).find(i=>i.id===l.itemId)||{}):{};
 }
 function renderPickingSlipDoc(ps){
@@ -2718,7 +2719,7 @@ const doSummary=[...new Set((ps.doNos&&ps.doNos.length?ps.doNos:(ps.lines||[]).m
    <div style="font-size:12.5px;color:var(--muted)">🔒 มุมมองอ่านอย่างเดียว — Picking Slip <strong>${esc(ps.psNo)}</strong> (รวม ${(ps.doNos||[]).length} DO · ${sos.length} S/O)</div>
    <div style="display:flex;gap:8px">
     <button class="btn secondary" onclick="window.print()">🖨️ Print</button>
-    <a class="btn secondary" href="${backToDash?'sales-portal.html':'sales-portal.html'}" style="text-decoration:none">← กลับไป Dashboard</a>
+    ${window.__TMS_SO?'':'<a class="btn secondary" href="sales-portal.html" style="text-decoration:none">← กลับไป Dashboard</a>'}
    </div>
   </div>
   <div class="so-sheet do-sheet">
@@ -2816,7 +2817,13 @@ function tryLoadPSViewMode(){
  const params=new URLSearchParams(window.location.search);
  const psNo=params.get('viewPS');
  if(!psNo) return false;
- const rec=TMTStore.pickingSlips.get(psNo);
+ let rec;
+ if(params.get('tms')==='1'){
+  try{
+   const o=JSON.parse(localStorage.getItem('tms_orders')||'[]').find(x=>x.psNo===psNo);
+   if(o){ rec=o.payload.ps; window.__TMS_SO={}; (o.payload.salesOrders||[]).forEach(s=>{ window.__TMS_SO[s.soNo]=s; }); }
+  }catch(e){}
+ } else rec=TMTStore.pickingSlips.get(psNo);
  const app=document.querySelector('.app');
  document.body.classList.add('view-mode');
  if(!rec){

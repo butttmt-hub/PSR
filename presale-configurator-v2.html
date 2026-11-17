@@ -2642,11 +2642,11 @@ function doFmtDot(d){
 // ป้ายใต้หัวข้อ: ส่วนงานที่ดูแล + ฟิลด์ใน Handover ที่เกี่ยวข้อง (อ้างอิง owner ของแต่ละฟิลด์ใน Handover)
 // ส่วนงานที่ใช้ใบ Picking Slip — ข้อมูลตาม Handover บนใบแสดงเฉพาะที่ 4 ส่วนงานนี้ดูแล (ส่วนงานอื่นไม่แสดง)
 const PS_DEPTS=['Service','Warehouse','Billing','Transport'];
-function psOwnTag(ids,fams){
+function psOwnTag(ids,fams,only){   // only = จำกัดเฉพาะส่วนงานที่ระบุ (เช่น หัวข้อ Packing แสดงเฉพาะ Warehouse)
  const owners=[], labels=[];
  Object.keys(productFieldDefs).filter(k=>!fams||!fams.length||fams.includes(k)).forEach(k=>productFieldDefs[k].forEach(f=>{
   if(!ids.includes(f.id)) return;
-  const mine=f.owner.split(' / ').map(o=>o.trim()).filter(o=>PS_DEPTS.includes(o));
+  const mine=f.owner.split(' / ').map(o=>o.trim()).filter(o=>PS_DEPTS.includes(o)&&(!only||only.includes(o)));
   if(!mine.length) return;
   mine.forEach(o=>{ if(!owners.includes(o)) owners.push(o); });
   const l=f.label.replace(/\s*\/\s*[^\/]*[\u0E00-\u0E7F][^\/]*$/,'').trim();
@@ -2676,7 +2676,7 @@ function renderPickingSlipDoc(ps){
  const created=new Date(ps.createdAt||Date.now());
  const lines=(ps.lines||[]).map(l=>({l,item:psItemOf(l)}));
  const fams=[...new Set(lines.map(x=>x.item.family).filter(Boolean))];
- const own=ids=>psOwnTag(ids,fams);
+ const own=(ids,only)=>psOwnTag(ids,fams,only);
  const totalKg=+(ps.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0).toFixed(2);
  const packing=soItemSummary(lines.map(x=>x.item),i=>{
   if(!i.specState||!i.family) return null;
@@ -2737,7 +2737,7 @@ function renderPickingSlipDoc(ps){
     <thead><tr><th>Document<br>No.</th><th>ลำดับที่<br>Item No.</th><th>รหัสสินค้า<br>Material Code</th><th>รายการ<br>Description</th><th>จำนวนชิ้น<br>PCS.</th><th>น้ำหนัก<br>Kgs.(Spec)</th><th>หน่วย<br>Unit</th></tr></thead>
     <tbody>${rows}<tr class="do-fill"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>
    </table>
-   <div class="do-note"><div><span class="do-k">ข้อควรระวัง</span> ${esc(caution)}${own(['cert','tubeCert'])}</div><div style="margin-top:12px"><span class="do-k">Packing</span> ${esc(packing)}${own(['packing','tubePackingType','tubeStrap','sticker','tubeSticker','bundle','tubePcsPack','tubePcsPackExtra'])}</div></div>
+   <div class="do-note"><div><span class="do-k">ข้อควรระวัง</span> ${esc(caution)}${own(['cert','tubeCert'])}</div><div style="margin-top:12px"><span class="do-k">Packing</span> ${esc(packing)}${own(['packing','tubePackingType','tubeStrap','sticker','tubeSticker','bundle','tubePcsPack','tubePcsPackExtra'],['Warehouse'])}</div></div>
    <div class="do-cond">
     <div><span class="do-k">รูปแบบการชั่ง</span> ชั่งรวม PC/KG</div>
     <div><span class="do-k">รูปแบบการส่งสินค้า</span>${own(['delivery','tubeDelivery'])} จัดส่งให้ลูกค้า</div>

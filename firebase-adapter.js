@@ -33,7 +33,7 @@ if (store && store.backend() === 'firestore') {
   const db = getFirestore(app);
   const auth = getAuth(app);
 
-  const COLLECTIONS = ['quotations', 'salesOrders', 'discountApprovals', 'deliveryOrders'];
+  const COLLECTIONS = ['quotations', 'salesOrders', 'discountApprovals', 'deliveryOrders', 'pickingSlips'];
   const MAX_DOC_BYTES = window.TMT_MAX_DOC_BYTES || 900000;
   const enc = new TextEncoder();
 

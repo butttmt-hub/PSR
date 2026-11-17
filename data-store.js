@@ -22,13 +22,14 @@
 (function(global){
   'use strict';
 
-  var COLLECTIONS = ['quotations', 'salesOrders', 'discountApprovals', 'deliveryOrders'];
+  var COLLECTIONS = ['quotations', 'salesOrders', 'discountApprovals', 'deliveryOrders', 'pickingSlips'];
 
   var KEYS = {
     quotations: 'tmt_saved_quotations',
     salesOrders: 'tmt_sales_orders',
     discountApprovals: 'tmt_discount_approvals',
     deliveryOrders: 'tmt_delivery_orders',
+    pickingSlips: 'tmt_picking_slips',
     widgets: 'tmt_dashboard_widgets',
     theme: 'tmt_theme',
     sessionUser: 'tmt_sales_portal_user',
@@ -39,7 +40,8 @@
     quotations: 'quotationNo',
     salesOrders: 'soNo',
     discountApprovals: 'quotationNo',
-    deliveryOrders: 'doNo'
+    deliveryOrders: 'doNo',
+    pickingSlips: 'psNo'
   };
 
   function isThenable(x){ return x && typeof x.then === 'function'; }
@@ -298,6 +300,7 @@
     salesOrders: makeCollection('salesOrders'),
     discountApprovals: makeCollection('discountApprovals'),
     deliveryOrders: makeCollection('deliveryOrders'),
+    pickingSlips: makeCollection('pickingSlips'),
     numbering: numbering,
     prefs: prefs,
     session: session,

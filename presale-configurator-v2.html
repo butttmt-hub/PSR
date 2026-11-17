@@ -169,6 +169,7 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .do-table .do-fill td{height:260px}
 .do-c-c{text-align:center}.do-c-n{text-align:right;white-space:nowrap}.do-c-doc{font-size:11px}.do-c-code{word-break:break-all;max-width:110px}
 .do-bar{margin-top:6px}
+.do-docno{font-size:13px;font-weight:600}.do-sub{font-size:10.5px;color:#444;margin-top:2px}
 .do-note{border:1.5px solid #111;border-top:0;padding:8px 10px;font-size:12.5px}
 .do-cond{border:1.5px solid #111;border-top:0;padding:8px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 14px;font-size:12px}
 .do-cond .do-k{display:block;min-width:0}
@@ -1706,8 +1707,8 @@ const HO_VIEWS={
   const nx=c.items.reduce((s,{item})=>s+hoItemFields(item,'Warehouse').filter(f=>item.specState[f.id].status!=='STD').length,0);
   return hoKpis([['จำนวนรวม (pcs)',c.totalQty.toLocaleString()],['น้ำหนักรวม (kg)',hoNum(c.totalW)],['ข้อกำหนดแพ็ก/โหลดพิเศษ',nx+hoSharedFields('Warehouse').filter(f=>fieldState[f.id].status!=='STD').length,nx?'warn':''],['Plant',esc(c.plants.join(', ')||'-')]])
   +hoAttention(c,'Warehouse')
-  +hoSec('ใบเตรียมสินค้า / แพ็ก',hoTable(['Material Code','จำนวน (pcs)','น้ำหนัก (kg)','การแพ็ก','Tag / Sticker','Pcs/Bundle','Marking'],
-    c.items.map(({item,w})=>[esc(item.code),item.qty.toLocaleString(),hoNum(w),hoSpec(item,['packing','tubePackingType','tubeStrap']),hoSpec(item,['sticker','tubeSticker']),hoSpec(item,['bundle','tubePcsPack','tubePcsPackExtra']),hoSpec(item,['marking','tubeMarking'])]),null,[1,2])
+  +hoSec('ใบเตรียมสินค้า / แพ็ก',hoTable((handoverDO?['DO / S/O']:[]).concat(['Material Code','จำนวน (pcs)','น้ำหนัก (kg)','การแพ็ก','Tag / Sticker','Pcs/Bundle','Marking']),
+    c.items.map(({item,w})=>(handoverDO?[`<strong>${esc(item._doNo||'-')}</strong><div style="color:var(--muted)">${esc(item._soNo||'')}</div>`]:[]).concat([esc(item.code),item.qty.toLocaleString(),hoNum(w),hoSpec(item,['packing','tubePackingType','tubeStrap']),hoSpec(item,['sticker','tubeSticker']),hoSpec(item,['bundle','tubePcsPack','tubePcsPackExtra']),hoSpec(item,['marking','tubeMarking'])])),null,handoverDO?[2,3]:[1,2])
   )+hoSharedBlock('Warehouse','การจัดเรียงและโหลด');
  },
 
@@ -1773,7 +1774,7 @@ function renderHandoverOwners(){
   return;
  }
  const d=HO_DEPTS.find(x=>x.k===handoverTab);
- const doBanner=handoverDO?hoInfo([['Picking Slip No.',esc(handoverDO.doNo)],['S/O',esc(handoverDO.soNo)],['กำหนดส่งสินค้า',esc(c.delivery)],['ผู้จัดทำ DO',esc(handoverDO.createdBy||'-')],['ลูกค้า',esc(c.customer)],['เอกสาร',`<a href="presale-configurator-v2.html?viewDO=${encodeURIComponent(handoverDO.doNo)}">📄 เปิดใบ Picking Slip</a>`]]):'';
+ const doBanner=handoverDO?hoInfo([['Picking Slip No.',esc(handoverDO.psNo)],['DO ที่รวมในใบ',esc((handoverDO.doNos||[]).join(', '))],['S/O',esc([...new Set((handoverDO.lines||[]).map(l=>l.soNo))].join(', '))],['กำหนดส่งสินค้า',esc(c.delivery)],['ผู้จัดทำ',esc(handoverDO.createdBy||'-')],['ลูกค้า',esc(c.customer)],['เอกสาร',`<a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(handoverDO.psNo)}">📄 เปิดใบ Picking Slip</a>`]]):'';
  grid.innerHTML=`<div class="ho-head"><div class="ho-ico">${d.icon}</div><div><h4>${d.k} · ${d.th}</h4><div class="ho-goal">${d.goal}</div></div></div>`+doBanner
   +(c.items.length?HO_VIEWS[d.k](c):`<div class="ho-att warn">ยังไม่มีสินค้าในรายการ — กลับไป Step 1 เพื่อเลือก Product ก่อน</div>`);
 }
@@ -2622,7 +2623,8 @@ function tryLoadDiscountApprovalMode(){
  app.innerHTML=renderDiscountApprovalView(rec);
  return true;
 }
-// ===== Delivery Order (Picking Slip W-FM-LG-21 R02) =====
+// ===== Picking Slip (W-FM-LG-21 R02) — ใบงานที่ Service กวาด DO หลายใบมารวม =====
+// แต่ละแถวรายการแยกตาม DO (ไม่บวกรวม) เพื่อให้รู้ว่า Line Item นี้มาจาก DO ไหน · ช่อง Document No. = เลข DO พร้อมเลข S/O ด้านล่าง
 function doBarcodeSvg(text){
  let h=2166136261; const bars=[];
  for(let i=0;i<60;i++){ h^=(text.charCodeAt(i%text.length)||7)+i; h=Math.imul(h,16777619)>>>0; bars.push(1+(h%3)); }
@@ -2634,46 +2636,55 @@ function doFmtDot(d){
  const x=new Date(d+'T00:00:00'); if(isNaN(x)) return '-';
  return `${String(x.getDate()).padStart(2,'0')}.${String(x.getMonth()+1).padStart(2,'0')}.${x.getFullYear()}`;
 }
-function renderDeliveryOrderDoc(d){
- const so=loadSalesOrders().find(s=>s.soNo===d.soNo)||{};
- const cust=soldToMasterData.find(c=>c.code===(d.soldToCode||so.soldToCode));
- const qe=so.quoteExtra||{};
- const fs=so.fieldState||{};
- const pick=(a,b)=>fs[a]||fs[b];
- const vehicle=pick('vehicle','tubeVehicle'), delivery=pick('delivery','tubeDelivery'), cert=pick('cert','tubeCert'),
-       ddoc=pick('deliveryDoc','tubeDeliveryDoc'), unl=pick('unloading','tubeUnloading');
- const val=(x,std)=>!x?std:(x.status==='STD'?std:(x.detail?`${x.value} — ${x.detail}`:x.value));
- const created=new Date(d.createdAt||Date.now());
- const lineItems=(d.lines||[]).map(l=>({l,item:(so.cart||[]).find(i=>i.id===l.itemId)||{}}));
- const totalKg=+(d.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0).toFixed(2);
- const packing=soItemSummary(lineItems.map(x=>x.item),i=>{
+function psSalesOrders(ps){
+ return [...new Set((ps.lines||[]).map(l=>l.soNo))].map(n=>loadSalesOrders().find(s=>s.soNo===n)).filter(Boolean);
+}
+function psItemOf(l){
+ const so=loadSalesOrders().find(s=>s.soNo===l.soNo);
+ return so?((so.cart||[]).find(i=>i.id===l.itemId)||{}):{};
+}
+function renderPickingSlipDoc(ps){
+ const sos=psSalesOrders(ps);
+ const first=sos[0]||{};
+ const cust=soldToMasterData.find(c=>c.code===(ps.soldToCode||first.soldToCode));
+ const qe=first.quoteExtra||{};
+ // เงื่อนไขหลาย S/O: รวมค่าที่ไม่ซ้ำกัน (ฟอร์มมีชุดเงื่อนไขเดียวต่อใบ)
+ const fsText=(a,b,std)=>{
+  const vals=sos.map(so=>{ const fs=so.fieldState||{}; const f=fs[a]||fs[b]; return !f||f.status==='STD'?std:(f.detail?`${f.value} — ${f.detail}`:f.value); }).filter(Boolean);
+  return [...new Set(vals)].join(' / ');
+ };
+ const created=new Date(ps.createdAt||Date.now());
+ const lines=(ps.lines||[]).map(l=>({l,item:psItemOf(l)}));
+ const totalKg=+(ps.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0).toFixed(2);
+ const packing=soItemSummary(lines.map(x=>x.item),i=>{
   if(!i.specState||!i.family) return null;
   const f=productFieldDefs[i.family].find(x=>x.id===(i.family==='Cut Sheet'?'packing':'tubePackingType'));
   if(!f||!i.specState[f.id]) return null;
   return i.specState[f.id].status==='STD'?'ปกติ':itemCurrentSelection(i,f);
  });
- const certText=val(cert,"Mill's Cert.");
+ const certText=fsText('cert','tubeCert',"Mill's Cert.");
  const caution=`ต้องนำเอกสาร ${certText} ไปพร้อมกับรถที่ส่งสินค้าทุกครั้ง`;
- const vehicleText=[val(vehicle,'ปกติ'),delivery&&delivery.status!=='STD'?val(delivery,''):''].filter(Boolean).join(' · ');
- const rows=lineItems.map(({l,item},idx)=>{
+ const vehicleText=[fsText('vehicle','tubeVehicle','ปกติ'),sos.some(so=>{const f=(so.fieldState||{}).delivery||(so.fieldState||{}).tubeDelivery;return f&&f.status!=='STD';})?fsText('delivery','tubeDelivery',''):''].filter(Boolean).join(' · ');
+ const payTerms=[...new Set(sos.map(so=>(so.quoteExtra||{}).paymentTerm).filter(Boolean))].join(' / ')||'-';
+ const rows=lines.map(({l,item},idx)=>{
   const notes=(item.specState?soItemNotes(item):[]).map(t=>`<div>${esc(t)}</div>`).join('');
   return `<tr>
-   <td class="do-c-doc"><div>${esc(d.soNo)}</div></td>
+   <td class="do-c-doc"><div class="do-docno">${esc(l.doNo)}</div><div class="do-sub">${esc(l.soNo)}</div></td>
    <td class="do-c-c">${idx+1}</td>
    <td class="do-c-code">${esc(l.code)}</td>
-   <td class="do-c-desc"><div>${esc(l.desc)}</div>${notes}<div>รหัสผู้ขาย ${esc(l.plant||'1200')} / น้ำหนักผลิตเฉลี่ย ${hoNum(l.weight)} kg</div><div class="do-bar">${doBarcodeSvg(d.doNo+l.code)}</div></td>
+   <td class="do-c-desc"><div>${esc(l.desc)}</div>${notes}<div>รหัสผู้ขาย ${esc(l.plant||'1200')} / น้ำหนักผลิตเฉลี่ย ${hoNum(l.weight)} kg</div><div class="do-bar">${doBarcodeSvg(ps.psNo+l.doNo+l.code)}</div></td>
    <td class="do-c-n">${l.qty.toLocaleString()}</td>
    <td class="do-c-n">${fmtMoney(+(l.qty*l.weight).toFixed(2))}</td>
    <td class="do-c-c">KG</td>
   </tr>`;
  }).join('');
- const isService=['service','warehouse','transport'].includes(TMTStore.session.getRole());
+ const backToDash=['service','warehouse','transport'].includes(TMTStore.session.getRole());
  return `<div class="so-doc do-doc">
-  <div class="so-toolbar">
-   <div style="font-size:12.5px;color:var(--muted)">🔒 มุมมองอ่านอย่างเดียว — Picking Slip <strong>${esc(d.doNo)}</strong> (S/O ${esc(d.soNo)})</div>
+  <div class="so-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;flex-wrap:wrap;gap:10px">
+   <div style="font-size:12.5px;color:var(--muted)">🔒 มุมมองอ่านอย่างเดียว — Picking Slip <strong>${esc(ps.psNo)}</strong> (รวม ${(ps.doNos||[]).length} DO · ${sos.length} S/O)</div>
    <div style="display:flex;gap:8px">
     <button class="btn secondary" onclick="window.print()">🖨️ Print</button>
-    <a class="btn secondary" href="${isService?'sales-portal.html':`presale-configurator-v2.html?viewSO=${encodeURIComponent(d.soNo)}`}" style="text-decoration:none">${isService?'← กลับไป Dashboard':'← ไปที่ Sales Order'}</a>
+    <a class="btn secondary" href="${backToDash?'sales-portal.html':'sales-portal.html'}" style="text-decoration:none">← กลับไป Dashboard</a>
    </div>
   </div>
   <div class="so-sheet do-sheet">
@@ -2683,23 +2694,23 @@ function renderDeliveryOrderDoc(d){
     <div class="do-formno">W-FM-LG-21 R02<div class="do-copy">ต้นฉบับ<br>หน้า 1 / 1</div></div>
    </div>
    <div class="do-ship">
-    <div><span class="do-k">สถานที่ส่งสินค้า</span> ${esc(d.soldToCode||'-')} ${esc(d.customer||'-')}<div class="do-ind">${esc(qe.deliveryPlace||'-')}</div></div>
+    <div><span class="do-k">สถานที่ส่งสินค้า</span> ${esc(ps.soldToCode||'-')} ${esc(ps.customer||'-')}<div class="do-ind">${esc(ps.shipTo||qe.deliveryPlace||'-')}</div></div>
     <div><span class="do-k">น้ำหนักรวม</span> ${(totalKg/1000).toFixed(2)} TONS</div>
    </div>
    <div class="do-box">
     <div class="do-box-l">
-     <div><span class="do-k">รหัสลูกค้า</span> ${esc(d.soldToCode||'-')} <span class="do-k" style="margin-left:24px">ประเภทธุรกิจ:</span> ${esc(cust?cust.custGroup:'-')}</div>
-     <div><span class="do-k">ชื่อลูกค้า</span> ${esc(d.customer||'-')}</div>
-     <div><span class="do-k">ที่อยู่</span> ${esc(qe.deliveryPlace||'-')}</div>
+     <div><span class="do-k">รหัสลูกค้า</span> ${esc(ps.soldToCode||'-')} <span class="do-k" style="margin-left:24px">ประเภทธุรกิจ:</span> ${esc(cust?cust.custGroup:'-')}</div>
+     <div><span class="do-k">ชื่อลูกค้า</span> ${esc(ps.customer||'-')}</div>
+     <div><span class="do-k">ที่อยู่</span> ${esc(ps.shipTo||qe.deliveryPlace||'-')}</div>
     </div>
     <div class="do-box-r">
      <div><span class="do-k">วันที่</span> ${soFmtDate(created)}</div>
      <div><span class="do-k">เวลาที่เปิดเอกสาร</span> ${created.toLocaleTimeString('en-GB')}</div>
-     <div><span class="do-k">Picking Slip No.</span> ${esc(d.doNo)}</div>
-     <div><span class="do-k">ทะเบียนรถ</span> ${esc(d.truckPlate||'')}</div>
+     <div><span class="do-k">Picking Slip No.</span> ${esc(ps.psNo)}</div>
+     <div><span class="do-k">ทะเบียนรถ</span> ${esc(ps.truckPlate||'')}</div>
     </div>
    </div>
-   <div class="do-pay"><span class="do-k">ชำระเงินโดย</span> ${esc(qe.paymentTerm||'-')}</div>
+   <div class="do-pay"><span class="do-k">ชำระเงินโดย</span> ${esc(payTerms)}</div>
    <table class="do-table">
     <thead><tr><th>Document<br>No.</th><th>ลำดับที่<br>Item No.</th><th>รหัสสินค้า<br>Material Code</th><th>รายการ<br>Description</th><th>จำนวนชิ้น<br>PCS.</th><th>น้ำหนัก<br>Kgs.(Spec)</th><th>หน่วย<br>Unit</th></tr></thead>
     <tbody>${rows}<tr class="do-fill"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody>
@@ -2708,70 +2719,81 @@ function renderDeliveryOrderDoc(d){
    <div class="do-cond">
     <div><span class="do-k">รูปแบบการชั่ง</span> ชั่งรวม PC/KG</div>
     <div><span class="do-k">รูปแบบการส่งสินค้า</span> จัดส่งให้ลูกค้า</div>
-    <div><span class="do-k">อุปกรณ์ลงของของลูกค้า</span> ${esc(val(unl,''))}</div>
+    <div><span class="do-k">อุปกรณ์ลงของของลูกค้า</span> ${esc(fsText('unloading','tubeUnloading',''))}</div>
     <div><span class="do-k">แนบใบ Cert.</span> ${esc(certText)}</div>
     <div><span class="do-k">เงื่อนไขของรถขนส่ง</span> ${esc(vehicleText)}</div>
-    <div><span class="do-k">รูปแบบใบส่งสินค้า</span> ${esc(val(ddoc,'ปกติ'))}</div>
+    <div><span class="do-k">รูปแบบใบส่งสินค้า</span> ${esc(fsText('deliveryDoc','tubeDeliveryDoc','ปกติ'))}</div>
    </div>
    <div class="do-foot">
-    <div><span class="do-k">ผู้จัดทำเอกสาร</span> ${esc(d.createdBy||'-')}</div>
-    <div><span class="do-k">วันที่กำหนดส่งสินค้า</span> <span style="font-size:15px">${doFmtDot(d.deliveryDate)}</span></div>
+    <div><span class="do-k">ผู้จัดทำเอกสาร</span> ${esc(ps.createdBy||'-')}</div>
+    <div><span class="do-k">วันที่กำหนดส่งสินค้า</span> <span style="font-size:15px">${doFmtDot(ps.deliveryDate)}</span></div>
    </div>
    <div class="do-sign"><div>พนักงานขับรถ</div><div>เจ้าหน้าที่ตรวจสอบสินค้าขาออก</div></div>
   </div>
  </div>`;
 }
-function loadDOHandoverView(d,dept){
- const so=loadSalesOrders().find(s=>s.soNo===d.soNo);
+// ชุดเงื่อนไขร่วม (Service/Document) ของหลาย S/O: ถ้า S/O ไหนเป็น Extra ให้รวมค่าที่ไม่ซ้ำกัน
+function mergePSFieldState(sos){
+ const out={};
+ fieldDefs.forEach(f=>{
+  const sts=sos.map(so=>(so.fieldState||{})[f.id]).filter(Boolean);
+  const extras=sts.filter(s=>s.status!=='STD');
+  if(extras.length){
+   const vals=[...new Set(extras.map(s=>s.detail?`${s.value} — ${s.detail}`:s.value))];
+   out[f.id]={...extras[0],status:extras.some(s=>s.status==='REVIEW')?'REVIEW':'EXTRA',value:vals.join(' / '),detail:''};
+  } else if(sts.length) out[f.id]=sts[0];
+  else out[f.id]=f.multi?{status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}}:{status:f.opts[0][1],value:f.opts[0][0],detail:''};
+ });
+ return out;
+}
+function loadPSHandoverView(ps,dept){
+ const sos=psSalesOrders(ps);
  const app=document.querySelector('.app');
- if(!so){
-  app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Sales Order เลขที่ ${esc(d.soNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
+ if(!sos.length){
+  app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Sales Order ของ Picking Slip ${esc(ps.psNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
   return true;
  }
- currentProduct=so.currentProduct||'Cut Sheet';
- fieldDefs=productFieldDefs[currentProduct];
- // รายการและจำนวนตาม DO ใบนี้เท่านั้น (ไม่ใช่ทั้ง S/O)
- productCart=(d.lines||[]).map(l=>{ const it=(so.cart||[]).find(i=>i.id===l.itemId); return it?{...it,qty:l.qty}:null; }).filter(Boolean);
- quoteExtra=so.quoteExtra||quoteExtra;
+ // รายการตาม Picking Slip: คงแถวแยกตาม DO (ไม่รวม) และใช้จำนวนตาม DO
+ productCart=(ps.lines||[]).map((l,idx)=>{ const it=psItemOf(l); return it&&it.code?{...it,id:idx+1,qty:l.qty,_doNo:l.doNo,_soNo:l.soNo}:null; }).filter(Boolean);
+ const families=[...new Set(productCart.map(i=>i.family))];
+ currentProduct=families[0]||sos[0].currentProduct||'Cut Sheet';
+ fieldDefs=families.flatMap(fam=>productFieldDefs[fam]);
+ quoteExtra=sos[0].quoteExtra||quoteExtra;
  Object.keys(fieldState).forEach(k=>delete fieldState[k]);
- fieldDefs.forEach(f=>{
-  if(so.fieldState && so.fieldState[f.id]) fieldState[f.id]=so.fieldState[f.id];
-  else fieldState[f.id]=f.multi?{status:'STD',value:f.opts[0][0],detail:'',selected:[],detailByIdx:{}}:{status:f.opts[0][1],value:f.opts[0][0],detail:''};
- });
- document.getElementById('project').value=so.project||'';
- document.getElementById('refNo').value=so.refNo||'';
- document.getElementById('customer').value=so.customer||'';
- document.getElementById('sales').value=so.sales||'';
+ Object.assign(fieldState,mergePSFieldState(sos));
+ document.getElementById('project').value=sos[0].project||'';
+ document.getElementById('refNo').value=sos.map(s=>s.refNo).filter(Boolean).join(', ');
+ document.getElementById('customer').value=ps.customer||'';
+ document.getElementById('sales').value=[...new Set(sos.map(s=>s.sales).filter(Boolean))].join(', ');
  document.body.classList.add('view-mode','handover-view');
- handoverRec=so; handoverDO=d; handoverDepts=['Warehouse','Transport'];
+ handoverRec=sos[0]; handoverDO=ps; handoverDepts=['Warehouse','Transport'];
  handoverTab=handoverDepts.includes(dept)?dept:'Warehouse';
  showScreen(9);
- const title=document.getElementById('handoverTitle'); if(title) title.textContent='Delivery Handover (จาก DO)';
+ const title=document.getElementById('handoverTitle'); if(title) title.textContent='Picking Slip Handover (ใบงาน)';
  const gate=document.getElementById('commitGate'); if(gate) gate.style.display='none';
- const role=TMTStore.session.getRole();
- const backHref=(role==='warehouse'||role==='transport'||role==='service')?'sales-portal.html':`presale-configurator-v2.html?viewDO=${encodeURIComponent(d.doNo)}`;
  const bar=document.getElementById('handoverViewBar');
  if(bar){
   bar.style.display='flex';
-  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — จาก Picking Slip <strong>${esc(d.doNo)}</strong> (S/O ${esc(d.soNo)})</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="${backHref}" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Dashboard</a></div>`;
+  bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — จาก Picking Slip <strong>${esc(ps.psNo)}</strong> (รวม ${(ps.doNos||[]).length} DO · ${sos.length} S/O)</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="sales-portal.html" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Dashboard</a></div>`;
  }
  return true;
 }
-function tryLoadDOViewMode(){
+function tryLoadPSViewMode(){
  const params=new URLSearchParams(window.location.search);
- const doNo=params.get('viewDO');
- if(!doNo) return false;
- const rec=TMTStore.deliveryOrders.get(doNo);
+ const psNo=params.get('viewPS');
+ if(!psNo) return false;
+ const rec=TMTStore.pickingSlips.get(psNo);
  const app=document.querySelector('.app');
  document.body.classList.add('view-mode');
  if(!rec){
-  app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Picking Slip เลขที่ ${esc(doNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
+  app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Picking Slip เลขที่ ${esc(psNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
   return true;
  }
- if(params.get('dept')) return loadDOHandoverView(rec,params.get('dept'));
- app.innerHTML=renderDeliveryOrderDoc(rec);
+ if(params.get('dept')) return loadPSHandoverView(rec,params.get('dept'));
+ app.innerHTML=renderPickingSlipDoc(rec);
  return true;
 }
+
 function tryLoadSOViewMode(){
  const params=new URLSearchParams(window.location.search);
  const soNo=params.get('viewSO');
@@ -2955,7 +2977,7 @@ TMTStore.subscribe(function(ev){
 // โหมด Firestore: รอ login + โหลดข้อมูลเสร็จก่อน (ไม่ได้ login → กลับหน้า login) โหมด Demo พร้อมทันที
 TMTStore.whenReady(function bootConfigurator(){
  if(TMTStore.backend()==='firestore' && !TMTStore.session.getUser()){ location.href='sales-portal.html'; return; }
- if(!tryLoadDiscountApprovalInboxMode() && !tryLoadDiscountApprovalMode() && !tryLoadApprovalInboxMode() && !tryLoadDOViewMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
+ if(!tryLoadDiscountApprovalInboxMode() && !tryLoadDiscountApprovalMode() && !tryLoadApprovalInboxMode() && !tryLoadPSViewMode() && !tryLoadSOViewMode() && !tryLoadViewMode()){
   populateCustomerDetailOptions();
   selectProduct('Cut Sheet');
   renderProductSpecForCart();

@@ -1003,7 +1003,7 @@ let serviceFilter={quick:null,from:'',to:'',q:''};
 let serviceSel=new Set();                        // รายการที่ติ๊กเลือกในหน้า S/O (key = soNo|itemId)
 let serviceOpenSO=null;                          // เปิดดูข้างใน S/O ใบไหนอยู่
 let serviceDetailTab='sales';
-function setServiceTab(t){ serviceTab=t; serviceOpenSO=null; serviceSel=new Set(); renderServiceDashboard(); }
+function setServiceTab(t){ serviceTab=t; serviceOpenSO=null; serviceSel=new Set(); serviceDoSel=new Set(); renderServiceDashboard(); }
 function setServiceQuick(k){ serviceFilter.quick=(serviceFilter.quick===k||k===null)?null:k; renderServiceDashboard(); }
 function setServiceGroup(g){ serviceGroup=g; renderServiceDashboard(); }
 function setServiceFilterField(f,v){ serviceFilter[f]=v; renderServiceDashboard(); }
@@ -1119,7 +1119,7 @@ function renderServiceSODetail(soNo){
  }).join('');
  const selectable=cart.filter(i=>Math.max(i.qty-(done[i.id]||0),0)>0&&!rec.blocked);
  const allChecked=selectable.length>0&&selectable.every(i=>serviceSel.has(sel(i)));
- const doList=myDOs.length?`<div class="sap-dos"><strong>DO ที่ออกแล้วจาก S/O นี้:</strong> ${myDOs.map(d=>`<a href="presale-configurator-v2.html?viewDO=${encodeURIComponent(d.doNo)}">${esc(d.doNo)}</a> <span style="color:var(--muted)">(${(d.lines||[]).reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${esc(sapDate(d.deliveryDate))})</span>`).join(' · ')}</div>`:'';
+ const doList=myDOs.length?`<div class="sap-dos"><strong>DO ที่ออกแล้วจาก S/O นี้:</strong> ${myDOs.map(d=>{ const p=psOfDO(d.doNo); return `<strong>${esc(d.doNo)}</strong> <span style="color:var(--muted)">(${(d.lines||[]).reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${esc(sapDate(d.deliveryDate))}${p?` · อยู่ใน PS <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">${esc(p.psNo)}</a>`:' · รอรวม PS'})</span>`; }).join('<br>')}</div>`:'';
  const allDone=selectable.length===0&&!rec.blocked;
  return `<div class="sap-title">Display TMT Sales Order ${esc(rec.soNo)}: Overview</div>
   <div class="sap-box">
@@ -1141,10 +1141,114 @@ function renderServiceSODetail(soNo){
    <div class="alv-bar" id="serviceSelBar"><span class="alv-bar-txt"></span><button class="ql-btn transfer" onclick="serviceOpenTransferSelected()">Transfer to DO →</button></div>
   </div>`;
 }
+// ---- DO → Picking Slip: Service เลือก DO ที่เปิดไว้มารวมเป็นใบงานใบเดียว ----
+// กติกา: รวมได้เฉพาะลูกค้า + สถานที่ส่ง + วันส่งเดียวกัน · แถวรายการแยกตาม DO (ไม่บวกรวม) · DO ที่ออกหลังกวาดแล้วต้องไปอยู่ Picking Slip ใบใหม่
+let serviceDoSel=new Set();
+let serviceDoGroupKeys=[];
+function psOfDO(doNo){ return TMTStore.pickingSlips.list().find(p=>(p.doNos||[]).includes(doNo)); }
+function doShipTo(d){
+ if(d.shipTo) return d.shipTo;
+ const so=loadSalesOrders().find(s=>s.soNo===d.soNo);
+ return (so&&so.quoteExtra&&so.quoteExtra.deliveryPlace)||'';
+}
+function psGroupKey(d){ return `${d.soldToCode||d.customer||''}|${doShipTo(d)}|${d.deliveryDate||''}`; }
+function toggleServiceDo(doNo,on){ if(on) serviceDoSel.add(doNo); else serviceDoSel.delete(doNo); updateServiceDoBar(); }
+function toggleServiceDoGroup(idx,on){ (serviceDoGroupKeys[idx]||[]).forEach(n=>{ if(on) serviceDoSel.add(n); else serviceDoSel.delete(n); }); renderServiceDashboard(); }
+function updateServiceDoBar(){
+ const dos=TMTStore.deliveryOrders.list().filter(d=>serviceDoSel.has(d.doNo));
+ const kg=dos.reduce((s,d)=>s+(d.lines||[]).reduce((a,l)=>a+l.qty*l.weight,0),0);
+ const bar=document.getElementById('serviceDoBar'); if(!bar) return;
+ bar.querySelector('.alv-bar-txt').textContent=dos.length?`เลือก ${dos.length} DO · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`:'ติ๊กเลือก DO ที่ต้องการรวมเป็น Picking Slip';
+ bar.querySelector('button').disabled=!dos.length;
+}
+function genPsNo(){
+ let no;
+ do{ no='000'+String(Math.floor(Math.random()*1e7)).padStart(7,'0'); }while(TMTStore.pickingSlips.get(no));
+ return no;
+}
+function serviceCreatePS(){
+ const dos=TMTStore.deliveryOrders.list().filter(d=>serviceDoSel.has(d.doNo)&&!psOfDO(d.doNo));
+ if(!dos.length){ alert('กรุณาเลือก DO ที่ต้องการรวมเป็น Picking Slip'); return; }
+ const keys=new Set(dos.map(psGroupKey));
+ if(keys.size>1){
+  const diff=[];
+  if(new Set(dos.map(d=>d.soldToCode||d.customer)).size>1) diff.push('ลูกค้า');
+  if(new Set(dos.map(doShipTo)).size>1) diff.push('สถานที่ส่ง');
+  if(new Set(dos.map(d=>d.deliveryDate)).size>1) diff.push('วันส่ง');
+  alert(`รวมเป็น Picking Slip ใบเดียวไม่ได้ — DO ที่เลือกต้องเป็น ลูกค้า สถานที่ส่ง และวันส่งเดียวกัน\n(ที่ไม่ตรงกัน: ${diff.join(', ')})`);
+  return;
+ }
+ dos.sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
+ const lines=[];
+ dos.forEach(d=>(d.lines||[]).forEach(l=>lines.push({doNo:d.doNo,soNo:d.soNo,itemId:l.itemId,code:l.code,desc:l.desc,plant:l.plant||'1200',qty:l.qty,weight:l.weight})));
+ const first=dos[0];
+ const ps={psNo:genPsNo(),doNos:dos.map(d=>d.doNo),customer:first.customer||'',soldToCode:first.soldToCode||'',shipTo:doShipTo(first),deliveryDate:first.deliveryDate||'',
+  createdAt:new Date().toISOString(),createdBy:TMTStore.session.getUser()||'Service',truckPlate:'',lines,status:'issued'};
+ if(!TMTStore.pickingSlips.upsert(ps)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
+ serviceDoSel=new Set();
+ serviceTab='ps';
+ renderServiceDashboard();
+}
+function renderServiceDOTab(){
+ const all=TMTStore.deliveryOrders.list().map(d=>({d,ps:psOfDO(d.doNo),kg:(d.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0),pcs:(d.lines||[]).reduce((s,l)=>s+l.qty,0)}));
+ const sortKey=x=>`${x.d.deliveryDate||'9999'}|${x.d.soldToCode||x.d.customer||''}|${doShipTo(x.d)}|${x.d.doNo}`;
+ const open=all.filter(x=>!x.ps).sort((a,b)=>sortKey(a)<sortKey(b)?-1:1);
+ const swept=all.filter(x=>x.ps).sort((a,b)=>new Date(b.d.createdAt||0)-new Date(a.d.createdAt||0));
+ const valid=new Set(open.map(x=>x.d.doNo));
+ serviceDoSel=new Set([...serviceDoSel].filter(n=>valid.has(n)));
+ serviceDoGroupKeys=[];
+ let body='', cur=null, buf=[];
+ const flush=()=>{
+  if(cur===null) return;
+  const gi=serviceDoGroupKeys.push(buf.map(x=>x.d.doNo))-1;
+  const allSel=buf.every(x=>serviceDoSel.has(x.d.doNo));
+  const kg=buf.reduce((s,x)=>s+x.kg,0), pcs=buf.reduce((s,x)=>s+x.pcs,0);
+  const date=buf[0].d.deliveryDate;
+  body+=`<tr class="alv-sub"><td><input type="checkbox" ${allSel?'checked':''} onchange="toggleServiceDoGroup(${gi},this.checked)" title="เลือกทั้งกลุ่ม (ลูกค้า/สถานที่ส่ง/วันส่งเดียวกัน)"></td><td colspan="6">${esc(buf[0].d.customer||'-')} · ส่ง ${esc(date?sapDate(date):'-')} <span style="font-weight:400">(${buf.length} DO · รวมเป็น Picking Slip ใบเดียวได้)</span></td><td class="alv-n">${pcs.toLocaleString()}</td><td class="alv-n">${Math.round(kg).toLocaleString()}</td><td></td></tr>`;
+ };
+ open.forEach(x=>{
+  const k=psGroupKey(x.d);
+  if(k!==cur){ flush(); cur=k; buf=[]; }
+  buf.push(x);
+  const d=x.d;
+  body+=`<tr class="alv-row${serviceDoSel.has(d.doNo)?' sel':''}">
+   <td><input type="checkbox" ${serviceDoSel.has(d.doNo)?'checked':''} onchange="toggleServiceDo('${esc(d.doNo)}',this.checked);this.closest('tr').classList.toggle('sel',this.checked)"></td>
+   <td><strong>${esc(d.doNo)}</strong></td><td>${esc(d.soNo)}</td><td>${esc(d.customer||'-')}</td><td>${esc(doShipTo(d).split(' ต.')[0]||'-')}</td>
+   <td>${d.deliveryDate?esc(sapDate(d.deliveryDate)):'-'}</td><td class="alv-n">${(d.lines||[]).length}</td>
+   <td class="alv-n">${x.pcs.toLocaleString()}</td><td class="alv-n">${Math.round(x.kg).toLocaleString()}</td>
+   <td><span class="appr-delivery-badge pending">รอรวม Picking Slip</span></td></tr>`;
+ });
+ flush();
+ const table=open.length?`<div class="alv-wrap"><table class="alv">
+  <thead><tr><th></th><th>DO No.</th><th>S/O No.</th><th>Sold to (name)</th><th>Ship to (name)</th><th>กำหนดส่ง</th><th class="alv-n">รายการ</th><th class="alv-n">pcs</th><th class="alv-n">น้ำหนัก (kg)</th><th>สถานะ</th></tr></thead>
+  <tbody>${body}</tbody></table></div>
+  <div class="alv-bar" id="serviceDoBar"><span class="alv-bar-txt"></span><button class="ql-btn transfer" onclick="serviceCreatePS()">สร้าง Picking Slip →</button></div>
+  <div style="font-size:11.5px;color:var(--muted);margin-top:8px">เลือกได้เฉพาะ DO ที่ลูกค้า สถานที่ส่ง และวันส่งเดียวกัน · DO ที่ออกหลังจากสร้าง Picking Slip แล้วจะไปอยู่ใน Picking Slip ใบใหม่</div>`
+  :`<div class="appr-empty">ไม่มี DO ที่รอรวม Picking Slip</div>`;
+ const sweptHtml=swept.length?`<div style="margin-top:22px"><div class="sap-items-title">DO ที่รวมเป็น Picking Slip แล้ว (${swept.length})</div><div class="alv-wrap" style="border-radius:0 0 8px 8px"><table class="alv"><tbody>${swept.map(x=>`<tr class="alv-row blocked"><td><strong>${esc(x.d.doNo)}</strong></td><td>${esc(x.d.soNo)}</td><td>${esc(x.d.customer||'-')}</td><td>${x.d.deliveryDate?esc(sapDate(x.d.deliveryDate)):'-'}</td><td class="alv-n">${x.pcs.toLocaleString()} pcs</td><td>อยู่ใน Picking Slip <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(x.ps.psNo)}">${esc(x.ps.psNo)}</a></td></tr>`).join('')}</tbody></table></div></div>`:'';
+ return `${table}${sweptHtml}`;
+}
+function renderServicePSTab(){
+ const list=TMTStore.pickingSlips.list().slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+ return `<div class="appr-list">${list.length?list.map(p=>{
+  const kg=(p.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0);
+  const dl=p.deliveryDate?esc(sapDate(p.deliveryDate)):'-';
+  return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">
+   <div class="appr-avatar">${esc((p.customer||'?').charAt(0))}</div>
+   <div class="appr-main">
+    <div class="appr-subject">Picking Slip <strong>${esc(p.psNo)}</strong> <span style="font-weight:400;color:var(--muted)">(${(p.doNos||[]).length} DO: ${esc((p.doNos||[]).join(', '))})</span></div>
+    <div class="appr-snippet">${esc(p.customer||'-')} · ${(p.lines||[]).length} รายการ · ${Math.round(kg).toLocaleString()} kg · ผู้จัดทำ: ${esc(p.createdBy||'-')}</div>
+    <div class="appr-delivery-row"><span class="appr-delivery-badge">🚚 กำหนดส่ง ${dl}</span></div>
+   </div>
+   <div class="appr-time">${esc(sapDate(p.createdAt))}</div>
+  </a>`;
+ }).join(''):`<div class="appr-empty">ยังไม่มี Picking Slip — ไปที่แท็บ "DO ที่เปิดแล้ว" เพื่อเลือก DO มารวม</div>`}</div>`;
+}
 function renderServiceDashboard(){
  const el=document.getElementById('serviceDashboardView'); if(!el) return;
  const allDO=TMTStore.deliveryOrders.list().slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
  const all=serviceSOList();
+ const openDOCount=allDO.filter(d=>!psOfDO(d.doNo)).length, psCount=TMTStore.pickingSlips.list().length;
  // ตัดรายการที่ติ๊กไว้แต่ไม่อยู่ในคิวแล้ว (เช่น เพิ่ง Transfer ไป)
  const valid=new Set(serviceLines().filter(x=>!x.blocked).map(x=>x.key));
  serviceSel=new Set([...serviceSel].filter(k=>valid.has(k)));
@@ -1152,26 +1256,15 @@ function renderServiceDashboard(){
    <div class="appr-sidebar-head"><span>📦 Service</span></div>
    <nav class="appr-nav">
     <button class="appr-nav-item${serviceTab==='queue'?' active':''}" onclick="setServiceTab('queue')"><span>Sales Order Outstanding</span><span class="appr-nav-badge${all.length?'':' zero'}">${all.length}</span></button>
-    <button class="appr-nav-item${serviceTab==='done'?' active':''}" onclick="setServiceTab('done')"><span>ออก DO แล้ว</span><span class="appr-nav-badge${allDO.length?'':' zero'}">${allDO.length}</span></button>
+    <button class="appr-nav-item${serviceTab==='dos'?' active':''}" onclick="setServiceTab('dos')"><span>DO ที่เปิดแล้ว (รอรวม)</span><span class="appr-nav-badge${openDOCount?'':' zero'}">${openDOCount}</span></button>
+    <button class="appr-nav-item${serviceTab==='ps'?' active':''}" onclick="setServiceTab('ps')"><span>Picking Slip</span><span class="appr-nav-badge${psCount?'':' zero'}">${psCount}</span></button>
    </nav>
   </aside>`;
  let content;
- if(serviceTab==='done'){
-  content=`<div class="appr-list">${allDO.length?allDO.map(d=>{
-   const kg=(d.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0);
-   const created=esc(new Date(d.createdAt||Date.now()).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}));
-   const dl=d.deliveryDate?esc(new Date(d.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})):'-';
-   return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewDO=${encodeURIComponent(d.doNo)}">
-    <div class="appr-avatar">${esc((d.customer||'?').charAt(0))}</div>
-    <div class="appr-main">
-     <div class="appr-subject">Picking Slip <strong>${esc(d.doNo)}</strong> <span style="font-weight:400;color:var(--muted)">(S/O ${esc(d.soNo)})</span></div>
-     <div class="appr-snippet">${esc(d.customer||'-')} · ${(d.lines||[]).length} รายการ · ${Math.round(kg).toLocaleString()} kg · ผู้จัดทำ: ${esc(d.createdBy||'-')}</div>
-     <div class="appr-delivery-row"><span class="appr-delivery-badge">🚚 กำหนดส่ง ${dl}</span></div>
-    </div>
-    <div class="appr-time">${created}</div>
-   </a>`;
-  }).join(''):`<div class="appr-empty">ยังไม่มี DO ที่ออก</div>`}</div>`;
- } else if(serviceOpenSO){
+ if(serviceTab==='dos'){
+  content=renderServiceDOTab();
+ } else if(serviceTab==='ps'){
+  content=renderServicePSTab(); } else if(serviceOpenSO){
   content=renderServiceSODetail(serviceOpenSO);
  } else {
   const cnt=k=>all.filter(g=>k==='due'?(g.days!==null&&g.days<=SERVICE_TRANSFER_DAYS):k==='later'?(g.days!==null&&g.days>SERVICE_TRANSFER_DAYS):g.days===null).length;
@@ -1226,6 +1319,7 @@ function renderServiceDashboard(){
  }
  el.innerHTML=`<div class="appr-shell">${nav}<div class="appr-content">${content}</div></div>`;
  if(serviceTab==='queue'&&serviceOpenSO) updateServiceBar();
+ if(serviceTab==='dos') updateServiceDoBar();
 }
 // ---- หน้า Transfer: ยืนยันรายการที่เลือก (แยกส่วนตาม S/O → ออก DO ใบละ S/O) ----
 let doTransferKeys=null;
@@ -1294,7 +1388,7 @@ function closeDoTransfer(){
 }
 function genDoNo(){
  let no;
- do{ no='000'+String(Math.floor(Math.random()*1e7)).padStart(7,'0'); }while(TMTStore.deliveryOrders.get(no));
+ do{ no='23'+String(Math.floor(Math.random()*1e8)).padStart(8,'0'); }while(TMTStore.deliveryOrders.get(no));
  return no;
 }
 function confirmDoTransfer(){
@@ -1330,7 +1424,7 @@ function confirmDoTransfer(){
   const d={
    doNo:genDoNo(), soNo:rec.soNo, quotationNo:rec.quotationNo||'', customer:rec.customer||'', soldToCode:rec.soldToCode||'',
    createdAt:new Date().toISOString(), createdBy:TMTStore.session.getUser()||'Service',
-   deliveryDate:date, lines, status:'issued'
+   shipTo:(rec.quoteExtra&&rec.quoteExtra.deliveryPlace)||'', deliveryDate:date, lines, status:'issued'
   };
   if(!TMTStore.deliveryOrders.upsert(d)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
  }
@@ -1344,7 +1438,7 @@ function serviceDeliveryBadge(rec,days){
  const diff=days<0?`เลยกำหนด ${Math.abs(days)} วัน`:days===0?'ส่งวันนี้':`อีก ${days} วัน`;
  return `<span class="appr-delivery-badge${days<=SERVICE_TRANSFER_DAYS?' urgent':''}">📅 ${dLabel} (${diff})</span>`;
 }
-// ---------- Warehouse / Transport Dashboard: ดูจาก DO (Picking Slip) ที่ Service ออกแล้ว ----------
+// ---------- Warehouse / Transport Dashboard: ดูจาก Picking Slip (ใบงานที่ Service รวม DO แล้ว) ----------
 let doDashFilter=null;
 function setDoDashFilter(k){ doDashFilter=(doDashFilter===k||k===null)?null:k; renderDODashboard(TMTStore.session.getRole()); }
 function renderWarehouseDashboard(){ renderDODashboard('warehouse'); }
@@ -1353,10 +1447,10 @@ function renderDODashboard(role){
  const dept=role==='warehouse'?'Warehouse':'Transport';
  const el=document.getElementById(role==='warehouse'?'warehouseDashboardView':'transportDashboardView'); if(!el) return;
  const today=new Date(); today.setHours(0,0,0,0);
- const all=TMTStore.deliveryOrders.list().map(d=>{
-  const days=d.deliveryDate?Math.round((new Date(d.deliveryDate+'T00:00:00')-today)/86400000):null;
-  const kg=(d.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0), pcs=(d.lines||[]).reduce((s,l)=>s+l.qty,0);
-  return {d,days,kg,pcs};
+ const all=TMTStore.pickingSlips.list().map(p=>{
+  const days=p.deliveryDate?Math.round((new Date(p.deliveryDate+'T00:00:00')-today)/86400000):null;
+  const kg=(p.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0), pcs=(p.lines||[]).reduce((s,l)=>s+l.qty,0);
+  return {p,days,kg,pcs};
  });
  const cls={
   late:x=>x.days!==null&&x.days<0,
@@ -1369,39 +1463,37 @@ function renderDODashboard(role){
   if(a.days!==null&&b.days!==null) return a.days-b.days;
   if(a.days!==null) return -1;
   if(b.days!==null) return 1;
-  return new Date(b.d.createdAt||0)-new Date(a.d.createdAt||0);
+  return new Date(b.p.createdAt||0)-new Date(a.p.createdAt||0);
  });
  const act=k=>doDashFilter===k?' active':'';
  const summary=`<div class="appr-summary">
-  <div class="appr-stat${doDashFilter===null?' active':''}" onclick="setDoDashFilter(null)"><div class="appr-stat-num">${all.length}</div><div class="appr-stat-lbl">DO ทั้งหมด</div></div>
+  <div class="appr-stat${doDashFilter===null?' active':''}" onclick="setDoDashFilter(null)"><div class="appr-stat-num">${all.length}</div><div class="appr-stat-lbl">Picking Slip ทั้งหมด</div></div>
   <div class="appr-stat${cnt('late')>0?' urgent':''}${act('late')}" onclick="setDoDashFilter('late')"><div class="appr-stat-num">${cnt('late')}</div><div class="appr-stat-lbl">เลยกำหนดส่ง</div></div>
   <div class="appr-stat${cnt('today')>0?' urgent':''}${act('today')}" onclick="setDoDashFilter('today')"><div class="appr-stat-num">${cnt('today')}</div><div class="appr-stat-lbl">ส่งวันนี้</div></div>
   <div class="appr-stat${act('tomorrow')}" onclick="setDoDashFilter('tomorrow')"><div class="appr-stat-num">${cnt('tomorrow')}</div><div class="appr-stat-lbl">ส่งพรุ่งนี้</div></div>
   <div class="appr-stat${act('week')}" onclick="setDoDashFilter('week')"><div class="appr-stat-num">${cnt('week')}</div><div class="appr-stat-lbl">ภายใน 7 วัน</div></div>
  </div>`;
- const rows=list.length?list.map(({d,days,kg,pcs})=>{
-  const dLabel=d.deliveryDate?esc(new Date(d.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})):'-';
+ const rows=list.length?list.map(({p,days,kg,pcs})=>{
+  const dLabel=p.deliveryDate?esc(new Date(p.deliveryDate).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})):'-';
   const diff=days===null?'':days<0?`เลยกำหนด ${Math.abs(days)} วัน`:days===0?'ส่งวันนี้':`อีก ${days} วัน`;
-  const plants=[...new Set((d.lines||[]).map(l=>l.plant||'1200'))].join(', ');
-  const so=loadSalesOrders().find(s=>s.soNo===d.soNo);
-  const place=so&&so.quoteExtra&&so.quoteExtra.deliveryPlace?so.quoteExtra.deliveryPlace:'-';
+  const plants=[...new Set((p.lines||[]).map(l=>l.plant||'1200'))].join(', ');
   const info=dept==='Warehouse'
-   ?`${(d.lines||[]).length} รายการ · ${pcs.toLocaleString()} pcs · ${Math.round(kg).toLocaleString()} kg · Plant ${esc(plants)}`
-   :`${Math.round(kg).toLocaleString()} kg · ต้นทาง Plant ${esc(plants)} · ส่งที่: ${esc(place)}`;
-  return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewDO=${encodeURIComponent(d.doNo)}&dept=${dept}">
-   <div class="appr-avatar">${esc((d.customer||'?').charAt(0))}</div>
+   ?`${(p.doNos||[]).length} DO · ${(p.lines||[]).length} รายการ · ${pcs.toLocaleString()} pcs · ${Math.round(kg).toLocaleString()} kg · Plant ${esc(plants)}`
+   :`${Math.round(kg).toLocaleString()} kg · ต้นทาง Plant ${esc(plants)} · ส่งที่: ${esc(p.shipTo||'-')}`;
+  return `<a class="appr-row" style="text-decoration:none;color:inherit" href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}&dept=${dept}">
+   <div class="appr-avatar">${esc((p.customer||'?').charAt(0))}</div>
    <div class="appr-main">
-    <div class="appr-subject">Picking Slip <strong>${esc(d.doNo)}</strong> <span style="font-weight:400;color:var(--muted)">(S/O ${esc(d.soNo)})</span></div>
-    <div class="appr-snippet">${esc(d.customer||'-')} · ${info}</div>
+    <div class="appr-subject">Picking Slip <strong>${esc(p.psNo)}</strong> <span style="font-weight:400;color:var(--muted)">(DO: ${esc((p.doNos||[]).join(', '))})</span></div>
+    <div class="appr-snippet">${esc(p.customer||'-')} · ${info}</div>
     <div class="appr-delivery-row"><span class="appr-delivery-badge${days!==null&&days<=1?' urgent':''}">🚚 กำหนดส่ง ${dLabel}${diff?` (${diff})`:''}</span></div>
    </div>
-   <div class="appr-time">${esc(sapDate(d.createdAt))}</div>
+   <div class="appr-time">${esc(sapDate(p.createdAt))}</div>
   </a>`;
- }).join(''):`<div class="appr-empty">${all.length?'ไม่มี DO ในหมวดนี้':'ยังไม่มี DO ที่ Service ออก'}</div>`;
+ }).join(''):`<div class="appr-empty">${all.length?'ไม่มี Picking Slip ในหมวดนี้':'ยังไม่มี Picking Slip ที่ Service ออก'}</div>`;
  el.innerHTML=`<div class="appr-shell">
   <aside class="appr-sidebar">
    <div class="appr-sidebar-head"><span>${dept==='Warehouse'?'📦 Warehouse':'🚚 Transport'}</span></div>
-   <nav class="appr-nav"><button class="appr-nav-item active"><span>DO ที่ต้องดำเนินการ</span><span class="appr-nav-badge${all.length?'':' zero'}">${all.length}</span></button></nav>
+   <nav class="appr-nav"><button class="appr-nav-item active"><span>Picking Slip ที่ต้องดำเนินการ</span><span class="appr-nav-badge${all.length?'':' zero'}">${all.length}</span></button></nav>
   </aside>
   <div class="appr-content">${summary}<div class="appr-list">${rows}</div></div>
  </div>`;

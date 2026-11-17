@@ -51,6 +51,12 @@ service cloud.firestore {
       allow create, update, delete: if hasRole() && role() == 'service';
     }
 
+    // Picking Slip: Service กวาด DO มารวมเป็นใบงาน (1 ใบมีหลาย DO) — ทุก role ที่มีสิทธิ์อ่านได้
+    match /pickingSlips/{id} {
+      allow read: if hasRole();
+      allow create, update, delete: if hasRole() && role() == 'service';
+    }
+
     match /discountApprovals/{id} {
       allow read: if hasRole();
       allow create: if hasRole() && role() == 'sales';

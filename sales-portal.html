@@ -981,7 +981,7 @@ function renderPlanningDashboard(){
 const SERVICE_TRANSFER_DAYS=2;
 function doQtyMap(soNo){
  const m={};
- TMTStore.deliveryOrders.list().filter(d=>d.soNo===soNo).forEach(d=>(d.lines||[]).forEach(l=>{ m[l.itemId]=(m[l.itemId]||0)+l.qty; }));
+ TMTStore.deliveryOrders.list().forEach(d=>(d.lines||[]).forEach(l=>{ if((l.soNo||d.soNo)===soNo) m[l.itemId]=(m[l.itemId]||0)+l.qty; }));
  return m;
 }
 function itemStockShort(i,qty){
@@ -1011,11 +1011,11 @@ let serviceFilter={quick:null,from:'',to:'',incNoDate:false,q:''};   // quick = 
 let serviceSel=new Set();                        // รายการที่ติ๊กเลือกในหน้า S/O (key = soNo|itemId)
 let serviceOpenSO=null;                          // เปิดดูข้างใน S/O ใบไหนอยู่
 let serviceDetailTab='sales';
-function setServiceTab(t){ serviceTab=t; serviceOpenSO=null; serviceSel=new Set(); serviceDoSel=new Set(); renderServiceDashboard(); }
+function setServiceTab(t){ serviceTab=t; serviceOpenSO=null; serviceSel=new Set(); serviceDoSel=new Set(); serviceSOSel=new Set(); renderServiceDashboard(); }
 function setServiceQuick(k){ serviceFilter.quick=(serviceFilter.quick===k||k===null)?null:k; renderServiceDashboard(); }
 function setServiceGroup(g){ serviceGroup=g; renderServiceDashboard(); }
 function setServiceFilterField(f,v){ serviceFilter[f]=v; renderServiceDashboard(); }
-function openServiceSO(soNo){ serviceOpenSO=soNo; serviceSel=new Set(); serviceDetailTab='sales'; renderServiceDashboard(); window.scrollTo(0,0); }
+function openServiceSO(soNo){ serviceOpenSO=soNo; serviceSel=new Set(); serviceSOSel=new Set(); serviceDetailTab='sales'; renderServiceDashboard(); window.scrollTo(0,0); }
 function closeServiceSO(){ serviceOpenSO=null; serviceSel=new Set(); renderServiceDashboard(); }
 function setServiceDetailTab(t){ serviceDetailTab=t; renderServiceDashboard(); }
 
@@ -1106,7 +1106,7 @@ function renderServiceSODetail(soNo){
  const done=doQtyMap(soNo), days=approvalUrgencyDays(rec), qe=rec.quoteExtra||{};
  const cart=rec.cart||[];
  const totalKg=cart.reduce((s,i)=>s+i.qty*i.weight,0);
- const myDOs=TMTStore.deliveryOrders.list().filter(d=>d.soNo===soNo).sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
+ const myDOs=TMTStore.deliveryOrders.list().filter(d=>(d.lines||[]).some(l=>(l.soNo||d.soNo)===soNo)).sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
  const hf=(label,val)=>`<div class="sap-f"><label>${label}</label><div class="v">${val===''||val==null?'&nbsp;':val}</div></div>`;
  const tabBtn=(k,label)=>`<button class="sap-tab${serviceDetailTab===k?' active':''}" onclick="setServiceDetailTab('${k}')">${label}</button>`;
  const reqDate=(rec.deliveryDateType==='scheduled'&&rec.deliveryDate)?sapDate(rec.deliveryDate):'';
@@ -1154,7 +1154,7 @@ function renderServiceSODetail(soNo){
  }).join('');
  const selectable=cart.filter(i=>Math.max(i.qty-(done[i.id]||0),0)>0&&!rec.blocked);
  const allChecked=selectable.length>0&&selectable.every(i=>serviceSel.has(sel(i)));
- const doList=myDOs.length?`<div class="sap-dos"><strong>DO ที่ออกแล้วจาก S/O นี้:</strong> ${myDOs.map(d=>{ const p=psOfDO(d.doNo); return `<strong>${esc(d.doNo)}</strong> <span style="color:var(--muted)">(${(d.lines||[]).reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${esc(sapDate(d.deliveryDate))}${p?` · อยู่ใน PS <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">${esc(p.psNo)}</a>`:' · รอรวม PS'})</span>${p?'':` <a href="#" onclick="event.preventDefault();deleteServiceDO('${esc(d.doNo)}')" style="color:#B42318">🗑 ลบ DO</a>`}`; }).join('<br>')}</div>`:'';
+ const doList=myDOs.length?`<div class="sap-dos"><strong>DO ที่ออกแล้วจาก S/O นี้:</strong> ${myDOs.map(d=>{ const p=psOfDO(d.doNo); return `<strong>${esc(d.doNo)}</strong> <span style="color:var(--muted)">(${(d.lines||[]).filter(l=>(l.soNo||d.soNo)===soNo).reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${esc(sapDate(d.deliveryDate))}${doSoNos(d).length>1?` · รวมกับ S/O ${esc(doSoNos(d).filter(n=>n!==soNo).join(', '))}`:''}${p?` · อยู่ใน PS <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(p.psNo)}">${esc(p.psNo)}</a>`:' · รอรวม PS'})</span>${p?'':` <a href="#" onclick="event.preventDefault();deleteServiceDO('${esc(d.doNo)}')" style="color:#B42318">🗑 ลบ DO</a>`}`; }).join('<br>')}</div>`:'';
  const allDone=selectable.length===0&&!rec.blocked;
  const hist=(rec.deliveryDateHistory||[]).slice(-5).reverse();
  const isPending=!(rec.deliveryDateType==='scheduled'&&rec.deliveryDate);
@@ -1193,6 +1193,7 @@ function renderServiceSODetail(soNo){
 // กติกา: รวมได้เฉพาะลูกค้า + สถานที่ส่ง + วันส่งเดียวกัน · แถวรายการแยกตาม DO (ไม่บวกรวม) · DO ที่ออกหลังกวาดแล้วต้องไปอยู่ Picking Slip ใบใหม่
 let serviceDoSel=new Set();
 let serviceDoGroupKeys=[];
+function doSoNos(d){ return [...new Set((d.lines||[]).map(l=>l.soNo||d.soNo))]; }
 function psOfDO(doNo){ return TMTStore.pickingSlips.list().find(p=>(p.doNos||[]).includes(doNo)); }
 function doShipTo(d){
  if(d.shipTo) return d.shipTo;
@@ -1221,7 +1222,7 @@ function deleteServiceDO(doNo){
  const ps=psOfDO(doNo);
  if(ps){ alert(`ลบ DO ${doNo} ไม่ได้ — DO นี้ถูกรวมอยู่ใน Picking Slip ${ps.psNo} แล้ว`); return; }
  const pcs=(d.lines||[]).reduce((s,l)=>s+l.qty,0);
- if(!confirm(`ลบ DO ${doNo} (S/O ${d.soNo}) ?\n\nรายการ ${(d.lines||[]).length} รายการ · ${pcs.toLocaleString()} pcs จะกลับเข้า S/O เหมือนเดิม`)) return;
+ if(!confirm(`ลบ DO ${doNo} (S/O ${doSoNos(d).join(', ')}) ?\n\nรายการ ${(d.lines||[]).length} รายการ · ${pcs.toLocaleString()} pcs จะกลับเข้า S/O เหมือนเดิม`)) return;
  if(!TMTStore.deliveryOrders.remove(doNo)){ alert('ลบไม่สำเร็จ'); return; }
  serviceDoSel.delete(doNo);
  renderServiceDashboard();
@@ -1245,7 +1246,7 @@ function serviceCreatePS(){
  }
  dos.sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
  const lines=[];
- dos.forEach(d=>(d.lines||[]).forEach(l=>lines.push({doNo:d.doNo,soNo:d.soNo,itemId:l.itemId,code:l.code,desc:l.desc,plant:l.plant||'1200',qty:l.qty,weight:l.weight})));
+ dos.forEach(d=>(d.lines||[]).forEach(l=>lines.push({doNo:d.doNo,soNo:l.soNo||d.soNo,itemId:l.itemId,code:l.code,desc:l.desc,plant:l.plant||'1200',qty:l.qty,weight:l.weight})));
  const first=dos[0];
  const ps={psNo:genPsNo(),doNos:dos.map(d=>d.doNo),customer:first.customer||'',soldToCode:first.soldToCode||'',shipTo:doShipTo(first),deliveryDate:first.deliveryDate||'',
   createdAt:new Date().toISOString(),createdBy:TMTStore.session.getUser()||'Service',truckPlate:'',lines,status:'issued'};
@@ -1279,7 +1280,7 @@ function renderServiceDOTab(){
   body+=`<tr class="alv-row${serviceDoSel.has(d.doNo)?' sel':''}">
    <td><input type="checkbox" ${serviceDoSel.has(d.doNo)?'checked':''} onchange="toggleServiceDo('${esc(d.doNo)}',this.checked);this.closest('tr').classList.toggle('sel',this.checked)"></td>
    <td><button class="ql-btn" style="padding:2px 8px;border-color:#E3B1AC;color:#B42318" onclick="deleteServiceDO('${esc(d.doNo)}')" title="ลบ DO — รายการกลับเข้า S/O">🗑 ลบ</button></td>
-   <td><strong>${esc(d.doNo)}</strong></td><td>${esc(d.soNo)}</td><td>${esc(d.customer||'-')}</td><td>${esc(doShipTo(d).split(' ต.')[0]||'-')}</td>
+   <td><strong>${esc(d.doNo)}</strong></td><td>${esc(doSoNos(d).join(', '))}</td><td>${esc(d.customer||'-')}</td><td>${esc(doShipTo(d).split(' ต.')[0]||'-')}</td>
    <td>${d.deliveryDate?esc(sapDate(d.deliveryDate)):'-'}</td><td class="alv-n">${(d.lines||[]).length}</td>
    <td class="alv-n">${x.pcs.toLocaleString()}</td><td class="alv-n">${Math.round(x.kg).toLocaleString()}</td>
    <td><span class="appr-delivery-badge pending">รอรวม Picking Slip</span></td></tr>`;
@@ -1291,7 +1292,7 @@ function renderServiceDOTab(){
   <div class="alv-bar" id="serviceDoBar"><span class="alv-bar-txt"></span><button class="ql-btn transfer" onclick="serviceCreatePS()">สร้าง Picking Slip →</button></div>
   <div style="font-size:11.5px;color:var(--muted);margin-top:8px">เลือกได้เฉพาะ DO ที่ลูกค้า สถานที่ส่ง และวันส่งเดียวกัน · DO ที่ออกหลังจากสร้าง Picking Slip แล้วจะไปอยู่ใน Picking Slip ใบใหม่</div>`
   :`<div class="appr-empty">ไม่มี DO ที่รอรวม Picking Slip</div>`;
- const sweptHtml=swept.length?`<div style="margin-top:22px"><div class="sap-items-title">DO ที่รวมเป็น Picking Slip แล้ว (${swept.length})</div><div class="alv-wrap" style="border-radius:0 0 8px 8px"><table class="alv"><tbody>${swept.map(x=>`<tr class="alv-row blocked"><td><strong>${esc(x.d.doNo)}</strong></td><td>${esc(x.d.soNo)}</td><td>${esc(x.d.customer||'-')}</td><td>${x.d.deliveryDate?esc(sapDate(x.d.deliveryDate)):'-'}</td><td class="alv-n">${x.pcs.toLocaleString()} pcs</td><td>อยู่ใน Picking Slip <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(x.ps.psNo)}">${esc(x.ps.psNo)}</a></td></tr>`).join('')}</tbody></table></div></div>`:'';
+ const sweptHtml=swept.length?`<div style="margin-top:22px"><div class="sap-items-title">DO ที่รวมเป็น Picking Slip แล้ว (${swept.length})</div><div class="alv-wrap" style="border-radius:0 0 8px 8px"><table class="alv"><tbody>${swept.map(x=>`<tr class="alv-row blocked"><td><strong>${esc(x.d.doNo)}</strong></td><td>${esc(doSoNos(x.d).join(', '))}</td><td>${esc(x.d.customer||'-')}</td><td>${x.d.deliveryDate?esc(sapDate(x.d.deliveryDate)):'-'}</td><td class="alv-n">${x.pcs.toLocaleString()} pcs</td><td>อยู่ใน Picking Slip <a href="presale-configurator-v2.html?viewPS=${encodeURIComponent(x.ps.psNo)}">${esc(x.ps.psNo)}</a></td></tr>`).join('')}</tbody></table></div></div>`:'';
  return `${table}${sweptHtml}`;
 }
 function renderServicePSTab(){
@@ -1310,10 +1311,32 @@ function renderServicePSTab(){
   </a></div>`;
  }).join(''):`<div class="appr-empty">ยังไม่มี Picking Slip — ไปที่แท็บ "DO ที่เปิดแล้ว" เพื่อเลือก DO มารวม</div>`}</div>`;
 }
+let serviceSOSel=new Set();
+let serviceSOGroups=[];
+function toggleServiceSO(soNo,on){ if(on) serviceSOSel.add(soNo); else serviceSOSel.delete(soNo); updateServiceSOBar(); }
+function toggleServiceSOAll(on){
+ serviceFilterSO(serviceSOList()).filter(g=>!g.blocked).forEach(g=>{ if(on) serviceSOSel.add(g.rec.soNo); else serviceSOSel.delete(g.rec.soNo); });
+ renderServiceDashboard();
+}
+function toggleServiceSOGroup(idx,on){ (serviceSOGroups[idx]||[]).forEach(n=>{ if(on) serviceSOSel.add(n); else serviceSOSel.delete(n); }); renderServiceDashboard(); }
+function updateServiceSOBar(){
+ const lines=serviceLines().filter(x=>serviceSOSel.has(x.rec.soNo)&&!x.blocked);
+ const kg=lines.reduce((s,x)=>s+x.kg,0);
+ const bar=document.getElementById('serviceSOBar'); if(!bar) return;
+ bar.querySelector('.alv-bar-txt').textContent=serviceSOSel.size?`เลือก ${serviceSOSel.size} S/O · ${lines.length} รายการ · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`:'ติ๊กเลือก S/O ได้หลายใบ (กำหนดส่งต่างกันได้) แล้วกด Transfer';
+ bar.querySelector('button').disabled=!serviceSOSel.size;
+}
+function serviceTransferSelectedSOs(){
+ const keys=serviceLines().filter(x=>serviceSOSel.has(x.rec.soNo)&&!x.blocked).map(x=>x.key);
+ if(!keys.length) return;
+ openDoTransfer(keys);
+}
 function renderServiceDashboard(){
  const el=document.getElementById('serviceDashboardView'); if(!el) return;
  const allDO=TMTStore.deliveryOrders.list().slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
  const all=serviceSOList();
+ serviceSOGroups=[];
+ { const validSO=new Set(all.filter(g=>!g.blocked).map(g=>g.rec.soNo)); serviceSOSel=new Set([...serviceSOSel].filter(n=>validSO.has(n))); }
  const openDOCount=allDO.filter(d=>!psOfDO(d.doNo)).length, psCount=TMTStore.pickingSlips.list().length;
  // ตัดรายการที่ติ๊กไว้แต่ไม่อยู่ในคิวแล้ว (เช่น เพิ่ง Transfer ไป)
  const valid=new Set(serviceLines().filter(x=>!x.blocked).map(x=>x.key));
@@ -1356,7 +1379,9 @@ function renderServiceDashboard(){
   const flush=()=>{
    if(cur===null) return;
    const kg=buf.reduce((s,g)=>s+g.kg,0), pcs=buf.reduce((s,g)=>s+g.left,0);
-   body+=`<tr class="alv-sub"><td colspan="9">${serviceGroup==='customer'?'':'กำหนดส่ง '}${esc(cur)} <span style="font-weight:400">(${buf.length} S/O)</span></td><td class="alv-n">${pcs.toLocaleString()}</td><td class="alv-n">${Math.round(kg).toLocaleString()}</td><td></td></tr>`;
+   const gi=serviceSOGroups.push(buf.filter(g=>!g.blocked).map(g=>g.rec.soNo))-1;
+   const gAll=serviceSOGroups[gi].length>0&&serviceSOGroups[gi].every(n=>serviceSOSel.has(n));
+   body+=`<tr class="alv-sub"><td><input type="checkbox" ${gAll?'checked':''} ${serviceSOGroups[gi].length?'':'disabled'} onchange="toggleServiceSOGroup(${gi},this.checked)" title="เลือกทั้งกลุ่ม"></td><td colspan="9">${serviceGroup==='customer'?'':'กำหนดส่ง '}${esc(cur)} <span style="font-weight:400">(${buf.length} S/O)</span></td><td class="alv-n">${pcs.toLocaleString()}</td><td class="alv-n">${Math.round(kg).toLocaleString()}</td><td></td></tr>`;
   };
   vis.forEach(g=>{
    const k=groupOf(g);
@@ -1364,7 +1389,8 @@ function renderServiceDashboard(){
    buf.push(g);
    const urgent=g.days!==null&&g.days<=SERVICE_TRANSFER_DAYS;
    const total=(g.rec.cart||[]).reduce((s,i)=>s+i.qty,0), issued=total-g.left;
-   body+=`<tr class="alv-row${g.blocked?' blocked':''}" style="cursor:pointer" onclick="openServiceSO('${esc(g.rec.soNo)}')">
+   body+=`<tr class="alv-row${g.blocked?' blocked':''}${serviceSOSel.has(g.rec.soNo)?' sel':''}" style="cursor:pointer" onclick="openServiceSO('${esc(g.rec.soNo)}')">
+    <td onclick="event.stopPropagation()"><input type="checkbox" ${serviceSOSel.has(g.rec.soNo)?'checked':''} ${g.blocked?'disabled title="S/O ถูก Block — ออก DO ไม่ได้"':''} onchange="toggleServiceSO('${esc(g.rec.soNo)}',this.checked);this.closest('tr').classList.toggle('sel',this.checked)"></td>
     <td class="alv-n">${esc(g.rec.sales||'-')}</td>
     <td><a href="#" onclick="event.preventDefault();openServiceSO('${esc(g.rec.soNo)}')">${esc(g.rec.soNo)}</a></td>
     <td>${g.blocked?'<span style="color:#B42318;font-weight:700">Blocked</span>':''}</td>
@@ -1380,20 +1406,31 @@ function renderServiceDashboard(){
    </tr>`;
   });
   flush();
+  const selectableSO=vis.filter(g=>!g.blocked);
+  const allSOChecked=selectableSO.length>0&&selectableSO.every(g=>serviceSOSel.has(g.rec.soNo));
   const table=vis.length?`<div class="alv-wrap"><table class="alv">
-   <thead><tr><th>ID พนักงานขาย</th><th>S/O No.</th><th>Overall blocked status</th><th>เลขที่ PO</th><th>Sold to (name)</th><th>S/O Date</th><th>กำหนดส่ง</th><th>Ship to (name)</th><th class="alv-n">รายการค้าง</th><th class="alv-n">คงเหลือ (pcs)</th><th class="alv-n">น้ำหนัก (kg)</th><th>สต็อก / ออก DO แล้ว</th></tr></thead>
+   <thead><tr><th><input type="checkbox" ${allSOChecked?'checked':''} onchange="toggleServiceSOAll(this.checked)" title="เลือกทั้งหมดที่แสดง"></th><th>ID พนักงานขาย</th><th>S/O No.</th><th>Overall blocked status</th><th>เลขที่ PO</th><th>Sold to (name)</th><th>S/O Date</th><th>กำหนดส่ง</th><th>Ship to (name)</th><th class="alv-n">รายการค้าง</th><th class="alv-n">คงเหลือ (pcs)</th><th class="alv-n">น้ำหนัก (kg)</th><th>สต็อก / ออก DO แล้ว</th></tr></thead>
    <tbody>${body}</tbody></table></div>
-   <div style="font-size:11.5px;color:var(--muted);margin-top:8px">คลิกที่ S/O เพื่อเข้าไปเลือกรายการที่จะเปิด DO</div>`:`<div class="appr-empty">${all.length?'ไม่พบ S/O ตามเงื่อนไขที่เลือก':'ไม่มี S/O ที่ค้างออก DO'}</div>`;
-  content=`${summary}${filters}${table}`;
+   <div style="font-size:11.5px;color:var(--muted);margin-top:8px">คลิกที่ S/O เพื่อเข้าไปเลือกรายการที่จะเปิด DO · หรือติ๊กเลือกหลาย S/O (กำหนดส่งต่างกันได้) แล้วกด Transfer — Sold-to และ Ship-to เดียวกันจะรวมเป็น DO ใบเดียว</div>`:`<div class="appr-empty">${all.length?'ไม่พบ S/O ตามเงื่อนไขที่เลือก':'ไม่มี S/O ที่ค้างออก DO'}</div>`;
+  const soBar=`<div class="alv-bar" id="serviceSOBar"><span class="alv-bar-txt"></span><button class="ql-btn transfer" onclick="serviceTransferSelectedSOs()">Transfer to DO →</button></div>`;
+  content=`${summary}${filters}${table}${vis.length?soBar:''}`;
  }
  el.innerHTML=`<div class="appr-shell">${nav}<div class="appr-content">${content}</div></div>`;
  if(serviceTab==='queue'&&serviceOpenSO) updateServiceBar();
+ if(serviceTab==='queue'&&!serviceOpenSO) updateServiceSOBar();
  if(serviceTab==='dos') updateServiceDoBar();
 }
-// ---- หน้า Transfer: ยืนยันรายการที่เลือก (แยกส่วนตาม S/O → ออก DO ใบละ S/O) ----
+// ---- หน้า Transfer: ยืนยันรายการที่เลือก (ข้าม S/O ได้) ----
+// กติกาการออก DO: Sold-to + Ship-to เดียวกัน → รวมเป็น DO ใบเดียว (แม้คนละ S/O / คนละกำหนดส่ง) · Sold-to เดียวกันแต่คนละ Ship-to → แยกเป็นคนละ DO
 let doTransferKeys=null;
+let doGroupDates={};
+function doGroupKeyOfRec(rec){ return `${rec.soldToCode||rec.customer||''}|${(rec.quoteExtra&&rec.quoteExtra.deliveryPlace)||''}`; }
+function doGroupDefaultDate(recs){
+ const ds=recs.map(r=>(r.deliveryDateType==='scheduled'&&r.deliveryDate)?r.deliveryDate:'').filter(Boolean).sort();
+ return ds[0]||'';
+}
 function openDoTransfer(keys){
- doTransferKeys=keys;
+ doTransferKeys=keys; doGroupDates={};
  const bySo=new Map();
  keys.forEach(k=>{ const [soNo,id]=k.split('|'); if(!bySo.has(soNo)) bySo.set(soNo,[]); bySo.get(soNo).push(+id); });
  const planHref=(i)=>`${encodeURI('แผนผลิตตัดม้วน Sep - 2026 (Demo).html')}?material=${encodeURIComponent(i.code)}&thk=${i.thickness}&wid=${i.width}`;
@@ -1421,7 +1458,6 @@ function openDoTransfer(keys){
    <div style="font-size:12.5px;line-height:1.8;margin-bottom:8px">
     <div><strong>S/O ${esc(soNo)}</strong> · ${esc(rec.customer||'-')} · PO: ${esc(rec.poNo||'-')}</div>
     <div>สถานที่ส่ง: ${esc(qe.deliveryPlace||'-')} · ชำระเงิน: ${esc(qe.paymentTerm||'-')} · กำหนดส่งตาม S/O: ${serviceDeliveryBadge(rec,days)}</div>
-    <div><label><strong>กำหนดส่งสินค้าของ DO นี้</strong> <input type="date" class="do-date" data-so="${esc(soNo)}" value="${esc(rec.deliveryDate||'')}" style="margin-left:8px;padding:6px 8px;border:1px solid var(--border,#C9D6E2);border-radius:6px"></label></div>
    </div>
    <div style="overflow:auto"><table class="price-table" style="width:100%;font-size:12px;border-collapse:collapse">
     <thead><tr><th></th><th>รายการ</th><th style="text-align:right">สั่งทั้งหมด</th><th style="text-align:right">ออก DO แล้ว</th><th style="text-align:right">คงเหลือ</th><th style="text-align:right">สต็อก</th><th>ตรวจสต็อก</th><th>แผนผลิต</th><th>จำนวนที่ Transfer</th></tr></thead>
@@ -1429,8 +1465,10 @@ function openDoTransfer(keys){
   </div>`;
  });
  document.getElementById('doTransferBody').innerHTML=`${sections}
-  <div id="doSelSummary" style="margin-top:4px;padding:8px 12px;border-radius:8px;background:#EAF3FA;color:#0B5C8E;font-size:12.5px;font-weight:700"></div>
-  <div style="font-size:11px;color:var(--muted);margin:8px 0 14px">* ออก DO ใบละ 1 S/O · เอาติ๊กออกเพื่อตัดรายการ หรือใส่จำนวนน้อยกว่าคงเหลือเพื่อแยกส่งบางส่วน · สต็อกเป็นค่า ณ วันที่ออกใบเสนอราคา ให้ตรวจกับสต็อกและแผนผลิต/แผนส่งจริงก่อน Transfer</div>
+  <div class="sap-items-title">DO ที่จะออก</div>
+  <div id="doGroups" style="border:1px solid #C9D6E2;border-top:0;border-radius:0 0 8px 8px;padding:10px 12px;margin-bottom:12px;background:#FBFDFF"></div>
+  <div id="doSelSummary" style="padding:8px 12px;border-radius:8px;background:#EAF3FA;color:#0B5C8E;font-size:12.5px;font-weight:700"></div>
+  <div style="font-size:11px;color:var(--muted);margin:8px 0 14px">* กติกา: Sold-to และ Ship-to เดียวกัน → รวมเป็น DO ใบเดียว (แม้คนละ S/O หรือคนละกำหนดส่ง — กำหนดส่งของ DO ปรับได้) · Sold-to เดียวกันแต่คนละ Ship-to → แยกเป็นคนละ DO · เอาติ๊กออกเพื่อตัดรายการ หรือใส่จำนวนน้อยกว่าคงเหลือเพื่อแยกส่งบางส่วน · สต็อกเป็นค่า ณ วันที่ออกใบเสนอราคา</div>
   <div style="display:flex;justify-content:flex-end;gap:10px">
    <button class="ql-btn" onclick="closeDoTransfer()">ยกเลิก</button>
    <button class="ql-btn transfer" onclick="confirmDoTransfer()">Transfer to DO</button>
@@ -1438,18 +1476,54 @@ function openDoTransfer(keys){
  document.getElementById('doTransferOverlay').classList.remove('hidden');
  updateDoSel();
 }
+// อ่านรายการที่ติ๊กไว้ในหน้า Transfer แล้วจัดกลุ่มเป็น DO ตาม Sold-to + Ship-to
+function collectDoGroups(){
+ const groups=new Map();
+ document.querySelectorAll('#doTransferBody .do-qty').forEach(inp=>{
+  const soNo=inp.dataset.so;
+  const sel=document.querySelector(`#doTransferBody .do-sel[data-so="${soNo}"][data-item="${inp.dataset.item}"]`);
+  if(sel&&!sel.checked) return;
+  const left=+inp.dataset.left, qty=Math.min(Math.max(parseInt(inp.value)||0,0),left);
+  if(qty<=0) return;
+  const rec=loadSalesOrders().find(s=>s.soNo===soNo); if(!rec) return;
+  const i=(rec.cart||[]).find(x=>x.id===+inp.dataset.item); if(!i) return;
+  const key=doGroupKeyOfRec(rec);
+  if(!groups.has(key)) groups.set(key,{key,recs:[],lines:[]});
+  const g=groups.get(key);
+  if(!g.recs.some(r=>r.soNo===rec.soNo)) g.recs.push(rec);
+  g.lines.push({soNo,itemId:i.id,code:i.code,desc:i.desc,plant:i.plant||'1200',qty,weight:i.weight,short:itemStockShort(i,qty)});
+ });
+ return [...groups.values()];
+}
+let doGroupKeysList=[];
+function setDoGroupDate(idx,v){ const k=doGroupKeysList[idx]; if(k!==undefined) doGroupDates[k]=v; }
 function updateDoSel(){
- let n=0,pcs=0,kg=0; const sos=new Set();
+ let n=0,pcs=0,kg=0;
  document.querySelectorAll('#doTransferBody .do-sel').forEach(c=>{
   const row=c.closest('tr'), inp=row.querySelector('.do-qty');
   inp.disabled=!c.checked;
   row.style.opacity=c.checked?'1':'.45';
-  if(!c.checked) return;
-  const qty=Math.min(Math.max(parseInt(inp.value)||0,0),+inp.dataset.left);
-  if(qty>0){ n++; pcs+=qty; kg+=qty*(+inp.dataset.weight||0); sos.add(c.dataset.so); }
  });
+ const groups=collectDoGroups();
+ groups.forEach(g=>g.lines.forEach(l=>{ n++; pcs+=l.qty; kg+=l.qty*l.weight; }));
+ doGroupKeysList=groups.map(g=>g.key);
+ const box=document.getElementById('doGroups');
+ if(box){
+  box.innerHTML=groups.length?groups.map((g,idx)=>{
+   const first=g.recs[0], qe=first.quoteExtra||{};
+   const gkg=g.lines.reduce((s,l)=>s+l.qty*l.weight,0);
+   const dateVal=doGroupDates[g.key]!==undefined?doGroupDates[g.key]:doGroupDefaultDate(g.recs);
+   const soDates=g.recs.map(r=>`${esc(r.soNo)} (${r.deliveryDateType==='scheduled'&&r.deliveryDate?esc(sapDate(r.deliveryDate)):'รอแจ้ง'})`).join(' · ');
+   return `<div style="padding:8px 0;${idx?'border-top:1px dashed #C9D6E2;':''}font-size:12.5px;line-height:1.8">
+    <div><strong>DO ใบที่ ${idx+1}</strong> · ${esc(first.customer||'-')} · Ship-to: ${esc((qe.deliveryPlace||'-').split(' ต.')[0])}</div>
+    <div>S/O: ${g.recs.map(r=>esc(r.soNo)).join(', ')} · ${g.lines.length} รายการ · ${g.lines.reduce((s,l)=>s+l.qty,0).toLocaleString()} pcs · ${Math.round(gkg).toLocaleString()} kg</div>
+    ${g.recs.length>1?`<div style="color:var(--muted)">กำหนดส่งตาม S/O: ${soDates}</div>`:''}
+    <div><label><strong>กำหนดส่งของ DO ใบนี้</strong> <input type="date" value="${esc(dateVal)}" onchange="setDoGroupDate(${idx},this.value)" style="margin-left:8px;padding:6px 8px;border:1px solid var(--border,#C9D6E2);border-radius:6px"></label></div>
+   </div>`;
+  }).join(''):'<div style="color:var(--muted);font-size:12.5px">ยังไม่ได้เลือกรายการ</div>';
+ }
  const el=document.getElementById('doSelSummary');
- if(el) el.textContent=`จะออก DO ${sos.size} ใบ · ${n} รายการ · ${pcs.toLocaleString()} pcs · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`;
+ if(el) el.textContent=`จะออก DO ${groups.length} ใบ · ${n} รายการ · ${pcs.toLocaleString()} pcs · ${(kg/1000).toFixed(2)} TONS (${Math.round(kg).toLocaleString()} kg)`;
 }
 function closeDoTransfer(){
  doTransferKeys=null;
@@ -1462,42 +1536,30 @@ function genDoNo(){
 }
 function confirmDoTransfer(){
  const today=new Date(); today.setHours(0,0,0,0);
- const drafts=[]; const shortMsg=[]; const earlyMsg=[];
- let missingDate=null;
- document.querySelectorAll('#doTransferBody .do-sec').forEach(sec=>{
-  const soNo=sec.dataset.so;
-  const rec=loadSalesOrders().find(s=>s.soNo===soNo); if(!rec) return;
-  const lines=[];
-  sec.querySelectorAll('.do-qty').forEach(inp=>{
-   const sel=sec.querySelector(`.do-sel[data-item="${inp.dataset.item}"]`);
-   if(sel&&!sel.checked) return;
-   const left=+inp.dataset.left, qty=Math.min(Math.max(parseInt(inp.value)||0,0),left);
-   if(qty<=0) return;
-   const i=(rec.cart||[]).find(x=>x.id===+inp.dataset.item); if(!i) return;
-   const sk=itemStockShort(i,qty);
-   if(sk>0) shortMsg.push(`S/O ${soNo} · ${i.code}: สต็อกไม่พอ ${sk.toLocaleString()} pcs`);
-   lines.push({itemId:i.id,code:i.code,desc:i.desc,plant:i.plant||'1200',qty,weight:i.weight});
-  });
-  if(!lines.length) return;
-  const date=sec.querySelector('.do-date').value;
-  if(!date){ missingDate=missingDate||soNo; return; }
+ const groups=collectDoGroups();
+ if(!groups.length){ alert('กรุณาติ๊กเลือกรายการและระบุจำนวนที่ต้องการ Transfer อย่างน้อย 1 รายการ'); return; }
+ const shortMsg=[], earlyMsg=[];
+ for(const [idx,g] of groups.entries()){
+  const date=doGroupDates[g.key]!==undefined?doGroupDates[g.key]:doGroupDefaultDate(g.recs);
+  if(!date){ alert(`กรุณาระบุกำหนดส่งของ DO ใบที่ ${idx+1}`); return; }
+  g.date=date;
+  g.lines.forEach(l=>{ if(l.short>0) shortMsg.push(`S/O ${l.soNo} · ${l.code}: สต็อกไม่พอ ${l.short.toLocaleString()} pcs`); });
   const dts=Math.round((new Date(date+'T00:00:00')-today)/86400000);
-  if(dts>SERVICE_TRANSFER_DAYS) earlyMsg.push(`S/O ${soNo}: กำหนดส่งอีก ${dts} วัน`);
-  drafts.push({rec,date,lines});
- });
- if(missingDate){ alert(`กรุณาระบุกำหนดส่งสินค้าของ DO (S/O ${missingDate})`); return; }
- if(!drafts.length){ alert('กรุณาติ๊กเลือกรายการและระบุจำนวนที่ต้องการ Transfer อย่างน้อย 1 รายการ'); return; }
+  if(dts>SERVICE_TRANSFER_DAYS) earlyMsg.push(`DO ใบที่ ${idx+1}: กำหนดส่งอีก ${dts} วัน`);
+ }
  if(shortMsg.length && !confirm('พบรายการที่สต็อกไม่พอ:\n'+shortMsg.join('\n')+'\n\nต้องการ Transfer ต่อหรือไม่?')) return;
  if(earlyMsg.length && !confirm(`ยังไม่ถึงช่วง Transfer (ก่อนส่ง ${SERVICE_TRANSFER_DAYS} วัน):\n`+earlyMsg.join('\n')+'\n\nต้องการ Transfer ก่อนกำหนดหรือไม่?')) return;
- for(const {rec,date,lines} of drafts){
+ for(const g of groups){
+  const first=g.recs[0];
   const d={
-   doNo:genDoNo(), soNo:rec.soNo, quotationNo:rec.quotationNo||'', customer:rec.customer||'', soldToCode:rec.soldToCode||'',
+   doNo:genDoNo(), soNo:first.soNo, soNos:g.recs.map(r=>r.soNo), quotationNo:first.quotationNo||'', customer:first.customer||'', soldToCode:first.soldToCode||'',
    createdAt:new Date().toISOString(), createdBy:TMTStore.session.getUser()||'Service',
-   shipTo:(rec.quoteExtra&&rec.quoteExtra.deliveryPlace)||'', deliveryDate:date, lines, status:'issued'
+   shipTo:(first.quoteExtra&&first.quoteExtra.deliveryPlace)||'', deliveryDate:g.date,
+   lines:g.lines.map(l=>({soNo:l.soNo,itemId:l.itemId,code:l.code,desc:l.desc,plant:l.plant,qty:l.qty,weight:l.weight})), status:'issued'
   };
   if(!TMTStore.deliveryOrders.upsert(d)){ alert('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลเต็ม'); return; }
  }
- serviceSel=new Set();
+ serviceSel=new Set(); serviceSOSel=new Set();
  closeDoTransfer();
  renderServiceDashboard();
 }

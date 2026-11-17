@@ -80,6 +80,20 @@ table.tms .sub{color:var(--muted);font-size:11.5px}
 .md-b{padding:16px 18px;overflow:auto;flex:1}
 .md-f{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
 .md-b label{display:block;font-weight:600;font-size:12px;margin:10px 0 4px}
+/* แผง Handover ด้านขวา */
+body.with-drawer{padding-right:500px}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:490px;background:#fff;border-left:1px solid var(--line);box-shadow:-10px 0 28px rgba(20,38,59,.14);z-index:30;display:flex;flex-direction:column}
+.dr-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--brand);color:#fff}
+.dr-h b{font-size:14px}.dr-h small{display:block;opacity:.85;margin-top:2px;font-size:11.5px}
+.dr-h button{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.5);color:#fff}
+.dr-b{overflow:auto;flex:1;padding:10px;background:var(--bg)}
+details.dr-sec{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+details.dr-sec>summary{padding:10px 12px;cursor:pointer;background:var(--brand2);color:var(--brand);font-size:13px;list-style:none}
+details.dr-sec>summary::-webkit-details-marker{display:none}
+details.dr-sec>summary .sm{display:block;color:var(--muted);font-size:11.5px;font-weight:400;margin-top:2px}
+.dr-sec iframe{width:100%;height:600px;border:0;background:#fff;display:block}
+.dr-no{display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;margin-right:8px}
+.dr-open{position:fixed;right:18px;bottom:18px;z-index:29;box-shadow:0 6px 18px rgba(20,38,59,.3);border-radius:999px;padding:10px 18px}
 .md-b input{width:100%}
 iframe{border:0;width:100%;height:100%;background:#fff}
 </style>
@@ -109,6 +123,12 @@ iframe{border:0;width:100%;height:100%;background:#fff}
   </nav>
   <main id="main"></main>
 </div>
+
+<aside id="drawer" class="drawer hidden">
+  <div class="dr-h"><div><b>Handover ของ Picking Slip ที่เลือก</b><small id="drSub"></small></div><button class="btn small" onclick="closeDrawer()" title="ซ่อนแผง">✕</button></div>
+  <div class="dr-b" id="drBody"></div>
+</aside>
+<button id="drOpenBtn" class="btn dr-open hidden" onclick="openDrawer()">📋 Handover (<span id="drCnt">0</span>)</button>
 
 <div id="overlay" class="ov hidden" onclick="if(event.target===this) closeModal()"><div class="md" id="modal"></div></div>
 
@@ -179,7 +199,7 @@ function login(){
   sessionUser=ok.u; try{ sessionStorage.setItem(K.user,ok.u); }catch(e){}
   showApp();
 }
-function logout(){ sessionUser=null; try{ sessionStorage.removeItem(K.user); }catch(e){} document.getElementById('app').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); }
+function logout(){ sessionUser=null; selected=new Set(); syncDrawer(); try{ sessionStorage.removeItem(K.user); }catch(e){} document.getElementById('app').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); }
 document.getElementById('lgPass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
 document.getElementById('lgUser').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('lgPass').focus(); });
 function showApp(){
@@ -201,6 +221,7 @@ function render(){
   document.getElementById('navShip').classList.toggle('active',tab==='ship');
   document.getElementById('main').innerHTML=(tab==='inbox'?renderInbox(orders,ships):renderShips(orders,ships));
   if(tab==='inbox'){ renderInboxRows(); updateBar(); }
+  syncDrawer();
 }
 function eventsHtml(){
   const ev=get(K.events,[]).filter(e=>!e.read);
@@ -274,7 +295,31 @@ function renderInbox(orders,ships){
    <div class="sub" style="margin:8px 2px" id="inboxCount"></div>
    ${filter==='open'?`<div class="bar" id="selBar"><span id="selTxt"></span><button class="btn" id="selBtn" onclick="openShipDialog()">สร้าง Shipment →</button></div>`:''}`;
 }
-function toggleSel(psNo,on,el){ if(on) selected.add(psNo); else selected.delete(psNo); if(el&&el.closest('tr')) el.closest('tr').classList.toggle('sel',on); updateBar(); }
+let drawerOpen=true;
+function openDrawer(){ drawerOpen=true; syncDrawer(); }
+function closeDrawer(){ drawerOpen=false; syncDrawer(); }
+function syncDrawer(){
+  const dr=document.getElementById('drawer'), body=document.getElementById('drBody'), btn=document.getElementById('drOpenBtn'); if(!dr) return;
+  const sel=[...selected];
+  if(!sel.length||tab!=='inbox'||!sessionUser){ dr.classList.add('hidden'); btn.classList.add('hidden'); document.body.classList.remove('with-drawer'); body.innerHTML=''; return; }
+  const orders=get(K.orders,[]);
+  [...body.children].forEach(el=>{ if(!sel.includes(el.dataset.ps)) el.remove(); });
+  sel.forEach(psNo=>{
+    if(body.querySelector('[data-ps="'+psNo+'"]')) return;
+    const o=orders.find(x=>x.psNo===psNo); if(!o) return;
+    const s=o.summary, sec=document.createElement('details');
+    sec.className='dr-sec'; sec.dataset.ps=psNo; sec.open=true;
+    sec.innerHTML='<summary><span class="dr-no"></span><b>Picking Slip '+esc(psNo)+'</b><span class="sm">'+esc(s.shipName||s.customer)+(s.district?' · '+esc(s.district):'')+' · '+kgFmt(s.kg)+' kg · กำหนดส่ง '+esc(fmtDate(s.deliveryDate))+'</span></summary>'
+      +'<iframe loading="lazy" src="presale-configurator-v2.html?viewPS='+encodeURIComponent(psNo)+'&tms=1&dept=Transport&embed=1"></iframe>';
+    body.appendChild(sec);
+  });
+  sel.forEach((psNo,i)=>{ const el=body.querySelector('[data-ps="'+psNo+'"] .dr-no'); if(el) el.textContent=(i+1); });
+  document.getElementById('drSub').textContent=sel.length+' ใบ · รวม '+num(orders.filter(o=>selected.has(o.psNo)).reduce((t,o)=>t+o.summary.kg,0))+' kg';
+  document.getElementById('drCnt').textContent=sel.length;
+  dr.classList.toggle('hidden',!drawerOpen); btn.classList.toggle('hidden',drawerOpen);
+  document.body.classList.toggle('with-drawer',drawerOpen);
+}
+function toggleSel(psNo,on,el){ if(on) selected.add(psNo); else selected.delete(psNo); if(el&&el.closest('tr')) el.closest('tr').classList.toggle('sel',on); updateBar(); drawerOpen=true; syncDrawer(); }
 function updateBar(){
   const t=document.getElementById('selTxt'); if(!t) return;
   const orders=get(K.orders,[]).filter(o=>selected.has(o.psNo));
@@ -317,7 +362,8 @@ function nextShipNo(){
 }
 function listOpts(id,arr){ return `<datalist id="${id}">${arr.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`; }
 function openShipDialog(){
-  const orders=get(K.orders,[]).filter(o=>selected.has(o.psNo)&&o.status==='open');
+  const allOrders=get(K.orders,[]);
+  const orders=[...selected].map(n=>allOrders.find(o=>o.psNo===n)).filter(o=>o&&o.status==='open');   // เรียงตามลำดับที่ติ๊ก
   if(!orders.length) return;
   const kg=orders.reduce((s,o)=>s+o.summary.kg,0);
   const dates=orders.map(o=>o.summary.deliveryDate).filter(Boolean).sort();
@@ -342,7 +388,7 @@ function createShipment(){
   if(!plate||!driver){ alert('กรุณาระบุทะเบียนรถและคนขับ'); return; }
   const sel=[...selected];
   let orders=get(K.orders,[]), ships=get(K.ships,[]);
-  const picks=orders.filter(o=>sel.includes(o.psNo)&&o.status==='open');
+  const picks=sel.map(n=>orders.find(o=>o.psNo===n)).filter(o=>o&&o.status==='open');   // เรียงตามลำดับที่ติ๊ก = ลำดับจุดส่ง
   if(!picks.length){ closeModal(); return; }
   const shipNo=nextShipNo();
   ships.push({shipNo,psNos:picks.map(o=>o.psNo),plate,driver,tripDate:document.getElementById('shDate').value,note:document.getElementById('shNote').value.trim(),createdAt:new Date().toISOString(),createdBy:sessionUser,status:'planned'});

@@ -173,6 +173,14 @@ select,input[type=text],input[type=number],input[type=time],textarea{width:100%;
 .do-own b{font-size:14px;color:#0B3C5D}
 .do-own-k{color:#555;font-weight:600}
 .do-sumrow td{font-weight:600;font-size:13px;padding:6px 8px;border-bottom:1px solid #111;word-break:break-all}
+body.embed-view header,body.embed-view .progress-wrap,body.embed-view .actions,body.embed-view .side,body.embed-view .qn-bar,body.embed-view .panel-head,body.embed-view .section-title,body.embed-view #hoTabs,body.embed-view #handoverTitle,body.embed-view #handoverMeta,body.embed-view #commitGate,body.embed-view footer{display:none!important}
+body.embed-view{background:#fff}
+body.embed-view main{width:100%!important;max-width:none!important;margin:0!important;display:block}
+body.embed-view .panel{box-shadow:none;border:0;border-radius:0}
+body.embed-view .panel-body{padding:10px!important}
+body.embed-view .handover{border:0;background:#fff;padding:4px}
+body.embed-view .ho-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.embed-view .ho-info,body.embed-view .ho-fgrid{grid-template-columns:1fr}
 .do-docno{font-size:13px;font-weight:600}.do-sub{font-size:10.5px;color:#444;margin-top:2px}
 .do-note{border:1.5px solid #111;border-top:0;padding:8px 10px;font-size:12.5px}
 .do-cond{border:1.5px solid #111;border-top:0;padding:8px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 14px;font-size:12px}
@@ -2801,13 +2809,13 @@ function loadPSHandoverView(ps,dept){
  document.getElementById('customer').value=ps.customer||'';
  document.getElementById('sales').value=[...new Set(sos.map(s=>s.sales).filter(Boolean))].join(', ');
  document.body.classList.add('view-mode','handover-view');
- handoverRec=sos[0]; handoverDO=ps; handoverDepts=['Warehouse','Transport','Billing'];
+ handoverRec=sos[0]; handoverDO=ps; handoverDepts=window.__TMS_SO?['Transport']:['Warehouse','Transport','Billing'];
  handoverTab=handoverDepts.includes(dept)?dept:'Warehouse';
  showScreen(9);
  const title=document.getElementById('handoverTitle'); if(title) title.textContent='Picking Slip Handover (ใบงาน)';
  const gate=document.getElementById('commitGate'); if(gate) gate.style.display='none';
  const bar=document.getElementById('handoverViewBar');
- if(bar){
+ if(bar&&!window.__TMS_SO){
   bar.style.display='flex';
   bar.innerHTML=`<div class="qn-info">🔒 มุมมองอ่านอย่างเดียว — จาก Picking Slip <strong>${esc(ps.psNo)}</strong> (รวม ${(ps.doNos||[]).length} DO · ${sos.length} S/O)</div><div style="display:flex;gap:8px"><button onclick="window.print()">🖨️ Print</button><a href="sales-portal.html" style="display:inline-flex;align-items:center;padding:7px 14px;border:1px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:700;text-decoration:none">← กลับไป Dashboard</a></div>`;
  }
@@ -2826,6 +2834,7 @@ function tryLoadPSViewMode(){
  } else rec=TMTStore.pickingSlips.get(psNo);
  const app=document.querySelector('.app');
  document.body.classList.add('view-mode');
+ if(params.get('embed')==='1') document.body.classList.add('embed-view');
  if(!rec){
   app.innerHTML=`<div style="padding:60px 24px;text-align:center;color:var(--review)">ไม่พบ Picking Slip เลขที่ ${esc(psNo)}<br><a href="sales-portal.html" style="color:var(--blue)">← กลับไป Dashboard</a></div>`;
   return true;

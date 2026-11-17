@@ -36,6 +36,28 @@
       return write(list) ? msg : null;
     },
     list: read,
+    // นำเข้า Picking Slip ที่มีอยู่แล้วใน V2 แต่ยังไม่เคยส่งเข้า TMS (สร้างก่อนมีการเชื่อมระบบ) — ส่งเป็นข้อความ PS_CREATE ตามปกติ
+    // คืนจำนวนใบที่นำเข้า (ใช้ข้อมูลใน localStorage ของ V2 — โหมด Firestore ไม่รองรับ)
+    backfillFromV2: function () {
+      var psList = [], sos = [];
+      try {
+        psList = JSON.parse(localStorage.getItem('tmt_picking_slips') || '[]');
+        sos = JSON.parse(localStorage.getItem('tmt_sales_orders') || '[]');
+      } catch (e) { return 0; }
+      var n = 0;
+      psList.forEach(function (ps) {
+        if (!ps || !ps.psNo || global.TMSIF.isSent(ps.psNo)) return;
+        var need = {};
+        (ps.lines || []).forEach(function (l) { need[l.soNo] = 1; });
+        var related = sos.filter(function (s) { return need[s.soNo]; }).map(function (s) {
+          var c = JSON.parse(JSON.stringify(s));
+          if (c.poAttachment) c.poAttachment = { name: c.poAttachment.name, type: c.poAttachment.type, size: c.poAttachment.size };
+          return c;
+        });
+        if (global.TMSIF.send('PS_CREATE', { ps: ps, salesOrders: related }, 'V2 (นำเข้า Picking Slip เดิม)')) n++;
+      });
+      return n;
+    },
     // true ถ้า Picking Slip นี้เคยถูกส่งและยังไม่ถูกยกเลิก
     isSent: function (psNo) {
       var sent = false;

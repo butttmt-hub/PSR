@@ -136,7 +136,7 @@ try{ sessionUser=sessionStorage.getItem(K.user); }catch(e){}
 /* ---------- รับข้อมูลจาก V2 (interface) ---------- */
 function summarize(ps){
   const kg=(ps.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0), pcs=(ps.lines||[]).reduce((s,l)=>s+l.qty,0);
-  return {customer:ps.customer||'-',shipTo:`${ps.shipToCode?ps.shipToCode+' ':''}${ps.shipToName||String(ps.shipTo||'-').split(' ต.')[0]}`,
+  return {customer:ps.customer||'',shipTo:ps.shipToName?`${ps.shipToCode?ps.shipToCode+' ':''}${ps.shipToName}`:'',
     shipName:ps.shipToName||'',district:ps.shipToDistrict||'',province:ps.shipToProvince||'',
     deliveryDate:ps.deliveryDate||'',doNos:(ps.doNos||[]).slice(),lines:(ps.lines||[]).length,pcs,kg};
 }
@@ -186,8 +186,9 @@ function showApp(){
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('whoName').textContent='👤 '+sessionUser;
-  processInterface(); render();
+  TMSIF.backfillFromV2(); processInterface(); render();
 }
+function syncFromV2(){ const n=TMSIF.backfillFromV2(); processInterface(); render(); alert(n?`นำเข้า Picking Slip เดิมจาก V2 เพิ่ม ${n} ใบ`:'ไม่มี Picking Slip ใหม่ให้นำเข้า (ทุกใบใน V2 อยู่ใน TMS แล้ว)'); }
 function setTab(t){ tab=t; selected=new Set(); render(); }
 function setFilter(f){ filter=f; selected=new Set(); render(); }
 
@@ -215,7 +216,7 @@ const MAP_SVG='<svg width="19" height="16" viewBox="0 0 19 16" fill="none"><rect
 const kgFmt=n=>(+n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 function colVal(o,k){
   const s=o.summary;
-  return k==='psNo'?o.psNo:k==='sold'?s.customer:k==='ship'?(s.shipName||s.shipTo):k==='district'?(s.district||''):k==='province'?(s.province||''):
+  return k==='psNo'?o.psNo:k==='sold'?s.customer:k==='ship'?(s.shipName||''):k==='district'?(s.district||''):k==='province'?(s.province||''):
     k==='weight'?s.kg:k==='date'?(s.deliveryDate||''):k==='status'?o.status:k==='map'?`${s.province||''} ${s.district||''}`:'';
 }
 function inboxList(orders){
@@ -231,7 +232,7 @@ function inboxList(orders){
   });
   return list;
 }
-function mapUrl(s){ return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([s.shipName||s.shipTo,s.district,s.province].filter(x=>x&&x!=='-').join(' ')); }
+function mapUrl(s){ return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent([s.shipName||s.customer,s.district,s.province].filter(x=>x&&x!=='-').join(' ')); }
 function inboxRowsHtml(list){
   if(!list.length) return `<tr><td colspan="12" class="empty">ไม่พบรายการ</td></tr>`;
   return list.map(o=>{
@@ -240,7 +241,7 @@ function inboxRowsHtml(list){
      <td class="c">${isOpen?`<input type="checkbox" ${selected.has(o.psNo)?'checked':''} onchange="toggleSel('${esc(o.psNo)}',this.checked,this)">`:''}</td>
      <td class="c"><a href="${esc(mapUrl(s))}" target="_blank" rel="noopener" title="เปิดแผนที่">${MAP_SVG}</a></td>
      <td><a class="plink" href="#" onclick="event.preventDefault();viewPS('${esc(o.psNo)}')">${esc(o.psNo)}</a><div class="sub">DO: ${esc(s.doNos.join(', '))}</div></td>
-     <td>${esc(s.customer)}</td><td>${esc(s.shipName||s.shipTo)}</td><td>${esc(s.district||'-')}</td><td>${esc(s.province||'-')}</td>
+     <td>${esc(s.customer)}</td><td>${esc(s.shipName||'')}</td><td>${esc(s.district||'')}</td><td>${esc(s.province||'')}</td>
      <td class="n-r">${kgFmt(s.kg)}</td>
      <td>${esc(fmtDate(s.deliveryDate))}</td>
      <td>${isOpen?'<span class="badge open">รอจัดรถ</span>':`<span class="badge done">จัดรถแล้ว · ${esc(o.shipNo)}</span>`}</td>
@@ -262,6 +263,7 @@ function renderInbox(orders,ships){
   const th=(k,label,cls)=>`<th class="srt-h ${cls||''}" onclick="setSort('${k}')">${label} ${arrow(k)}</th>`;
   const fl=(k,ph)=>`<th class="flt"><input placeholder="${ph}" value="${esc(colFilter[k])}" oninput="onColFilter('${k}',this.value)"></th>`;
   return `${eventsHtml()}
+   <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn secondary small" onclick="syncFromV2()" title="ดึง Picking Slip ที่มีอยู่แล้วใน V2 แต่ยังไม่อยู่ใน TMS">🔄 ดึง Picking Slip เดิมจาก V2</button></div>
    <div class="cards">${stat('open',open.length,'รอจัดรถ')}${stat('assigned',asg.length,'จัดรถแล้ว')}${stat('all',orders.length,'ทั้งหมดที่รับเข้า')}</div>
    <div class="panel"><table class="tms">
     <thead>
@@ -291,7 +293,7 @@ function renderShips(orders,ships){
        <div><button class="btn secondary small" onclick="openShipEdit('${esc(s.shipNo)}')">แก้ไขรถ/คนขับ</button> <button class="btn danger small" onclick="deleteShip('${esc(s.shipNo)}')">🗑 ลบ Shipment</button></div></div>
       <div class="meta"><span>ทะเบียนรถ: <b>${esc(s.plate)}</b></span><span>คนขับ: <b>${esc(s.driver)}</b></span><span>วันที่วิ่ง: <b>${esc(fmtDate(s.tripDate))}</b></span><span>น้ำหนักรวม: <b>${num(kg)} kg</b></span><span>${ps.length} Picking Slip</span>${s.note?`<span>หมายเหตุ: ${esc(s.note)}</span>`:''}<span>สร้างโดย ${esc(s.createdBy||'-')} · ${esc(fmtDT(s.createdAt))}</span></div>
       <table><thead><tr><th>ลำดับจุดส่ง</th><th>Picking Slip / DO</th><th>ลูกค้า</th><th>Ship-to</th><th>District</th><th>Province</th><th>กำหนดส่ง</th><th class="n-r">kg</th><th></th></tr></thead><tbody>
-      ${ps.map((o,i)=>`<tr><td>${i+1}</td><td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(o.summary.doNos.join(', '))}</div></td><td>${esc(o.summary.customer)}</td><td>${esc(o.summary.shipTo)}</td><td>${esc(o.summary.district||'-')}</td><td>${esc(o.summary.province||'-')}</td><td>${esc(fmtDate(o.summary.deliveryDate))}</td><td class="n-r">${num(o.summary.kg)}</td>
+      ${ps.map((o,i)=>`<tr><td>${i+1}</td><td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(o.summary.doNos.join(', '))}</div></td><td>${esc(o.summary.customer)}</td><td>${esc(o.summary.shipName||'')}</td><td>${esc(o.summary.district||'')}</td><td>${esc(o.summary.province||'')}</td><td>${esc(fmtDate(o.summary.deliveryDate))}</td><td class="n-r">${num(o.summary.kg)}</td>
         <td><button class="btn secondary small" onclick="viewPS('${esc(o.psNo)}')">📄 ดูใบ</button> <button class="btn danger small" onclick="removeFromShip('${esc(s.shipNo)}','${esc(o.psNo)}')" title="เอาใบนี้ออกจาก Shipment (กลับไปรอจัดรถ)">✕ เอาออก</button></td></tr>`).join('')}
       </tbody></table></div>`;
   }).join('');
@@ -324,7 +326,7 @@ function openShipDialog(){
   document.getElementById('modal').innerHTML=`<div class="md-h"><h3>สร้าง Shipment</h3><button class="btn secondary small" onclick="closeModal()">✕</button></div>
    <div class="md-b">
     <div style="font-size:12.5px;line-height:1.7;background:var(--brand2);border-radius:9px;padding:9px 12px">
-     <b>${orders.length} Picking Slip</b> · ${num(kg)} kg<br>${orders.map(o=>`${esc(o.psNo)} (${esc(o.summary.shipTo)})`).join('<br>')}
+     <b>${orders.length} Picking Slip</b> · ${num(kg)} kg<br>${orders.map(o=>`${esc(o.psNo)}${o.summary.shipName?` (${esc(o.summary.shipName)})`:''}`).join('<br>')}
      ${custs.size>1?'<br><span style="color:var(--warn)">ℹ️ หลายลูกค้าในรถคันเดียว (วิ่งหลายจุดส่ง)</span>':''}${diffDate?'<br><span style="color:var(--warn)">ℹ️ กำหนดส่งของใบที่เลือกไม่ตรงกัน — ตรวจสอบวันที่วิ่ง</span>':''}
     </div>
     <label>ทะเบียนรถ *</label><input id="shPlate" list="dlTrucks" placeholder="เลือกหรือพิมพ์ทะเบียน">${listOpts('dlTrucks',TRUCKS)}

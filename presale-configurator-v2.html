@@ -2848,6 +2848,11 @@ function tryLoadPSViewMode(){
    const o=JSON.parse(localStorage.getItem('tms_orders')||'[]').find(x=>x.psNo===psNo);
    if(o){ rec=o.payload.ps; window.__TMS_SO={}; (o.payload.salesOrders||[]).forEach(s=>{ window.__TMS_SO[s.soNo]=s; }); }
   }catch(e){}
+ } else if(params.get('wms')==='1'){
+  try{
+   const sh=Object.values(JSON.parse(localStorage.getItem('wms_shipments')||'{}')).find(x=>x.psData&&x.psData[psNo]);
+   if(sh){ const pd=sh.psData[psNo]; rec=pd.ps; window.__TMS_SO={}; (pd.salesOrders||[]).forEach(s=>{ window.__TMS_SO[s.soNo]=s; }); }
+  }catch(e){}
  } else rec=TMTStore.pickingSlips.get(psNo);
  const app=document.querySelector('.app');
  document.body.classList.add('view-mode');

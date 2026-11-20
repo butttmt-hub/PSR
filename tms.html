@@ -7,13 +7,16 @@
 <style>
 :root{--bg:#F3F6FA;--card:#fff;--ink:#14263B;--muted:#5B7083;--line:#D5E0EB;--brand:#1D4F91;--brand2:#E8F0FA;--warn:#B45309;--warnbg:#FFF4E5;--bad:#B42318;--ok:#14632E;--okbg:#E7F6EC}
 *{box-sizing:border-box}
-body{margin:0;font-family:"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px}
+body{margin:0;font-family:"Segoe UI",Tahoma,sans-serif;color:var(--ink);font-size:13.5px;min-height:100vh;background:linear-gradient(rgba(236,242,249,.62),rgba(236,242,249,.82)),url('tms-bg.webp') center top/cover fixed no-repeat #1B2A3D}
+body.is-login{background:linear-gradient(rgba(6,14,26,.12),rgba(6,14,26,.35)),url('tms-bg.webp') center/cover fixed no-repeat #0F1B2B}
+.cards .stat,.panel,.seq,.ship,.bar,.event{box-shadow:0 2px 12px rgba(10,20,35,.14)}
+#inboxCount{display:inline-block;background:rgba(255,255,255,.88);padding:2px 10px;border-radius:6px}
 .hidden{display:none!important}
 button{font-family:inherit;cursor:pointer}
 input,select{font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
 /* login */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 28px rgba(20,38,59,.08)}
+.login-card{background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:14px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 28px rgba(20,38,59,.08)}
 .login-card h1{margin:0 0 4px;font-size:22px;color:var(--brand)}
 .login-card p{margin:0 0 18px;color:var(--muted);font-size:12.5px}
 .login-card label{display:block;font-weight:600;font-size:12px;margin:12px 0 4px}
@@ -31,7 +34,7 @@ header h1{margin:0;font-size:17px}
 header small{display:block;font-weight:400;font-size:11.5px;opacity:.85}
 header .who{display:flex;align-items:center;gap:12px;font-size:12.5px}
 header button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;padding:5px 12px}
-nav{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;display:flex;gap:4px}
+nav{background:rgba(255,255,255,.95);border-bottom:1px solid var(--line);padding:0 22px;display:flex;gap:4px}
 nav button{border:0;background:none;padding:12px 16px;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
 nav button.active{color:var(--brand);border-bottom-color:var(--brand)}
 nav .cnt{display:inline-block;background:var(--brand2);color:var(--brand);border-radius:999px;font-size:11px;padding:1px 8px;margin-left:6px}
@@ -156,6 +159,7 @@ iframe{border:0;width:100%;height:100%;background:#fff}
 <div id="overlay" class="ov hidden" onclick="if(event.target===this) closeModal()"><div class="md" id="modal"></div></div>
 
 <script src="tms-interface.js"></script>
+<script src="wms-interface.js"></script>
 <script>
 /* ===== TMS — ที่เก็บข้อมูลของตัวเอง (แยกจาก V2) =====
    tms_orders    : Picking Slip ที่รับเข้ามา (เก็บ payload ทั้งใบ เพื่อเปิดดูฟอร์มเหมือนที่ Service เห็น)
@@ -176,6 +180,13 @@ const num=n=>(+n||0).toLocaleString('en-US',{maximumFractionDigits:0});
 let tab='inbox', filter='open', selected=new Set(), sessionUser=null, flash='';
 try{ sessionUser=sessionStorage.getItem(K.user); }catch(e){}
 
+/* ---------- ส่ง Shipment เข้า WMS (interface TMS → WMS) ---------- */
+function wmsSync(shipNo,by){
+  const ship=get(K.ships,[]).find(s=>s.shipNo===shipNo); if(!ship) return;
+  WMSIF.send('SHIPMENT_UPSERT',WMSIF.buildShipmentPayload(ship,get(K.orders,[])),by||sessionUser||'');
+}
+function wmsDelete(shipNo){ WMSIF.send('SHIPMENT_DELETE',{shipNo},sessionUser||''); }
+
 /* ---------- รับข้อมูลจาก V2 (interface) ---------- */
 function summarize(ps){
   const kg=(ps.lines||[]).reduce((s,l)=>s+l.qty*l.weight,0), pcs=(ps.lines||[]).reduce((s,l)=>s+l.qty,0);
@@ -189,6 +200,7 @@ function processInterface(){
   const msgs=TMSIF.list().filter(m=>!done.has(m.id));
   if(!msgs.length) return false;
   let orders=get(K.orders,[]), ships=get(K.ships,[]);
+  const ships0=JSON.parse(JSON.stringify(ships));
   msgs.forEach(m=>{
     if(m.type==='PS_CREATE' && m.payload && m.payload.ps){
       const ps=m.payload.ps, old=orders.find(o=>o.psNo===ps.psNo);
@@ -211,6 +223,7 @@ function processInterface(){
     done.add(m.id);
   });
   set(K.orders,orders); set(K.ships,ships); set(K.done,[...done].slice(-600));
+  ships0.forEach(s0=>{ const s1=ships.find(x=>x.shipNo===s0.shipNo); if(!s1) wmsDelete(s0.shipNo); else if(JSON.stringify(s1.psNos)!==JSON.stringify(s0.psNos)) wmsSync(s0.shipNo,'TMS'); });
   return true;
 }
 
@@ -222,10 +235,11 @@ function login(){
   sessionUser=ok.u; try{ sessionStorage.setItem(K.user,ok.u); }catch(e){}
   showApp();
 }
-function logout(){ sessionUser=null; selected=new Set(); syncDrawer(); try{ sessionStorage.removeItem(K.user); }catch(e){} document.getElementById('app').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); }
+function logout(){ document.body.classList.add('is-login'); sessionUser=null; selected=new Set(); syncDrawer(); try{ sessionStorage.removeItem(K.user); }catch(e){} document.getElementById('app').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); }
 document.getElementById('lgPass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
 document.getElementById('lgUser').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('lgPass').focus(); });
 function showApp(){
+  document.body.classList.remove('is-login');
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('whoName').textContent='👤 '+sessionUser;
@@ -489,6 +503,7 @@ function createShipment(){
   ships.push({shipNo,psNos:picks.map(o=>o.psNo),plate,driver,tripDate:document.getElementById('shDate').value,note:document.getElementById('shNote').value.trim(),createdAt:new Date().toISOString(),createdBy:sessionUser,status:'planned'});
   orders=orders.map(o=>picks.some(p=>p.psNo===o.psNo)?{...o,status:'assigned',shipNo}:o);
   set(K.orders,orders); set(K.ships,ships);
+  wmsSync(shipNo);   // ส่งเข้า WMS
   selected=new Set(); closeModal(); filter='open'; flash=`✅ สร้าง Shipment ${shipNo} แล้ว (${picks.length} Picking Slip · รถ ${plate}) — ใบที่จัดรถแล้วย้ายไปอยู่ที่แท็บ Shipments`; render();
 }
 function openShipEdit(shipNo){
@@ -508,6 +523,7 @@ function saveShipEdit(shipNo){
   const plate=document.getElementById('shPlate').value.trim(), driver=document.getElementById('shDriver').value.trim();
   if(!plate||!driver){ alert('กรุณาระบุทะเบียนรถและคนขับ'); return; }
   set(K.ships,get(K.ships,[]).map(s=>s.shipNo===shipNo?{...s,plate,driver,tripDate:document.getElementById('shDate').value,note:document.getElementById('shNote').value.trim()}:s));
+  wmsSync(shipNo);   // ส่งข้อมูลที่แก้เข้า WMS
   closeModal(); render();
 }
 function releaseOrders(psNos){
@@ -517,18 +533,20 @@ function removeFromShip(shipNo,psNo){
   if(!confirm(`เอา Picking Slip ${psNo} ออกจาก Shipment ${shipNo} ?\nใบนี้จะกลับไปอยู่สถานะ "รอจัดรถ"`)) return;
   let ships=get(K.ships,[]);
   ships=ships.map(s=>s.shipNo===shipNo?{...s,psNos:s.psNos.filter(n=>n!==psNo)}:s).filter(s=>s.psNos.length);
-  set(K.ships,ships); releaseOrders([psNo]); render();
+  set(K.ships,ships); releaseOrders([psNo]);
+  if(ships.some(s=>s.shipNo===shipNo)) wmsSync(shipNo); else wmsDelete(shipNo);
+  render();
 }
 function deleteShip(shipNo){
   const s=get(K.ships,[]).find(x=>x.shipNo===shipNo); if(!s) return;
   if(!confirm(`ลบ Shipment ${shipNo} ?\nPicking Slip ทั้ง ${s.psNos.length} ใบจะกลับไปอยู่สถานะ "รอจัดรถ"`)) return;
-  set(K.ships,get(K.ships,[]).filter(x=>x.shipNo!==shipNo)); releaseOrders(s.psNos); render();
+  set(K.ships,get(K.ships,[]).filter(x=>x.shipNo!==shipNo)); releaseOrders(s.psNos); wmsDelete(shipNo); render();
 }
 
 /* ---------- เริ่มระบบ + ฟังข้อความใหม่จาก V2 ---------- */
 TMSIF.onChange(()=>{ if(!sessionUser) return; processInterface(); render(); });
 window.addEventListener('storage',e=>{ if(sessionUser&&(e.key===K.orders||e.key===K.ships||e.key===K.events)) render(); });
-if(sessionUser) showApp();
+if(sessionUser) showApp(); else document.body.classList.add('is-login');
 </script>
 </body>
 </html>

@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WMS — Warehouse Management System (Prototype)</title>
+<style>
+:root{--blue:#0F5A8F;--blue2:#0C4B78;--ink:#222;--muted:#6A7580;--line:#DADFE4;--teal:#2FA4C2;--ok:#2F8F46;--bg:#EEF0F2}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Segoe UI",Tahoma,sans-serif;font-size:14px;color:var(--ink);min-height:100vh;background:linear-gradient(rgba(255,255,255,.58),rgba(255,255,255,.70)),url('wms-bg.jpg') center top/cover fixed no-repeat #DDE3E8}
+body.is-login{background:linear-gradient(rgba(10,25,40,.18),rgba(10,25,40,.30)),url('wms-bg.jpg') center/cover fixed no-repeat #2A3744}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid #C9CFD5;border-radius:3px;background:#fff}
+a{color:#1A73B8;text-decoration:none}
+.shell{max-width:1500px;margin:0 auto;padding:0 36px 30px}
+/* login */
+.lg{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.lg-c{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:6px;padding:28px;width:100%;max-width:380px;box-shadow:0 8px 26px rgba(0,0,0,.08)}
+.lg-c h1{margin:10px 0 2px;font-size:22px;color:var(--blue)}
+.lg-c p{margin:0 0 14px;color:var(--muted);font-size:12.5px}
+.lg-c label{display:block;font-weight:700;font-size:12px;margin:12px 0 4px}
+.lg-c input{width:100%}
+.btn{border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:3px;padding:8px 16px;font-weight:700;font-size:13px}
+.btn.teal{background:var(--teal);border-color:#2792AE}
+.btn.sec{background:#fff;color:var(--blue)}
+.btn.small{padding:4px 10px;font-size:12px}
+.lg-hint{margin-top:14px;font-size:11.5px;color:var(--muted);background:#EEF4F8;border-radius:4px;padding:8px 10px}
+.lg-err{color:#B42318;font-size:12px;margin-top:8px}
+/* header (ตามหน้า WMS จริง) */
+.top{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 18px;margin-top:14px;background:rgba(255,255,255,.88);border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,.12);backdrop-filter:blur(2px)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{height:54px}
+.brand b{font-size:15px;color:#1B3552;display:block}
+.brand small{font-size:10.5px;color:#1B3552;font-weight:700}
+.who{text-align:right}
+.who .u{font-size:19px;font-weight:700;color:#2A2F35}
+.who .lk{margin-top:8px;display:flex;gap:22px;justify-content:flex-end;font-size:14px}
+.nav{background:var(--blue);display:flex;border-radius:3px;overflow:hidden}
+.nav button{border:0;background:none;color:#fff;font-size:15px;padding:14px 22px;border-right:1px solid rgba(255,255,255,.18)}
+.nav button.act{background:var(--blue2);font-weight:700}
+.nav button.dis{opacity:.85}
+h2.pt{font-size:28px;font-weight:400;margin:14px 0 10px;color:#1D2530;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.card{background:rgba(255,255,255,.96);border:1px solid var(--line);padding:14px 12px;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,.10)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.date{display:flex;align-items:stretch}
+.date input{border-radius:3px 0 0 3px;min-width:210px}
+.date button{border:1px solid #C9CFD5;border-left:0;background:#F3F4F5;border-radius:0 3px 3px 0;padding:0 10px}
+.badge-ok{background:var(--ok);color:#fff;border-radius:3px;font-size:12px;font-weight:700;padding:3px 8px;display:inline-block}
+.tbl-w{border:1px solid var(--line);margin-top:14px;max-height:68vh;overflow:auto;background:#fff}
+table{border-collapse:collapse;width:100%}
+th{background:#F1F2F3;text-align:left;font-weight:400;font-size:14px;padding:9px 10px;border:1px solid #D5D9DD;position:sticky;top:0;z-index:1;white-space:nowrap}
+th .fn{float:right;border:0;background:none;color:#555;font-size:13px;padding:0 0 0 8px}
+th .fn.on{color:#E8890C}
+th.c,td.c{text-align:center}
+tr.frow th{background:#FAFAFA;padding:5px 6px;top:38px}
+tr.frow input{width:100%;padding:5px 7px;font-size:12.5px}
+td{padding:8px 10px;border-bottom:1px solid #EEF0F2;vertical-align:top}
+tr.main:nth-child(4n+1) td,tr.main:nth-child(4n+3) td{background:#fff}
+tr.main td{cursor:pointer}
+tr.main:hover td{background:#F3F8FC}
+.arr{display:inline-block;width:14px;color:#555;transition:transform .12s}
+tr.open .arr{transform:rotate(90deg)}
+tr.det td{background:#F8FAFB;padding:12px 16px 16px 44px;border-bottom:1px solid #DADFE4}
+.meta{display:flex;flex-wrap:wrap;gap:6px 24px;color:var(--muted);margin-bottom:10px;font-size:13px}
+.meta b{color:var(--ink)}
+table.sub{margin-top:4px}
+table.sub th{position:static;font-size:12.5px;background:#EDF1F4;padding:6px 8px}
+table.sub td{padding:6px 8px;font-size:13px;border-bottom:1px solid #E7ECF0;background:#fff!important}
+table.lin th{background:#F6F8FA;font-size:12px;padding:4px 8px}
+table.lin td{font-size:12.5px;padding:4px 8px;color:#444}
+.n-r{text-align:right;white-space:nowrap}
+.empty{padding:34px;text-align:center;color:var(--muted)}
+.foot{margin-top:8px;color:var(--muted);font-size:12.5px}
+.ph{padding:60px;text-align:center;color:var(--muted)}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+.md{background:#fff;border-radius:6px;width:100%;max-width:1100px;height:92vh;display:flex;flex-direction:column}
+.md-h{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.md-h h3{margin:0;font-size:15px}
+.md iframe{border:0;flex:1;width:100%}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="lg">
+  <div class="lg-c">
+    <img src="tmt-logo.png" alt="TMT" style="height:46px">
+    <h1>WMS</h1>
+    <p>Warehouse Management System — ระบบจัดการคลังสินค้า (Prototype จำลองเป็นระบบแยก อยู่ในวงเดียวกับ TMS)</p>
+    <label for="lgUser">Username</label><input id="lgUser" autocomplete="off">
+    <label for="lgPass">Password</label><input id="lgPass" type="password">
+    <div id="lgErr" class="lg-err hidden">Username หรือ Password ไม่ถูกต้อง</div>
+    <p style="margin-top:16px"><button class="btn" style="width:100%" onclick="login()">เข้าสู่ระบบ</button></p>
+    <div class="lg-hint">Prototype demo — ผู้ใช้ WMS: <b>WMS</b> / <b>WM123</b></div>
+  </div>
+</div>
+
+<div id="app" class="shell hidden">
+  <div class="top">
+    <div class="brand"><img src="tmt-logo.png" alt="TMT"><div><b>บริษัท ทีเอ็มที สตีล จำกัด (มหาชน)</b><small>TMT STEEL PUBLIC COMPANY LIMITED</small></div></div>
+    <div class="who"><div class="u">👤 Logged in as <span id="whoName"></span></div>
+      <div class="lk"><a href="#" onclick="event.preventDefault();alert('Prototype: ยังไม่เปิดใช้การเปลี่ยนรหัสผ่าน')">✎ Change Password</a><a href="#" onclick="event.preventDefault();logout()">Logout</a></div></div>
+  </div>
+  <div class="nav" id="nav"></div>
+  <h2 class="pt" id="pageTitle">Shipment</h2>
+  <div id="page"></div>
+</div>
+
+<div id="overlay" class="ov hidden" onclick="if(event.target===this) closeModal()"><div class="md" id="modal"></div></div>
+
+<script src="wms-interface.js"></script>
+<script>
+/* ===== WMS — ที่เก็บข้อมูลของตัวเอง (แยกจาก TMS) =====
+   wms_shipments : Shipment ที่รับมาจาก TMS (เก็บ payload เต็ม: หัว Shipment + จุดส่ง + รายการสินค้า + ข้อมูลใบ Picking Slip)
+   wms_processed : id ข้อความจาก TMS ที่ประมวลผลแล้ว
+   wms_last      : การโหลดข้อมูลล่าสุด (แสดงในป้ายสีเขียว) */
+const K={ships:'wms_shipments',done:'wms_processed',last:'wms_last',user:'wms_session_user'};
+const USERS=[{u:'WMS',p:'WM123'}];
+const MENUS=['Shipment','Weight','Center','Store','Configure','Report','Other','Billing','Milk Run','Mobile','User'];
+const get=(k,d)=>{ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } };
+const set=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ alert('พื้นที่จัดเก็บข้อมูลเต็ม'); return false; } };
+const esc=x=>String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const p2=n=>String(n).padStart(2,'0');
+const isoToday=()=>{ const d=new Date(); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; };
+const fmtDMY=iso=>{ if(!iso) return '-'; const d=new Date(iso+'T00:00:00'); return isNaN(d)?'-':`${p2(d.getDate())}-${MON[d.getMonth()]}-${d.getFullYear()}`; };
+const fmtDT=iso=>{ const d=new Date(iso); return isNaN(d)?'-':`${p2(d.getDate())} ${MON[d.getMonth()]} ${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}`; };
+const kgFmt=n=>(+n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+let sessionUser=null, page='Shipment', dateSel=isoToday(), allDays=false, openSet=new Set(), allOpen=false, filterRow=false;
+const colF={time:'',end:'',code:'',type:'',kind:'',ext:'',driver:''};
+try{ sessionUser=sessionStorage.getItem(K.user); }catch(e){}
+
+/* ---------- รับข้อมูลจาก TMS ---------- */
+function processInterface(){
+  const done=new Set(get(K.done,[]));
+  const msgs=WMSIF.list().filter(m=>!done.has(m.id));
+  if(!msgs.length) return false;
+  const ships=get(K.ships,{}); let last=null;
+  msgs.forEach(m=>{
+    if(m.type==='SHIPMENT_UPSERT'&&m.payload&&m.payload.shipment){
+      const no=m.payload.shipment.shipNo;
+      ships[no]={...m.payload,receivedAt:m.sentAt}; last={ref:no,at:m.sentAt};
+    }
+    if(m.type==='SHIPMENT_DELETE'&&m.payload){ delete ships[m.payload.shipNo]; last={ref:m.payload.shipNo,at:m.sentAt}; }
+    done.add(m.id);
+  });
+  set(K.ships,ships); set(K.done,[...done].slice(-600)); if(last) set(K.last,last);
+  return true;
+}
+
+/* ---------- login ---------- */
+function login(){
+  const u=document.getElementById('lgUser').value.trim(), p=document.getElementById('lgPass').value;
+  const ok=USERS.find(x=>x.u===u&&x.p===p);
+  if(!ok){ document.getElementById('lgErr').classList.remove('hidden'); return; }
+  sessionUser=ok.u; try{ sessionStorage.setItem(K.user,ok.u); }catch(e){}
+  showApp();
+}
+function logout(){ document.body.classList.add('is-login'); sessionUser=null; try{ sessionStorage.removeItem(K.user); }catch(e){} document.getElementById('app').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); }
+document.getElementById('lgPass').addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
+document.getElementById('lgUser').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('lgPass').focus(); });
+function showApp(){
+  document.body.classList.remove('is-login');
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('whoName').textContent=sessionUser;
+  WMSIF.backfillFromTMS(); processInterface(); render();
+}
+function setPage(p){ page=p; render(); }
+
+/* ---------- แสดงผล ---------- */
+function render(){
+  document.getElementById('nav').innerHTML=MENUS.map(m=>`<button class="${m===page?'act':(m==='Shipment'?'':'dis')}" onclick="setPage('${m}')">${m}</button>`).join('');
+  document.getElementById('pageTitle').textContent=page;
+  document.getElementById('page').innerHTML=page==='Shipment'?shipmentPage():`<div class="card"><div class="ph">เมนู "${esc(page)}" ยังไม่เปิดใช้ใน Prototype นี้ (ตอนนี้ทำเฉพาะหน้า Shipment)</div></div>`;
+  if(page==='Shipment') renderRows();
+}
+function shipmentPage(){
+  const last=get(K.last,null);
+  const fn=(k)=>`<button class="fn ${colF[k]?'on':''}" onclick="event.stopPropagation();toggleFilterRow()" title="กรอง">▼</button>`;
+  const fi=(k,ph)=>`<th><input placeholder="${ph}" value="${esc(colF[k])}" oninput="onColF('${k}',this.value)"></th>`;
+  return `<div class="card">
+   <div class="bar"><button class="btn teal" onclick="toggleAll()" id="expBtn">Expand all</button>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+     <label style="font-size:13px;color:var(--muted)"><input type="checkbox" ${allDays?'checked':''} onchange="allDays=this.checked;render()"> แสดงทุกวัน</label>
+     <div class="date"><input type="text" id="dateTxt" readonly value="${esc(fmtDMY(dateSel))}" onclick="document.getElementById('dateInp').showPicker&&document.getElementById('dateInp').showPicker()"><button onclick="document.getElementById('dateInp').showPicker&&document.getElementById('dateInp').showPicker()">📅</button>
+      <input type="date" id="dateInp" value="${esc(dateSel)}" onchange="dateSel=this.value||isoToday();allDays=false;render()" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px"></div></div></div>
+   <div style="text-align:right;margin-top:10px">${last?`<span class="badge-ok">โหลดข้อมูลล่าสุด ${esc(last.ref)} - ${esc(fmtDT(last.at))}</span>`:'<span class="badge-ok" style="background:#999">ยังไม่มีข้อมูลที่โหลดจาก TMS</span>'}</div>
+   <div class="tbl-w"><table>
+    <thead><tr><th style="width:40px"></th>
+     <th>Start Time ${fn('time')}</th><th>End Time ${fn('end')}</th><th>Shipment Code ${fn('code')}</th><th>ประเภทงาน ${fn('type')}</th><th>ลักษณะงาน ${fn('kind')}</th><th>External ID ${fn('ext')}</th><th>Driver ${fn('driver')}</th></tr>
+     <tr class="frow ${filterRow?'':'hidden'}"><th></th>${fi('time','Start Time')}${fi('end','End Time')}${fi('code','Shipment Code')}${fi('type','ประเภทงาน')}${fi('kind','ลักษณะงาน')}${fi('ext','External ID')}${fi('driver','Driver')}</tr></thead>
+    <tbody id="rows"></tbody></table></div>
+   <div class="foot" id="foot"></div></div>`;
+}
+function toggleFilterRow(){ filterRow=!filterRow; render(); }
+function onColF(k,v){ colF[k]=v; renderRows(); }
+function rowData(rec){
+  const s=rec.shipment;
+  return {code:s.shipNo, time:'', end:'', type:'Outbound', kind:'', ext:s.plate, driver:s.driver};
+}
+function listShips(){
+  const all=Object.values(get(K.ships,{}));
+  let list=allDays?all:all.filter(r=>(r.shipment.tripDate||'')===dateSel);
+  list=list.filter(r=>{ const d=rowData(r); return Object.keys(colF).every(k=>!colF[k].trim()||String(d[k]||'').toLowerCase().includes(colF[k].trim().toLowerCase())); });
+  return {all,list:list.sort((a,b)=>String(a.shipment.shipNo).localeCompare(String(b.shipment.shipNo)))};
+}
+function renderRows(){
+  const body=document.getElementById('rows'); if(!body) return;
+  const {all,list}=listShips();
+  if(!list.length){
+    body.innerHTML=`<tr><td colspan="8" class="empty">${all.length?`ไม่มี Shipment ในวันที่ ${esc(fmtDMY(dateSel))} — เลือกวันอื่นหรือติ๊ก "แสดงทุกวัน" (มีทั้งหมด ${all.length} Shipment)`:'ยังไม่มี Shipment ที่รับมาจาก TMS — เมื่อ TMS จัด Shipment ข้อมูลจะถูกส่งเข้ามาที่นี่อัตโนมัติ'}</td></tr>`;
+    document.getElementById('foot').textContent='แสดง 0 Shipment'; return;
+  }
+  body.innerHTML=list.map(r=>{
+    const d=rowData(r), open=allOpen||openSet.has(d.code);
+    return `<tr class="main ${open?'open':''}" onclick="toggleRow('${esc(d.code)}')"><td class="c"><span class="arr">▸</span></td>
+      <td>${esc(d.time)}</td><td>${esc(d.end)}</td><td>${esc(d.code)}</td><td>${esc(d.type)}</td><td>${esc(d.kind)}</td><td>${esc(d.ext)}</td><td>${esc(d.driver)}</td></tr>`
+      +(open?`<tr class="det"><td colspan="8">${detailHtml(r)}</td></tr>`:'');
+  }).join('');
+  const kg=list.reduce((t,r)=>t+r.stops.reduce((s,x)=>s+x.kg,0),0);
+  document.getElementById('foot').textContent=`แสดง ${list.length} Shipment · น้ำหนักรวม ${kgFmt(kg)} kg`;
+  document.getElementById('expBtn').textContent=allOpen?'Collapse all':'Expand all';
+}
+function toggleRow(code){ if(openSet.has(code)) openSet.delete(code); else openSet.add(code); allOpen=false; renderRows(); }
+function toggleAll(){ allOpen=!allOpen; if(!allOpen) openSet=new Set(); renderRows(); }
+function detailHtml(r){
+  const s=r.shipment, stops=r.stops, kg=stops.reduce((t,x)=>t+x.kg,0), nStop=new Set(stops.map(x=>x.stop)).size;
+  return `<div class="meta"><span>ทะเบียนรถ: <b>${esc(s.plate)}</b></span><span>คนขับ: <b>${esc(s.driver)}</b></span><span>วันที่วิ่ง: <b>${esc(fmtDMY(s.tripDate))}</b></span><span>${stops.length} Picking Slip · ${nStop} จุดส่ง</span><span>น้ำหนักรวม: <b>${kgFmt(kg)} kg</b></span>${s.note?`<span>หมายเหตุ: ${esc(s.note)}</span>`:''}<span>จัดโดย ${esc(s.createdBy||'-')} (TMS) · รับเข้า ${esc(fmtDT(r.receivedAt))}</span></div>
+   <table class="sub"><thead><tr><th>จุดส่ง</th><th>Ship to</th><th>District</th><th>Province</th><th>Picking Slip</th><th>DO</th><th>ลูกค้า</th><th>กำหนดส่ง</th><th class="n-r">Weight (kg)</th><th></th></tr></thead><tbody>
+   ${stops.map(x=>`<tr><td class="c">${x.stop}</td><td>${esc(x.shipName)}</td><td>${esc(x.district)}</td><td>${esc(x.province)}</td><td><b>${esc(x.psNo)}</b></td><td>${esc(x.doNos.join(', '))}</td><td>${esc(x.customer)}</td><td>${esc(fmtDMY(x.deliveryDate))}</td><td class="n-r">${kgFmt(x.kg)}</td>
+     <td><button class="btn sec small" onclick="event.stopPropagation();viewPS('${esc(x.psNo)}')">📄 ดูใบ</button></td></tr>
+     <tr><td></td><td colspan="9"><table class="lin" style="width:100%"><thead><tr><th>DO</th><th>S/O</th><th>รหัสสินค้า</th><th>รายการ</th><th>Plant</th><th class="n-r">จำนวน (pcs)</th><th class="n-r">น้ำหนัก (kg)</th></tr></thead><tbody>
+      ${x.lines.map(l=>`<tr><td>${esc(l.doNo)}</td><td>${esc(l.soNo)}</td><td>${esc(l.code)}</td><td>${esc(l.desc)}</td><td>${esc(l.plant||'')}</td><td class="n-r">${(+l.qty||0).toLocaleString()}</td><td class="n-r">${kgFmt(l.qty*l.weight)}</td></tr>`).join('')}
+     </tbody></table></td></tr>`).join('')}
+   </tbody></table>`;
+}
+/* ใบ Picking Slip (หน้าเดียวกับที่ Service/TMS เห็น — อ่านจากข้อมูลที่ WMS รับเข้ามา) */
+function viewPS(psNo){
+  document.getElementById('modal').innerHTML=`<div class="md-h"><h3>Picking Slip ${esc(psNo)} (ข้อมูลที่รับจาก TMS)</h3><button class="btn sec small" onclick="closeModal()">✕ ปิด</button></div>
+   <iframe src="presale-configurator-v2.html?viewPS=${encodeURIComponent(psNo)}&wms=1"></iframe>`;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function closeModal(){ document.getElementById('overlay').classList.add('hidden'); document.getElementById('modal').innerHTML=''; }
+
+/* ---------- เริ่มระบบ + ฟังข้อความใหม่จาก TMS ---------- */
+WMSIF.onChange(()=>{ if(!sessionUser) return; processInterface(); render(); });
+if(sessionUser) showApp(); else document.body.classList.add('is-login');
+</script>
+</body>
+</html>

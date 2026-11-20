@@ -103,6 +103,18 @@ details.dr-sec>summary .sm{display:block;color:var(--muted);font-size:11.5px;fon
 .seq-l .no{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:13px}
 .seq-l .seq-m{flex:1;min-width:0}
 .seq-l .seq-b{display:flex;gap:4px}
+.stop{border:1px solid #B9CBE0;border-radius:11px;margin-bottom:10px;background:#fff;cursor:grab;user-select:none;overflow:hidden}
+.stop.dragging{opacity:.4}
+.stop.over-top{box-shadow:0 -4px 0 var(--brand)}
+.stop.over-bottom{box-shadow:0 4px 0 var(--brand)}
+.stop-h{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--brand2)}
+.stop .grip{color:#8FA3B8;font-size:18px}
+.stop .no{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:13px}
+.stop .seq-m{flex:1;min-width:0}
+.stop .seq-b{display:flex;gap:4px}
+.stop-items{padding:4px 12px 8px 48px}
+.stop-it{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px dashed var(--line)}
+.stop-it:first-child{border-top:0}
 .dr-no{display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:700;margin-right:8px}
 .dr-open{position:fixed;right:18px;bottom:18px;z-index:29;box-shadow:0 6px 18px rgba(20,38,59,.3);border-radius:999px;padding:10px 18px}
 .md-b input{width:100%}
@@ -313,7 +325,7 @@ function openDrawer(){ drawerOpen=true; syncDrawer(); }
 function closeDrawer(){ drawerOpen=false; syncDrawer(); }
 function syncDrawer(){
   const dr=document.getElementById('drawer'), body=document.getElementById('drBody'), btn=document.getElementById('drOpenBtn'); if(!dr) return;
-  const sel=[...selected];
+  const sel=orderedSelection();
   if(!sel.length||tab!=='inbox'||!sessionUser){ dr.classList.add('hidden'); btn.classList.add('hidden'); document.body.classList.remove('with-drawer'); body.innerHTML=''; return; }
   const orders=get(K.orders,[]);
   [...body.children].forEach(el=>{ if(!sel.includes(el.dataset.ps)) el.remove(); });
@@ -326,7 +338,8 @@ function syncDrawer(){
       +'<iframe loading="lazy" src="presale-configurator-v2.html?viewPS='+encodeURIComponent(psNo)+'&tms=1&conds=1&dept=Transport&embed=1"></iframe>';
     body.appendChild(sec);
   });
-  sel.forEach((psNo,i)=>{ const sec=body.querySelector('[data-ps="'+psNo+'"]'); if(!sec) return; sec.style.order=i; const el=sec.querySelector('.dr-no'); if(el) el.textContent=(i+1); });
+  const stopNo={}; selBlocks().forEach((bl,bi)=>bl.items.forEach(o=>{ stopNo[o.psNo]=bi+1; }));
+  sel.forEach((psNo,i)=>{ const sec=body.querySelector('[data-ps="'+psNo+'"]'); if(!sec) return; sec.style.order=i; const el=sec.querySelector('.dr-no'); if(el){ el.textContent=stopNo[psNo]; el.title='จุดส่งที่ '+stopNo[psNo]; } });
   document.getElementById('drSub').textContent=sel.length+' ใบ · รวม '+num(orders.filter(o=>selected.has(o.psNo)).reduce((t,o)=>t+o.summary.kg,0))+' kg';
   document.getElementById('drCnt').textContent=sel.length;
   dr.classList.toggle('hidden',!drawerOpen); btn.classList.toggle('hidden',drawerOpen);
@@ -346,45 +359,70 @@ function updateBar(){
   renderSeq();
 }
 
-/* ===== สรุปใบที่ติ๊ก + ลากขึ้น/ลงเพื่อกำหนดลำดับการส่ง (ใช้เป็นลำดับจุดส่งของ Shipment) ===== */
-let dragPs=null;
+/* ===== สรุปใบที่ติ๊ก จัดเป็นบล็อก "จุดส่ง" ตาม Ship to Name แล้วลากสลับลำดับระดับจุดส่ง =====
+   ใบที่ Ship to Name เดียวกัน (แม้คนละ Sold-to / คนละ S/O) อยู่บล็อกเดียวกัน = จุดส่งเดียวกัน
+   ใบที่ไม่มีชื่อ Ship to จะไม่ถูกรวม (แยกเป็นจุดส่งของตัวเอง) */
+let dragKey=null;
+function stopKey(o){ const n=(o.summary.shipName||'').trim().toLowerCase(); return n?'N:'+n:'P:'+o.psNo; }
+function selBlocks(){
+  const orders=get(K.orders,[]), blocks=[], idx={};
+  [...selected].forEach(n=>{
+    const o=orders.find(x=>x.psNo===n); if(!o) return;
+    const k=stopKey(o);
+    if(idx[k]===undefined){ idx[k]=blocks.length; blocks.push({key:k,items:[]}); }
+    blocks[idx[k]].items.push(o);
+  });
+  return blocks;
+}
+// ลำดับใบที่เลือกทั้งหมด เรียงตามลำดับจุดส่ง (ใบในจุดเดียวกันอยู่ติดกัน)
+function orderedSelection(){ return selBlocks().flatMap(b=>b.items.map(o=>o.psNo)); }
 function renderSeq(){
   const box=document.getElementById('seqPanel'); if(!box) return;
-  const orders=get(K.orders,[]);
-  const list=[...selected].map(n=>orders.find(o=>o.psNo===n)).filter(Boolean);
-  if(!list.length){ box.innerHTML=''; return; }
-  const kg=list.reduce((s,o)=>s+o.summary.kg,0);
-  box.innerHTML=`<div class="seq"><div class="seq-h"><b>ลำดับการส่งสินค้า</b> · ${list.length} Picking Slip · ${kgFmt(kg)} kg
-    <span class="sub"> — ลากแถวขึ้น/ลงเพื่อสลับลำดับ (1 = จุดส่งแรก) หรือกดลูกศร</span></div>
-   <ol class="seq-l">${list.map((o,i)=>{ const s=o.summary; return `<li draggable="true" data-ps="${esc(o.psNo)}" ondragstart="seqDragStart(event)" ondragover="seqDragOver(event)" ondragleave="seqDragLeave(event)" ondrop="seqDrop(event)" ondragend="seqDragEnd(event)">
-     <span class="grip" title="ลากเพื่อสลับลำดับ">⠿</span><span class="no">${i+1}</span>
-     <div class="seq-m"><b>${esc(o.psNo)}</b> · ${esc(s.customer)}<div class="sub">Ship to: ${esc(s.shipName||'-')}${s.district||s.province?' · '+esc([s.district,s.province].filter(Boolean).join(' ')):''} · ${kgFmt(s.kg)} kg · กำหนดส่ง ${esc(fmtDate(s.deliveryDate))}</div></div>
-     <span class="seq-b"><button class="btn secondary small" onclick="seqMove('${esc(o.psNo)}',-1)" ${i===0?'disabled':''} title="เลื่อนขึ้น">▲</button><button class="btn secondary small" onclick="seqMove('${esc(o.psNo)}',1)" ${i===list.length-1?'disabled':''} title="เลื่อนลง">▼</button><button class="btn danger small" onclick="seqRemove('${esc(o.psNo)}')" title="เอาออกจากรายการที่เลือก">✕</button></span></li>`; }).join('')}</ol></div>`;
+  const blocks=selBlocks();
+  if(!blocks.length){ box.innerHTML=''; return; }
+  const all=blocks.flatMap(b=>b.items), kg=all.reduce((s,o)=>s+o.summary.kg,0);
+  box.innerHTML=`<div class="seq"><div class="seq-h"><b>ลำดับการส่งสินค้า</b> · ${all.length} Picking Slip · ${blocks.length} จุดส่ง · ${kgFmt(kg)} kg
+    <span class="sub"> — ลากบล็อกขึ้น/ลงเพื่อสลับลำดับจุดส่ง (1 = จุดแรก) หรือกดลูกศร · Ship to เดียวกันอยู่บล็อกเดียวกัน</span></div>
+   ${blocks.map((bl,i)=>{
+     const f=bl.items[0].summary, bkg=bl.items.reduce((s,o)=>s+o.summary.kg,0);
+     const place=bl.key.startsWith('N:')?esc(f.shipName):'<span class="sub">(ไม่ระบุ Ship to)</span>';
+     const geo=[f.district,f.province].filter(Boolean).join(' ');
+     const keyAttr=esc(bl.key).replace(/'/g,'&#39;');
+     return `<div class="stop" draggable="true" data-i="${i}" ondragstart="seqDragStart(event)" ondragover="seqDragOver(event)" ondragleave="seqDragLeave(event)" ondrop="seqDrop(event)" ondragend="seqDragEnd(event)">
+      <div class="stop-h"><span class="grip" title="ลากเพื่อสลับลำดับจุดส่ง">⠿</span><span class="no">${i+1}</span>
+       <div class="seq-m"><b>${place}</b>${geo?' · '+esc(geo):''}<div class="sub">${bl.items.length} Picking Slip · ${kgFmt(bkg)} kg</div></div>
+       <span class="seq-b"><button class="btn secondary small" onclick="seqMove(${i},-1)" ${i===0?'disabled':''} title="เลื่อนจุดส่งขึ้น">▲</button><button class="btn secondary small" onclick="seqMove(${i},1)" ${i===blocks.length-1?'disabled':''} title="เลื่อนจุดส่งลง">▼</button></span></div>
+      <div class="stop-items">${bl.items.map(o=>`<div class="stop-it"><div class="seq-m"><b>${esc(o.psNo)}</b> · ${esc(o.summary.customer)}<div class="sub">DO: ${esc(o.summary.doNos.join(', '))} · ${kgFmt(o.summary.kg)} kg · กำหนดส่ง ${esc(fmtDate(o.summary.deliveryDate))}</div></div>
+        <button class="btn danger small" onclick="seqRemove('${esc(o.psNo)}')" title="เอาออกจากรายการที่เลือก">✕</button></div>`).join('')}</div></div>`;
+   }).join('')}</div>`;
 }
-function seqApply(arr){ selected=new Set(arr); renderInboxRows(); updateBar(); syncDrawer(); }
-function seqMove(psNo,delta){
-  const arr=[...selected], i=arr.indexOf(psNo), j=i+delta;
-  if(i<0||j<0||j>=arr.length) return;
-  arr.splice(i,1); arr.splice(j,0,psNo); seqApply(arr);
+function seqApplyBlocks(blocks){ selected=new Set(blocks.flatMap(b=>b.items.map(o=>o.psNo))); renderInboxRows(); updateBar(); syncDrawer(); }
+function seqMove(i,delta){
+  const blocks=selBlocks(), j=i+delta;
+  if(i<0||j<0||j>=blocks.length) return;
+  const [bl]=blocks.splice(i,1); blocks.splice(j,0,bl); seqApplyBlocks(blocks);
 }
 function seqRemove(psNo){ selected.delete(psNo); renderInboxRows(); updateBar(); syncDrawer(); }
-function seqDragStart(e){ dragPs=e.currentTarget.dataset.ps; e.dataTransfer.effectAllowed='move'; try{ e.dataTransfer.setData('text/plain',dragPs); }catch(x){} e.currentTarget.classList.add('dragging'); }
+function seqDragStart(e){ dragKey=+e.currentTarget.dataset.i; e.dataTransfer.effectAllowed='move'; try{ e.dataTransfer.setData('text/plain',String(dragKey)); }catch(x){} e.currentTarget.classList.add('dragging'); }
 function seqDragOver(e){
+  if(dragKey===null) return;
   e.preventDefault(); e.dataTransfer.dropEffect='move';
-  const li=e.currentTarget, r=li.getBoundingClientRect(), top=(e.clientY-r.top)<r.height/2;
-  li.classList.toggle('over-top',top); li.classList.toggle('over-bottom',!top);
+  const el=e.currentTarget, r=el.getBoundingClientRect(), top=(e.clientY-r.top)<r.height/2;
+  el.classList.toggle('over-top',top); el.classList.toggle('over-bottom',!top);
 }
 function seqDragLeave(e){ e.currentTarget.classList.remove('over-top','over-bottom'); }
 function seqDrop(e){
+  if(dragKey===null) return;
   e.preventDefault();
-  const li=e.currentTarget, target=li.dataset.ps, r=li.getBoundingClientRect(), after=(e.clientY-r.top)>=r.height/2;
-  li.classList.remove('over-top','over-bottom');
-  if(!dragPs||dragPs===target){ dragPs=null; return; }
-  const arr=[...selected].filter(n=>n!==dragPs);
-  let idx=arr.indexOf(target); if(after) idx++;
-  arr.splice(idx,0,dragPs); dragPs=null; seqApply(arr);
+  const el=e.currentTarget, target=+el.dataset.i, r=el.getBoundingClientRect(), after=(e.clientY-r.top)>=r.height/2;
+  el.classList.remove('over-top','over-bottom');
+  const from=dragKey; dragKey=null;
+  if(from===target) return;
+  const blocks=selBlocks(), [bl]=blocks.splice(from,1);
+  let idx=target>from?target-1:target; if(after) idx++;
+  blocks.splice(idx,0,bl); seqApplyBlocks(blocks);
 }
-function seqDragEnd(e){ dragPs=null; document.querySelectorAll('.seq-l li').forEach(li=>li.classList.remove('dragging','over-top','over-bottom')); }
+function seqDragEnd(e){ dragKey=null; document.querySelectorAll('.stop').forEach(el=>el.classList.remove('dragging','over-top','over-bottom')); }
 function renderShips(orders,ships){
   const list=ships.slice().sort((a,b)=>(a.tripDate||'9999')<(b.tripDate||'9999')?-1:1);
   const html=list.map(s=>{
@@ -395,7 +433,7 @@ function renderShips(orders,ships){
        <div><button class="btn secondary small" onclick="openShipEdit('${esc(s.shipNo)}')">แก้ไขรถ/คนขับ</button> <button class="btn danger small" onclick="deleteShip('${esc(s.shipNo)}')">🗑 ลบ Shipment</button></div></div>
       <div class="meta"><span>ทะเบียนรถ: <b>${esc(s.plate)}</b></span><span>คนขับ: <b>${esc(s.driver)}</b></span><span>วันที่วิ่ง: <b>${esc(fmtDate(s.tripDate))}</b></span><span>น้ำหนักรวม: <b>${num(kg)} kg</b></span><span>${ps.length} Picking Slip</span>${s.note?`<span>หมายเหตุ: ${esc(s.note)}</span>`:''}<span>สร้างโดย ${esc(s.createdBy||'-')} · ${esc(fmtDT(s.createdAt))}</span></div>
       <table><thead><tr><th>ลำดับจุดส่ง</th><th>Picking Slip / DO</th><th>ลูกค้า</th><th>Ship-to</th><th>District</th><th>Province</th><th>กำหนดส่ง</th><th class="n-r">kg</th><th></th></tr></thead><tbody>
-      ${ps.map((o,i)=>`<tr><td>${i+1}</td><td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(o.summary.doNos.join(', '))}</div></td><td>${esc(o.summary.customer)}</td><td>${esc(o.summary.shipName||'')}</td><td>${esc(o.summary.district||'')}</td><td>${esc(o.summary.province||'')}</td><td>${esc(fmtDate(o.summary.deliveryDate))}</td><td class="n-r">${num(o.summary.kg)}</td>
+      ${(()=>{ let stop=0,prev=null; return ps.map((o,i)=>{ const k=stopKey(o); if(k!==prev){ stop++; prev=k; } o._stop=stop; return o; }); })().map((o,i)=>`<tr><td>${o._stop}</td><td><strong>${esc(o.psNo)}</strong><div style="color:var(--muted);font-size:11.5px">DO: ${esc(o.summary.doNos.join(', '))}</div></td><td>${esc(o.summary.customer)}</td><td>${esc(o.summary.shipName||'')}</td><td>${esc(o.summary.district||'')}</td><td>${esc(o.summary.province||'')}</td><td>${esc(fmtDate(o.summary.deliveryDate))}</td><td class="n-r">${num(o.summary.kg)}</td>
         <td><button class="btn secondary small" onclick="viewPS('${esc(o.psNo)}')">📄 ดูใบ</button> <button class="btn danger small" onclick="removeFromShip('${esc(s.shipNo)}','${esc(o.psNo)}')" title="เอาใบนี้ออกจาก Shipment (กลับไปรอจัดรถ)">✕ เอาออก</button></td></tr>`).join('')}
       </tbody></table></div>`;
   }).join('');
@@ -420,7 +458,7 @@ function nextShipNo(){
 function listOpts(id,arr){ return `<datalist id="${id}">${arr.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`; }
 function openShipDialog(){
   const allOrders=get(K.orders,[]);
-  const orders=[...selected].map(n=>allOrders.find(o=>o.psNo===n)).filter(o=>o&&o.status==='open');   // เรียงตามลำดับที่ติ๊ก
+  const orders=orderedSelection().map(n=>allOrders.find(o=>o.psNo===n)).filter(o=>o&&o.status==='open');   // เรียงตามลำดับที่ติ๊ก
   if(!orders.length) return;
   const kg=orders.reduce((s,o)=>s+o.summary.kg,0);
   const dates=orders.map(o=>o.summary.deliveryDate).filter(Boolean).sort();
@@ -443,7 +481,7 @@ function openShipDialog(){
 function createShipment(){
   const plate=document.getElementById('shPlate').value.trim(), driver=document.getElementById('shDriver').value.trim();
   if(!plate||!driver){ alert('กรุณาระบุทะเบียนรถและคนขับ'); return; }
-  const sel=[...selected];
+  const sel=orderedSelection();
   let orders=get(K.orders,[]), ships=get(K.ships,[]);
   const picks=sel.map(n=>orders.find(o=>o.psNo===n)).filter(o=>o&&o.status==='open');   // เรียงตามลำดับที่ติ๊ก = ลำดับจุดส่ง
   if(!picks.length){ closeModal(); return; }

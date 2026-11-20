@@ -352,7 +352,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
       </div>
       <div id="loginError" class="login-error hidden">Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
       <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ / Login</button>
-      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Planning: <b>Plan</b> / <b>P123</b> &nbsp;·&nbsp; Service: <b>Service</b> / <b>SV123</b> &nbsp;·&nbsp; Warehouse: <b>Warehouse</b> / <b>W123</b> &nbsp;·&nbsp; Transport: <b>Transport</b> / <b>T123</b> &nbsp;·&nbsp; Billing: <b>Billing</b> / <b>B123</b></div>
+      <div class="login-hint">Prototype demo — ยังไม่ใช่ระบบ Authentication จริง<br>ฝ่ายขาย: <b>Sale01</b> / <b>S123</b> &nbsp;·&nbsp; Mgr01: <b>Mgr01</b> / <b>M123</b> &nbsp;·&nbsp; Approval: <b>Apv01</b> / <b>A123</b> &nbsp;·&nbsp; Admin Operation: <b>AdminOps</b> / <b>AO123</b> &nbsp;·&nbsp; Service: <b>Service</b> / <b>SV123</b> &nbsp;·&nbsp; Warehouse: <b>Warehouse</b> / <b>W123</b> &nbsp;·&nbsp; Transport: <b>Transport</b> / <b>T123</b> &nbsp;·&nbsp; Billing: <b>Billing</b> / <b>B123</b></div>
     </div>
   </div>
 </div>
@@ -385,7 +385,7 @@ body{margin:0;font-family:Inter,"Noto Sans Thai",Arial,sans-serif;background:var
     </div>
     <div id="mgr01DashboardView" class="hidden"></div>
     <div id="approvalDashboardView" class="hidden"></div>
-    <div id="planningDashboardView" class="hidden"></div>
+    <div id="adminopsDashboardView" class="hidden"></div>
     <div id="serviceDashboardView" class="hidden"></div>
     <div id="warehouseDashboardView" class="hidden"></div>
     <div id="transportDashboardView" class="hidden"></div>
@@ -512,7 +512,7 @@ const CREDENTIALS_LIST = [
  { username: 'Sale01', password: 'S123', role: 'sales' },
  { username: 'Mgr01', password: 'M123', role: 'mgr01' },
  { username: 'Apv01', password: 'A123', role: 'approval' },
-  { username: 'Plan', password: 'P123', role: 'planning' },
+  { username: 'AdminOps', password: 'AO123', role: 'adminops' },
   { username: 'Service', password: 'SV123', role: 'service' },
  { username: 'Warehouse', password: 'W123', role: 'warehouse' },
  { username: 'Transport', password: 'T123', role: 'transport' },
@@ -552,13 +552,14 @@ const DASHBOARD_BRAND_BY_ROLE = {
  sales: 'Sales Performance Dashboard',
  mgr01: 'Approval Dashboard (Mgr01)',
  approval: 'S/O Approval Dashboard',
-  planning: 'Planning Dashboard',
+  adminops: 'Admin Operation Dashboard',
   service: 'Service Dashboard (Transfer to DO)',
  warehouse: 'Warehouse Dashboard (DO)',
  transport: 'Transport Dashboard (DO)',
  billing: 'Billing Dashboard (Picking Slip)',
 };
 function showDashboard(user, role){
+ if(role==='planning') role='adminops';   // ชื่อ role เดิม (ก่อนเปลี่ยนเป็น Admin Operation)
  document.getElementById('loginScreen').classList.add('hidden');
  document.getElementById('dashboardScreen').classList.remove('hidden');
  document.getElementById('dashUserName').textContent = user;
@@ -571,7 +572,7 @@ function showDashboard(user, role){
  const ROLE_VIEWS={
   mgr01:['mgr01DashboardView',renderMgr01Dashboard],
   approval:['approvalDashboardView',renderApprovalDashboard],
-  planning:['planningDashboardView',renderPlanningDashboard],
+  adminops:['adminopsDashboardView',renderAdminOpsDashboard],
   service:['serviceDashboardView',renderServiceDashboard],
   warehouse:['warehouseDashboardView',renderWarehouseDashboard],
   transport:['transportDashboardView',renderTransportDashboard],
@@ -917,7 +918,7 @@ function renderSOApprovalSectionHTML(){
   contentHtml:`${summaryHtml}<div class="appr-list">${rowsHtml}</div>`
  });
 }
-// ---------- Planning Dashboard ----------
+// ---------- Admin Operation Dashboard ----------
 // รายการ S/O ที่ Apv01 อนุมัติแล้ว เรียงตามความเร่งด่วน พร้อมสรุปว่าต้องผลิตเพิ่มเท่าไร (เทียบสต็อก ณ วันออกใบเสนอราคา)
 function planInfo(rec){
  let kg=0, shortKg=0, shortPcs=0;
@@ -932,9 +933,9 @@ function planInfo(rec){
 let planCardFilter=null;
 function setPlanCardFilter(key){
  planCardFilter=(planCardFilter===key||key===null)?null:key;
- renderPlanningDashboard();
+ renderAdminOpsDashboard();
 }
-function renderPlanningDashboard(){
+function renderAdminOpsDashboard(){
  const all=loadSalesOrders().filter(s=>s.status==='approved').map(rec=>({rec,...planInfo(rec)}));
  const cls={
   urgent:x=>x.days!==null&&x.days<=7,
@@ -977,9 +978,9 @@ function renderPlanningDashboard(){
    <div class="appr-time">${dt}</div>
   </a>`;
  }).join(''):`<div class="appr-empty">${all.length?'ไม่มีงานในหมวดนี้':'ยังไม่มี S/O ที่อนุมัติแล้ว'}</div>`;
- document.getElementById('planningDashboardView').innerHTML=`<div class="appr-shell">
+ document.getElementById('adminopsDashboardView').innerHTML=`<div class="appr-shell">
   <aside class="appr-sidebar">
-   <div class="appr-sidebar-head"><span>🗓️ Planning</span></div>
+   <div class="appr-sidebar-head"><span>🗂️ Admin Operation</span></div>
    <nav class="appr-nav"><button class="appr-nav-item active"><span>S/O ที่อนุมัติแล้ว</span><span class="appr-nav-badge${all.length?'':' zero'}">${all.length}</span></button></nav>
   </aside>
   <div class="appr-content">${summary}<div class="appr-list">${rows}</div></div>
@@ -1959,8 +1960,9 @@ document.getElementById('loginUser').addEventListener('keydown', e=>{ if(e.key==
 let liveRefreshTimer = null;
 function refreshLiveViews(){
  if(!TMTStore.session.getUser()) return;
- const role = TMTStore.session.getRole() || 'sales';
- const liveRender={mgr01:renderMgr01Dashboard,approval:renderApprovalDashboard,planning:renderPlanningDashboard,service:renderServiceDashboard,warehouse:renderWarehouseDashboard,transport:renderTransportDashboard,billing:renderBillingDashboard}[role];
+ let role = TMTStore.session.getRole() || 'sales';
+ if(role==='planning') role='adminops';
+ const liveRender={mgr01:renderMgr01Dashboard,approval:renderApprovalDashboard,adminops:renderAdminOpsDashboard,service:renderServiceDashboard,warehouse:renderWarehouseDashboard,transport:renderTransportDashboard,billing:renderBillingDashboard}[role];
  if(liveRender) liveRender();
  else if(!cardDrag) renderWidgetGrid();
  if(!document.getElementById('quotationListOverlay').classList.contains('hidden')) openQuotationList();

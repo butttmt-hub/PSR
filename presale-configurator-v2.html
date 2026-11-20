@@ -2905,7 +2905,7 @@ function loadSOHandoverView(rec){
  document.getElementById('sales').value=rec.sales||'';
  document.body.classList.add('view-mode','handover-view');
  handoverRec=rec;
- const isPlanning=TMTStore.session.getRole()==='planning';
+ const isPlanning=['adminops','planning'].includes(TMTStore.session.getRole());   // Admin Operation (ชื่อเดิม planning)
  const tabParam=new URLSearchParams(window.location.search).get('tab')||(isPlanning?'Planning':'');
  if(tabParam) handoverTab=tabParam;
  showScreen(9);
